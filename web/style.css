@@ -1,0 +1,11 @@
+
+canvas, img {
+   image-rendering: optimizeSpeed;
+   image-rendering: -moz-crisp-edges;
+   image-rendering: pixelated;
+   image-rendering: -webkit-optimize-contrast;
+   image-rendering: optimize-contrast;
+   -ms-interpolation-mode: nearest-neighbor;
+   border: 0px solid #ddd;
+   line-height:0;
+}
