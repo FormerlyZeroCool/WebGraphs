@@ -288,24 +288,26 @@ class Game extends SquareAABBCollidable {
         });
         const x_min = this.scale * this.x_translation - 1/this.scale;
         const x_max = this.scale * this.x_translation + 1/this.scale;
-        console.log(x_min, x_max)
+        //console.log(x_min, x_max)
         const deltaX = x_max - x_min;
-        const y_min = this.y_translation - deltaX / 2;
-        const y_max = this.y_translation + deltaX / 2;
+        const y_min = this.y_translation*this.scale - deltaX / 2;
+        const y_max = this.y_translation*this.scale + deltaX / 2;
         const deltaY = y_max - y_min;
         
         functions.forEach((foo:Function, index:number) => {
             const view = new Int32Array(this.screen_buf[index].imageData!.data.buffer);
             const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255)
-            foo.calc_for(x_min, x_max, (x_max - x_min) / this.cell_dim[0]);
-            let last_x = 0; let last_y = 0;
             try{
+            foo.calc_for(x_min, x_max, (x_max - x_min) / this.cell_dim[0]);
+            let last_x = ((-this.x_translation * this.scale) / deltaX) * this.cell_dim[0];
+            let last_y = ((foo.table[0] - y_min - this.y_translation * this.scale) / deltaY) * this.cell_dim[1];;
+            
             for(let i = 0; i < foo.table.length; i++)
             {
                 const x = x_min + foo.dx * i;
-                const y = foo.table[i];
-                const sy = ((y - y_min - this.y_translation) / deltaY) * this.cell_dim[1];
-                const sx = ((x - x_min - this.x_translation) / deltaX) * this.cell_dim[0];
+                const y = -foo.table[i];
+                const sy = ((y - y_min - this.y_translation * this.scale) / deltaY) * this.cell_dim[1];
+                const sx = ((x - x_min - this.x_translation * this.scale) / deltaX) * this.cell_dim[0];
                 this.draw_line_segment(sx, last_x, sy, last_y, color.color, view);
                 last_x = sx;
                 last_y = sy;
@@ -327,14 +329,12 @@ class Game extends SquareAABBCollidable {
         const x_min = this.scale * this.x_translation - 1/this.scale;
         const x_max = this.scale * this.x_translation + 1/this.scale;
         const deltaX = x_max - x_min;
-        const y_min = this.y_translation - deltaX / 2;
-        const y_max = this.y_translation + deltaX / 2;
+        const y_min = this.y_translation*this.scale - deltaX / 2;
+        const y_max = this.y_translation*this.scale + deltaX / 2;
         const deltaY = y_max - y_min;
-        const x_axis = -this.y_translation;
-        //console.log(x_axis, deltaX)
+        const x_axis = -this.y_translation * this.scale;
         const screen_space_x_axis = (x_axis - y_min) / deltaY * this.height;
-        //console.log(x_axis - y_min)
-        const y_axis = -(this.x_translation);
+        const y_axis = -(this.x_translation * this.scale);
         const screen_space_y_axis = (y_axis - x_min) / deltaX * this.width;
         
         ctx.beginPath()
