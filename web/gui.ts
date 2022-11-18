@@ -1633,7 +1633,7 @@ export class GuiTextBox implements GuiElement {
                         this.insert_char("-", e);
                         break;
                         case("Slash"):
-                        this.insert_char("", e);
+                        this.insert_char("/", e);
                         break;
                         case("NumpadEnter"):
                         case("Enter"):
