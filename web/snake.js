@@ -270,9 +270,10 @@ class Game extends SquareAABBCollidable {
         this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
         this.axises.ctx.stroke();
         ctx.drawImage(this.axises.image, x, y, width, height);
-        this.screen_buf.forEach(buf => {
+        this.screen_buf.forEach((buf, index) => {
             //buf.refreshImage(); no need since we render directly onto sprite canvases
-            ctx.drawImage(buf.image, x, y, width, height);
+            if (this.layer_manager.list.list[index].checkBox.checked)
+                ctx.drawImage(buf.image, x, y, width, height);
         });
         this.guiManager.draw(ctx);
     }
