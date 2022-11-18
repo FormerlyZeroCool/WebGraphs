@@ -86,6 +86,23 @@ class Function {
         this.x_max = 0;
         this.x_min = 0;
         this.dx = 0;
+        this.color = new RGB(0, 0, 0, 0);
+    }
+    compile(source) {
+        if (this.source !== source) {
+            this.source = source;
+            this.error_message = null;
+            try {
+                this.compiled = eval(`(x) => ${source}`);
+            }
+            catch (e) {
+                console.log(e.message);
+                this.error_message = e.message;
+            }
+            this.x_max = 0;
+            this.x_min = 0;
+            this.dx = 0;
+        }
     }
     calc_for(x_min, x_max, dx) {
         if (this.error_message === null) {
@@ -121,11 +138,12 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => this.screen_buf.splice(layer, 1), () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => console.log('layer', layer, 'slider val', slider_value), (l1, l2) => this.swap_layers(l1, l2));
+        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); }, () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => console.log('layer', layer, 'slider val', slider_value), (l1, l2) => this.swap_layers(l1, l2));
         this.axises = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
+        this.functions = [];
         this.try_render_functions();
     }
     calc_bounds() {
@@ -138,8 +156,11 @@ class Game extends SquareAABBCollidable {
     }
     add_layer() {
         this.screen_buf.push(this.new_sprite());
+        this.functions.push(new Function(""));
     }
     swap_layers(l1, l2) {
+        const temp = this.functions.splice(l1, 1)[0];
+        this.functions.splice(l2, 0, temp);
     }
     set_place(index, color) {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
@@ -221,7 +242,7 @@ class Game extends SquareAABBCollidable {
     }
     try_render_functions() {
         this.calc_bounds();
-        let functions = [];
+        let functions = this.functions;
         //this.screen_buf = [];
         this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
         this.layer_manager.list.list.forEach((li, index) => {
@@ -229,12 +250,18 @@ class Game extends SquareAABBCollidable {
             if (!this.screen_buf[index]) {
                 this.screen_buf.push(this.new_sprite());
             }
-            functions.push(new Function(text));
+            if (!this.functions[index]) {
+                const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
+                const foo = new Function(text);
+                foo.color = color;
+                functions.push(foo);
+            }
+            else
+                functions[index].compile(text);
         });
         functions.forEach((foo, index) => {
             const view = new Int32Array(this.screen_buf[index].imageData.data.buffer);
-            const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
-            this.screen_buf[index].ctx.strokeStyle = color.htmlRBG();
+            this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
             //build table to be rendered
             foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0]);
             let last_x = 0;

@@ -103,6 +103,7 @@ class LayerManagerTool {
 };
 class Function {
     source:string;
+    color:RGB;
     compiled:(x:number) => number;
     error_message:string | null;
     x_min:number;
@@ -124,6 +125,25 @@ class Function {
         this.x_max = 0;
         this.x_min = 0;
         this.dx = 0;
+        this.color = new RGB(0,0,0,0);
+    }
+    compile(source:string):void
+    {
+        if(this.source !== source)
+        {
+            this.source = source;
+            this.error_message = null;
+            try{
+                this.compiled = eval(`(x) => ${source}`);
+            }catch(e:any)
+            {
+                console.log(e.message);
+                this.error_message = e.message;
+            }
+            this.x_max = 0;
+            this.x_min = 0;
+            this.dx = 0;
+        }
     }
     calc_for(x_min:number, x_max:number, dx:number):number[]
     {
@@ -144,7 +164,7 @@ class Function {
 class Game extends SquareAABBCollidable {
     axises:Sprite;
     draw_axises:boolean;
-    
+    functions:Function[];
     screen_buf:Sprite[];
     background_color:RGB;
     guiManager:SimpleGridLayoutManager;
@@ -183,7 +203,7 @@ class Game extends SquareAABBCollidable {
         this.guiManager = new SimpleGridLayoutManager([1,1], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, 
             (layer:number, state:boolean) => console.log(state),
-            (layer:number) => this.screen_buf.splice(layer, 1),
+            (layer:number) => {this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1)},
             () => this.screen_buf.length,
             (layer:number) => this.try_render_functions(),
             (layer:number, slider_value:number) => console.log('layer', layer,'slider val', slider_value),
@@ -193,6 +213,7 @@ class Game extends SquareAABBCollidable {
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
+        this.functions = [];
         this.try_render_functions();
     }
     calc_bounds():void
@@ -207,10 +228,12 @@ class Game extends SquareAABBCollidable {
     add_layer():void
     {
         this.screen_buf.push(this.new_sprite());
+        this.functions.push(new Function(""));
     }
     swap_layers(l1:number, l2:number):void
     {
-
+        const temp = this.functions.splice(l1, 1)[0];
+        this.functions.splice(l2, 0, temp);
     }
     set_place(index:number, color:number):boolean
     {
@@ -311,7 +334,7 @@ class Game extends SquareAABBCollidable {
     try_render_functions()
     {
         this.calc_bounds();
-        let functions:Function[] = [];
+        let functions:Function[] = this.functions;
         //this.screen_buf = [];
         this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
         this.layer_manager.list.list.forEach((li:GuiListItem, index:number) => {
@@ -320,13 +343,20 @@ class Game extends SquareAABBCollidable {
             {
                 this.screen_buf.push(this.new_sprite());
             }
-            functions.push(new Function(text));
+            if(!this.functions[index])
+            {
+                const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
+                const foo = new Function(text);
+                foo.color = color;
+                functions.push(foo);
+            }
+            else
+                functions[index].compile(text);
         });
         
         functions.forEach((foo:Function, index:number) => {
             const view = new Int32Array(this.screen_buf[index].imageData!.data.buffer);
-            const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
-            this.screen_buf[index].ctx.strokeStyle = color.htmlRBG();
+            this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
             //build table to be rendered
             foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0]);
 

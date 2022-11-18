@@ -862,7 +862,7 @@ export class GuiCheckList implements GuiElement {
                     if(clicked > this.list.length)
                         this.swapElementsInParallelArray(this.dragItemInitialIndex, this.list.length - 1);
                     else
-                    this.swapElementsInParallelArray(this.dragItemInitialIndex, clicked);
+                        this.swapElementsInParallelArray(this.dragItemInitialIndex, clicked);
                 }
                 this.dragItem = null;
                 this.dragItemInitialIndex = -1;
