@@ -436,20 +436,20 @@ export class SimpleGridLayoutManager implements GuiElement {
             });
             e.translateEvent(e, this.x, this.y);
             if(record)
+            {
+                e.preventDefault();
+                e.translateEvent(e, -record.x - this.x, -record.y - this.y);
+                if(type !== "touchmove")
+                    record.element.activate();
+                record.element.handleTouchEvents(type, e);
+                e.translateEvent(e, record.x + this.x, record.y + this.y);
+                record.element.refresh();
+                this.elementTouched = record;
+                if(e.repaint)
                 {
-                    e.preventDefault();
-                    e.translateEvent(e, -record.x - this.x, -record.y - this.y);
-                    if(type !== "touchmove")
-                        record.element.activate();
-                    record.element.handleTouchEvents(type, e);
-                    e.translateEvent(e, record.x + this.x, record.y + this.y);
-                    record.element.refresh();
-                    this.elementTouched = record;
-                    if(e.repaint)
-                    {
-                        this.refreshCanvas();
-                    }
-                    this.lastTouched = index;
+                    this.refreshCanvas();
+                }
+                this.lastTouched = index;
             }
             
         }
@@ -714,6 +714,7 @@ export class SlideEvent {
 }
 export class GuiCheckList implements GuiElement {
     limit:number;
+    pos:number[]
     list:GuiListItem[];
     dragItem:GuiListItem | null;
     dragItemLocation:number[];
@@ -731,6 +732,7 @@ export class GuiCheckList implements GuiElement {
         this.fontSize = fontSize;
         this.layoutManager = new SimpleGridLayoutManager ([1,matrixDim[1]], pixelDim);
         this.list = [];
+        this.pos = [0, 0];
         this.limit = 0;
         this.dragItem = null;
         this.dragItemLocation = [-1, -1];
@@ -812,6 +814,10 @@ export class GuiCheckList implements GuiElement {
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number, offsetY:number): void
     {
         //this.layoutManager.draw(ctx, x, y, offsetX, offsetY);
+        this.pos[0] = x;
+        this.pos[1] = y;
+        this.layoutManager.x = x;
+        this.layoutManager.y = y;
         const itemsPositions:RowRecord[] = this.layoutManager.elementsPositions;
         let offsetI:number = 0;
         for(let i = 0; i < itemsPositions.length; i++)
@@ -832,31 +838,15 @@ export class GuiCheckList implements GuiElement {
     }
     handleTouchEvents(type:string, e:any):void
     {
-        let checkedIndex:number = -1;
-        if(this.uniqueSelection)
-        {
-            for(let i = 0; i < this.list.length; i++) {
-                if(this.list[i].checkBox.checked)
-                {
-                    checkedIndex = i;
-                }
-            };
-            this.layoutManager.handleTouchEvents(type, e);
-            for(let i = 0; i < this.list.length; i++)
-            {
-                if(this.list[i].checkBox.checked && i !== checkedIndex)
-                {
-                    this.list[checkedIndex].checkBox.checked = false;
-                    this.list[checkedIndex].checkBox.refresh();
-                    break;
-                }     
-            }
-        }
-        else {
-            this.layoutManager.handleTouchEvents(type, e);
-        }
         const clicked:number = Math.floor((e.touchPos[1] / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
+        const element:RowRecord = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
+        if(element)
+        {
+            e.translateEvent(e,  this.pos[0], this.pos[1]);
+            element.element.handleTouchEvents(type, e);
+            e.translateEvent(e,  -this.pos[0], -this.pos[1]);
+        }
         switch(type)
         {
             case("touchend"):
@@ -901,6 +891,27 @@ export class GuiCheckList implements GuiElement {
                 this.dragItemLocation[1] += e.deltaY;
             }
             break;
+        }
+
+        let checkedIndex:number = -1;
+        if(this.uniqueSelection)
+        {
+            for(let i = 0; i < this.list.length; i++) {
+                if(this.list[i].checkBox.checked)
+                {
+                    checkedIndex = i;
+                }
+            };
+            
+            
+            for(let i = 0; i < this.list.length; i++)
+            {
+                if(this.list[i].checkBox.checked && i !== checkedIndex)
+                {
+                    this.list[checkedIndex].checkBox.checked = false;
+                    this.list[checkedIndex].checkBox.refresh();
+                }     
+            }
         }
     }
     isLayoutManager():boolean
@@ -1330,6 +1341,7 @@ export class GuiCheckBox implements GuiElement {
     handleTouchEvents(type:string, e:any):void
     {
         if(this.active())
+        {
             switch(type)
             {
                 case("touchstart"):
@@ -1345,6 +1357,7 @@ export class GuiCheckBox implements GuiElement {
                     this.drawInternal();
                 break;
             }
+        }
             
     }
     active():boolean
@@ -1586,7 +1599,6 @@ export class GuiTextBox implements GuiElement {
             preventDefault = true;
             const oldText:string = this.text;
             const oldCursor:number = this.cursor;
-            //console.log(e.code);
             if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
             {
                 if(type === "keydown")
@@ -2486,7 +2498,6 @@ export class Sprite {
     }
     copyImage(image:HTMLImageElement):void
     {
-        console.log(image.width, image.height)
         this.width = image.width;
         this.height = image.height;
         this.image.width = this.width;

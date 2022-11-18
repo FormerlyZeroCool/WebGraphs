@@ -570,6 +570,7 @@ export class GuiCheckList {
         this.fontSize = fontSize;
         this.layoutManager = new SimpleGridLayoutManager([1, matrixDim[1]], pixelDim);
         this.list = [];
+        this.pos = [0, 0];
         this.limit = 0;
         this.dragItem = null;
         this.dragItemLocation = [-1, -1];
@@ -635,6 +636,10 @@ export class GuiCheckList {
     }
     draw(ctx, x, y, offsetX, offsetY) {
         //this.layoutManager.draw(ctx, x, y, offsetX, offsetY);
+        this.pos[0] = x;
+        this.pos[1] = y;
+        this.layoutManager.x = x;
+        this.layoutManager.y = y;
         const itemsPositions = this.layoutManager.elementsPositions;
         let offsetI = 0;
         for (let i = 0; i < itemsPositions.length; i++) {
@@ -651,28 +656,14 @@ export class GuiCheckList {
         this.layoutManager.handleKeyBoardEvents(type, e);
     }
     handleTouchEvents(type, e) {
-        let checkedIndex = -1;
-        if (this.uniqueSelection) {
-            for (let i = 0; i < this.list.length; i++) {
-                if (this.list[i].checkBox.checked) {
-                    checkedIndex = i;
-                }
-            }
-            ;
-            this.layoutManager.handleTouchEvents(type, e);
-            for (let i = 0; i < this.list.length; i++) {
-                if (this.list[i].checkBox.checked && i !== checkedIndex) {
-                    this.list[checkedIndex].checkBox.checked = false;
-                    this.list[checkedIndex].checkBox.refresh();
-                    break;
-                }
-            }
-        }
-        else {
-            this.layoutManager.handleTouchEvents(type, e);
-        }
         const clicked = Math.floor((e.touchPos[1] / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
+        const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
+        if (element) {
+            e.translateEvent(e, this.pos[0], this.pos[1]);
+            element.element.handleTouchEvents(type, e);
+            e.translateEvent(e, -this.pos[0], -this.pos[1]);
+        }
         switch (type) {
             case ("touchend"):
                 if (this.dragItem) {
@@ -710,6 +701,21 @@ export class GuiCheckList {
                     this.dragItemLocation[1] += e.deltaY;
                 }
                 break;
+        }
+        let checkedIndex = -1;
+        if (this.uniqueSelection) {
+            for (let i = 0; i < this.list.length; i++) {
+                if (this.list[i].checkBox.checked) {
+                    checkedIndex = i;
+                }
+            }
+            ;
+            for (let i = 0; i < this.list.length; i++) {
+                if (this.list[i].checkBox.checked && i !== checkedIndex) {
+                    this.list[checkedIndex].checkBox.checked = false;
+                    this.list[checkedIndex].checkBox.refresh();
+                }
+            }
         }
     }
     isLayoutManager() {
@@ -1048,7 +1054,7 @@ export class GuiCheckBox {
         return false;
     }
     handleTouchEvents(type, e) {
-        if (this.active())
+        if (this.active()) {
             switch (type) {
                 case ("touchstart"):
                     this.pressed = true;
@@ -1063,6 +1069,7 @@ export class GuiCheckBox {
                     this.drawInternal();
                     break;
             }
+        }
     }
     active() {
         return this.focused;
@@ -1236,7 +1243,6 @@ export class GuiTextBox {
             preventDefault = true;
             const oldText = this.text;
             const oldCursor = this.cursor;
-            //console.log(e.code);
             if (e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"]) {
                 if (type === "keydown")
                     switch (e.code) {
@@ -1997,7 +2003,6 @@ export class Sprite {
         this.refreshImage();
     }
     copyImage(image) {
-        console.log(image.width, image.height);
         this.width = image.width;
         this.height = image.height;
         this.image.width = this.width;

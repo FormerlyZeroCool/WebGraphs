@@ -100,12 +100,18 @@ class Function {
 class Game extends SquareAABBCollidable {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        this.x_min = this.x_translation * this.scale - 1 / this.scale;
+        this.x_max = this.x_translation * this.scale + 1 / this.scale;
+        this.deltaX = this.x_max - this.x_min;
+        this.y_min = this.y_translation * this.scale - this.deltaX / 2;
+        this.y_max = this.y_translation * this.scale + this.deltaX / 2;
+        this.deltaY = this.y_max - this.y_min;
         this.scale = 1 / 10;
         this.x_translation = 0;
         this.y_translation = 0;
         this.graph_start_x = 200;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 750;
+        const rough_dim = 1000;
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
@@ -116,6 +122,14 @@ class Game extends SquareAABBCollidable {
         this.guiManager.activate();
         //this.restart_game();
         this.try_render_functions();
+    }
+    calc_bounds() {
+        this.x_min = this.x_translation * this.scale - 1 / this.scale;
+        this.x_max = this.x_translation * this.scale + 1 / this.scale;
+        this.deltaX = this.x_max - this.x_min;
+        this.y_min = this.y_translation * this.scale - this.deltaX / 2;
+        this.y_max = this.y_translation * this.scale + this.deltaX / 2;
+        this.deltaY = this.y_max - this.y_min;
     }
     add_layer() {
         this.screen_buf.push(this.new_sprite());
@@ -201,6 +215,7 @@ class Game extends SquareAABBCollidable {
         }
     }
     try_render_functions() {
+        this.calc_bounds();
         let functions = [];
         //this.screen_buf = [];
         this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
@@ -211,28 +226,21 @@ class Game extends SquareAABBCollidable {
             }
             functions.push(new Function(text));
         });
-        const x_min = this.x_translation * this.scale - 1 / this.scale;
-        const x_max = this.x_translation * this.scale + 1 / this.scale;
-        const deltaX = x_max - x_min;
-        const y_min = this.y_translation * this.scale - deltaX / 2;
-        const y_max = this.y_translation * this.scale + deltaX / 2;
-        const deltaY = y_max - y_min;
-        console.log(x_min, x_max, y_min, y_max);
         functions.forEach((foo, index) => {
             const view = new Int32Array(this.screen_buf[index].imageData.data.buffer);
             const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
             this.screen_buf[index].ctx.strokeStyle = color.htmlRBG();
             try {
-                foo.calc_for(x_min, x_max, (x_max - x_min) / this.cell_dim[0]);
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0]);
                 let last_x = 0;
-                let last_y = ((-foo.table[0] - y_min) / deltaY) * this.cell_dim[1];
+                let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
                 ;
                 this.screen_buf[index].ctx.beginPath();
                 for (let i = 0; i < foo.table.length; i++) {
-                    const x = x_min + foo.dx * i;
+                    const x = this.x_min + foo.dx * i;
                     const y = -foo.table[i];
-                    const sy = ((y - y_min) / deltaY) * this.cell_dim[1];
-                    const sx = ((x - x_min) / deltaX) * this.cell_dim[0];
+                    const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
+                    const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
                     if (sx !== last_x || sy !== last_y) {
                         this.screen_buf[index].ctx.moveTo(last_x, last_y);
                         this.screen_buf[index].ctx.lineTo(sx, sy);
@@ -252,24 +260,18 @@ class Game extends SquareAABBCollidable {
         if (+ctx.font.split("px")[0] != font_size) {
             ctx.font = `${font_size}px Helvetica`;
         }
-        const x_min = this.x_translation * this.scale - 1 / this.scale;
-        const x_max = this.x_translation * this.scale + 1 / this.scale;
-        const deltaX = x_max - x_min;
-        const y_min = this.y_translation * this.scale - deltaX / 2;
-        const y_max = this.y_translation * this.scale + deltaX / 2;
-        const deltaY = y_max - y_min;
-        const screen_space_x_axis = (0 - y_min) / deltaY * this.cell_dim[1];
-        const screen_space_y_axis = (0 - x_min) / deltaX * this.cell_dim[0];
+        const screen_space_x_axis = (0 - this.y_min) / this.deltaY * this.cell_dim[1];
+        const screen_space_y_axis = (0 - this.x_min) / this.deltaX * this.cell_dim[0];
         this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
         this.axises.ctx.beginPath();
         this.axises.ctx.moveTo(0, screen_space_x_axis);
-        this.axises.ctx.lineTo(this.width, screen_space_x_axis);
+        this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
         this.axises.ctx.moveTo(screen_space_y_axis, 0);
-        this.axises.ctx.lineTo(screen_space_y_axis, this.height);
+        this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
         this.axises.ctx.stroke();
         ctx.drawImage(this.axises.image, x, y, width, height);
         this.screen_buf.forEach(buf => {
-            //buf.refreshImage();
+            //buf.refreshImage(); no need since we render directly onto sprite canvases
             ctx.drawImage(buf.image, x, y, width, height);
         });
         this.guiManager.draw(ctx);
@@ -353,15 +355,12 @@ async function main() {
     let draw = false;
     game.guiManager.createHandlers(keyboardHandler, touchListener);
     /*touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
-       game.guiManager.handleTouchEvents("touchstart", event);
     });
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
-       game.guiManager.handleTouchEvents("touchend", event);
     });*/
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
-        //game.guiManager.handleTouchEvents("touchmove", event);
-        game.y_translation -= (event.deltaY / game.height * game.cell_dim[1]) / 2;
-        game.x_translation -= (event.deltaX / game.width * game.cell_dim[0]) / 2;
+        game.y_translation -= (event.deltaY / game.height * game.cell_dim[1] / game.scale) / 2;
+        game.x_translation -= (event.deltaX / game.width * game.cell_dim[0] / game.scale) / 2;
         game.try_render_functions();
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
