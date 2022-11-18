@@ -712,6 +712,9 @@ export class SlideEvent {
         this.element = element;
     }
 }
+export class GuiCheckListError {
+
+};
 export class GuiCheckList implements GuiElement {
     limit:number;
     pos:number[]
@@ -723,6 +726,7 @@ export class GuiCheckList implements GuiElement {
     fontSize:number;
     focused:boolean;
     uniqueSelection:boolean;
+    errors:GuiCheckListError[];
     swapElementsInParallelArray:((x1:number, x2:number) => void) | null;
     slideMoved:((event:SlideEvent) => void) | null;
     constructor(matrixDim:number[], pixelDim:number[], fontSize:number, uniqueSelection:boolean, swap:((x1:number, x2:number) => void) | null = null, slideMoved:((event:SlideEvent) => void) | null = null)

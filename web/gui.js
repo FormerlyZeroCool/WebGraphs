@@ -563,6 +563,9 @@ export class SlideEvent {
         this.element = element;
     }
 }
+export class GuiCheckListError {
+}
+;
 export class GuiCheckList {
     constructor(matrixDim, pixelDim, fontSize, uniqueSelection, swap = null, slideMoved = null) {
         this.focused = true;

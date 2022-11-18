@@ -176,7 +176,7 @@ class Game extends SquareAABBCollidable {
         this.y_translation = 0;
         this.graph_start_x = 200;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 1000;
+        const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
