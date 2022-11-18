@@ -111,6 +111,7 @@ class Game extends SquareAABBCollidable {
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => this.screen_buf.splice(layer, 1), () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => console.log('layer', layer, 'slider val', slider_value), (l1, l2) => this.swap_layers(l1, l2));
+        this.axises = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
@@ -210,14 +211,6 @@ class Game extends SquareAABBCollidable {
             }
             functions.push(new Function(text));
         });
-        if (this.screen_buf.length < this.layer_manager.list.list.length + 2) {
-            this.screen_buf.push(this.new_sprite());
-            this.screen_buf.push(this.new_sprite());
-            functions = [new Function("0"), new Function("x*1000"), ...functions];
-        }
-        else {
-            functions = [new Function("0"), new Function("x*1000"), ...functions];
-        }
         const x_min = this.x_translation * this.scale - 1 / this.scale;
         const x_max = this.x_translation * this.scale + 1 / this.scale;
         const deltaX = x_max - x_min;
@@ -265,17 +258,20 @@ class Game extends SquareAABBCollidable {
         const y_min = this.y_translation * this.scale - deltaX / 2;
         const y_max = this.y_translation * this.scale + deltaX / 2;
         const deltaY = y_max - y_min;
-        const x_axis = -this.y_translation * this.scale;
-        const screen_space_x_axis = (x_axis - y_min) / deltaY * this.height;
-        const y_axis = -(this.x_translation * this.scale);
-        const screen_space_y_axis = (y_axis - x_min) / deltaX * this.width;
-        /*ctx.beginPath()
-        ctx.moveTo(0, screen_space_x_axis);
-        ctx.lineTo(this.width, screen_space_x_axis);
-        ctx.moveTo(screen_space_y_axis, 0);
-        ctx.lineTo(screen_space_y_axis, this.height);
-        ctx.stroke();
-        */
+        const screen_space_x_axis = (0 - y_min) / deltaY * this.cell_dim[1];
+        const screen_space_y_axis = (0 - x_min) / deltaX * this.cell_dim[0];
+        this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
+        this.axises.ctx.beginPath();
+        if (x_min <= 0 && x_max >= 0) {
+            this.axises.ctx.moveTo(0, screen_space_x_axis);
+            this.axises.ctx.lineTo(this.width, screen_space_x_axis);
+        }
+        if (y_min <= 0 && y_max >= 0) {
+            this.axises.ctx.moveTo(screen_space_y_axis, 0);
+            this.axises.ctx.lineTo(screen_space_y_axis, this.height);
+        }
+        this.axises.ctx.stroke();
+        ctx.drawImage(this.axises.image, x, y, width, height);
         this.screen_buf.forEach(buf => {
             //buf.refreshImage();
             ctx.drawImage(buf.image, x, y, width, height);
