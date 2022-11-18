@@ -40,14 +40,14 @@ class LayerManagerTool {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         });
-        this.buttonAddLayer = new GuiButton(() => { this.pushList(`l${this.runningId++}`); }, "Add Layer", 99, 40, 16);
+        this.buttonAddLayer = new GuiButton(() => { this.pushList(`${++this.runningId}*x`); this.callback_onclick_event(0) }, "Add Layer", 99, 40, 16);
         this.layoutManager.addElement(new GuiLabel("Layers list:", 200));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
         this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", 99, 40, 16));
     
-        this.runningId = LayerManagerTool.running_number++;
-        this.pushList(`l${this.runningId}`);
+        this.runningId = ++LayerManagerTool.running_number;
+        this.pushList(`${this.runningId}*x`);
         this.list.refresh();
     }
     deleteItem(index:number = this.list.selected()):void
@@ -162,7 +162,7 @@ class Game extends SquareAABBCollidable {
             (layer:number, state:boolean) => console.log(state),
             (layer:number) => this.screen_buf.splice(layer, 1),
             () => this.screen_buf.length,
-            (layer:number) => console.log('clicked on', layer),
+            (layer:number) => this.try_render_functions(),
             (layer:number, slider_value:number) => console.log('layer', layer,'slider val', slider_value),
             (l1:number, l2:number) => this.swap_layers(l1, l2)
             );
@@ -277,16 +277,12 @@ class Game extends SquareAABBCollidable {
     }
     try_render_functions()
     {
-        const functions:Function[] = [];
+        let functions:Function[] = [];
         //this.screen_buf = [];
         this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
         this.layer_manager.list.list.forEach((li:GuiListItem, index:number) => {
             const text = li.textBox.text;
-            if(this.screen_buf[index])
-            {
-                
-            }
-            else
+            if(!this.screen_buf[index])
             {
                 this.screen_buf.push(this.new_sprite());
             }
@@ -295,14 +291,12 @@ class Game extends SquareAABBCollidable {
         if(this.screen_buf.length < this.layer_manager.list.list.length + 2)
         {
             this.screen_buf.push(this.new_sprite());
-            functions.push(new Function("0"));
             this.screen_buf.push(this.new_sprite());
-            functions.push(new Function("x*1000"));
+            functions = [new Function("0"), new Function("x*1000"), ...functions];
         }
         else
         {
-            functions.push(new Function("0"));
-            functions.push(new Function("x*1000"));
+            functions = [new Function("0"), new Function("x*1000"), ...functions];
         }
         const x_min = this.x_translation * this.scale - 1/this.scale;
         const x_max = this.x_translation * this.scale + 1/this.scale;
@@ -318,8 +312,8 @@ class Game extends SquareAABBCollidable {
             this.screen_buf[index].ctx.strokeStyle = color.htmlRBG();
             try{
                 foo.calc_for(x_min, x_max, (x_max - x_min) / this.cell_dim[0]);
-                let last_x = ((x_min) / deltaX) * this.cell_dim[0];
-                let last_y = ((foo.table[0] - y_min) / deltaY) * this.cell_dim[1];;
+                let last_x = 0;
+                let last_y = ((-foo.table[0] - y_min) / deltaY) * this.cell_dim[1];;
                 this.screen_buf[index].ctx.beginPath();
                 for(let i = 0; i < foo.table.length; i++)
                 {
