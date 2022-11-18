@@ -262,14 +262,10 @@ class Game extends SquareAABBCollidable {
         const screen_space_y_axis = (0 - x_min) / deltaX * this.cell_dim[0];
         this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
         this.axises.ctx.beginPath();
-        if (x_min <= 0 && x_max >= 0) {
-            this.axises.ctx.moveTo(0, screen_space_x_axis);
-            this.axises.ctx.lineTo(this.width, screen_space_x_axis);
-        }
-        if (y_min <= 0 && y_max >= 0) {
-            this.axises.ctx.moveTo(screen_space_y_axis, 0);
-            this.axises.ctx.lineTo(screen_space_y_axis, this.height);
-        }
+        this.axises.ctx.moveTo(0, screen_space_x_axis);
+        this.axises.ctx.lineTo(this.width, screen_space_x_axis);
+        this.axises.ctx.moveTo(screen_space_y_axis, 0);
+        this.axises.ctx.lineTo(screen_space_y_axis, this.height);
         this.axises.ctx.stroke();
         ctx.drawImage(this.axises.image, x, y, width, height);
         this.screen_buf.forEach(buf => {
