@@ -232,10 +232,11 @@ class Game extends SquareAABBCollidable {
         functions.forEach((foo, index) => {
             const view = new Int32Array(this.screen_buf[index].imageData.data.buffer);
             const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
+            this.screen_buf[index].ctx.strokeStyle = color.htmlRBG();
             try {
                 foo.calc_for(x_min, x_max, (x_max - x_min) / this.cell_dim[0]);
-                let last_x = ((-this.x_translation * this.scale) / deltaX) * this.cell_dim[0];
-                let last_y = ((foo.table[0] - y_min - this.y_translation * this.scale) / deltaY) * this.cell_dim[1];
+                let last_x = ((x_min) / deltaX) * this.cell_dim[0];
+                let last_y = ((foo.table[0] - y_min) / deltaY) * this.cell_dim[1];
                 ;
                 this.screen_buf[index].ctx.beginPath();
                 for (let i = 0; i < foo.table.length; i++) {
