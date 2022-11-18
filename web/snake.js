@@ -86,8 +86,8 @@ class Function {
         this.dx = 0;
     }
     calc_for(x_min, x_max, dx) {
-        x_max = x_max;
-        x_min = x_min;
+        this.x_max = x_max;
+        this.x_min = x_min;
         this.dx = dx;
         this.table.splice(0, this.table.length);
         for (let i = x_min; i <= x_max; i += dx) {
@@ -114,6 +114,7 @@ class Game extends SquareAABBCollidable {
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
+        this.try_render_functions();
     }
     add_layer() {
         this.screen_buf.push(this.new_sprite());
@@ -156,7 +157,7 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [cell_width, cell_height];
         const pixels = (new Array(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
         const old_buf = this.screen_buf;
-        this.screen_buf = [this.new_sprite()];
+        this.screen_buf = [];
     }
     new_sprite() {
         const pixels = (new Array(this.cell_dim[1] * this.cell_dim[0])).fill(this.background_color, 0, this.cell_dim[1] * this.cell_dim[0]);
@@ -180,11 +181,11 @@ class Game extends SquareAABBCollidable {
         const deltaX = x2 - x1;
         const m = deltaY / deltaX;
         const b = y2 - m * x2;
-        const delta = 0.1;
+        const delta = 1;
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
             const min = Math.min(x1, x2);
             const max = Math.max(x1, x2);
-            for (let x = min; x < max; x++) {
+            for (let x = min; x < max; x += delta) {
                 let y = Math.abs(deltaX) > 0 ? m * (x) + b : y2;
                 view[Math.floor(x) + Math.floor(y) * this.cell_dim[0]] = color;
             }
@@ -200,21 +201,34 @@ class Game extends SquareAABBCollidable {
     }
     try_render_functions() {
         const functions = [];
-        this.screen_buf = [];
+        //this.screen_buf = [];
+        this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
         this.layer_manager.list.list.forEach((li, index) => {
             const text = li.textBox.text;
-            {
+            if (this.screen_buf[index]) {
+            }
+            else {
                 this.screen_buf.push(this.new_sprite());
             }
             functions.push(new Function(text));
         });
-        const x_min = this.scale * this.x_translation - 1 / this.scale;
-        const x_max = this.scale * this.x_translation + 1 / this.scale;
-        //console.log(x_min, x_max)
+        if (this.screen_buf.length < this.layer_manager.list.list.length + 2) {
+            this.screen_buf.push(this.new_sprite());
+            functions.push(new Function("0"));
+            this.screen_buf.push(this.new_sprite());
+            functions.push(new Function("x*1000"));
+        }
+        else {
+            functions.push(new Function("0"));
+            functions.push(new Function("x*1000"));
+        }
+        const x_min = this.x_translation * this.scale - 1 / this.scale;
+        const x_max = this.x_translation * this.scale + 1 / this.scale;
         const deltaX = x_max - x_min;
         const y_min = this.y_translation * this.scale - deltaX / 2;
         const y_max = this.y_translation * this.scale + deltaX / 2;
         const deltaY = y_max - y_min;
+        console.log(x_min, x_max, y_min, y_max);
         functions.forEach((foo, index) => {
             const view = new Int32Array(this.screen_buf[index].imageData.data.buffer);
             const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
@@ -223,15 +237,20 @@ class Game extends SquareAABBCollidable {
                 let last_x = ((-this.x_translation * this.scale) / deltaX) * this.cell_dim[0];
                 let last_y = ((foo.table[0] - y_min - this.y_translation * this.scale) / deltaY) * this.cell_dim[1];
                 ;
+                this.screen_buf[index].ctx.beginPath();
                 for (let i = 0; i < foo.table.length; i++) {
                     const x = x_min + foo.dx * i;
                     const y = -foo.table[i];
-                    const sy = ((y - y_min - this.y_translation * this.scale) / deltaY) * this.cell_dim[1];
-                    const sx = ((x - x_min - this.x_translation * this.scale) / deltaX) * this.cell_dim[0];
-                    this.draw_line_segment(sx, last_x, sy, last_y, color.color, view);
+                    const sy = ((y - y_min) / deltaY) * this.cell_dim[1];
+                    const sx = ((x - x_min) / deltaX) * this.cell_dim[0];
+                    if (sx !== last_x || sy !== last_y) {
+                        this.screen_buf[index].ctx.moveTo(last_x, last_y);
+                        this.screen_buf[index].ctx.lineTo(sx, sy);
+                    }
                     last_x = sx;
                     last_y = sy;
                 }
+                this.screen_buf[index].ctx.stroke();
             }
             catch (e) {
                 console.log(e);
@@ -243,8 +262,8 @@ class Game extends SquareAABBCollidable {
         if (+ctx.font.split("px")[0] != font_size) {
             ctx.font = `${font_size}px Helvetica`;
         }
-        const x_min = this.scale * this.x_translation - 1 / this.scale;
-        const x_max = this.scale * this.x_translation + 1 / this.scale;
+        const x_min = this.x_translation * this.scale - 1 / this.scale;
+        const x_max = this.x_translation * this.scale + 1 / this.scale;
         const deltaX = x_max - x_min;
         const y_min = this.y_translation * this.scale - deltaX / 2;
         const y_max = this.y_translation * this.scale + deltaX / 2;
@@ -253,14 +272,15 @@ class Game extends SquareAABBCollidable {
         const screen_space_x_axis = (x_axis - y_min) / deltaY * this.height;
         const y_axis = -(this.x_translation * this.scale);
         const screen_space_y_axis = (y_axis - x_min) / deltaX * this.width;
-        ctx.beginPath();
+        /*ctx.beginPath()
         ctx.moveTo(0, screen_space_x_axis);
         ctx.lineTo(this.width, screen_space_x_axis);
         ctx.moveTo(screen_space_y_axis, 0);
         ctx.lineTo(screen_space_y_axis, this.height);
         ctx.stroke();
+        */
         this.screen_buf.forEach(buf => {
-            buf.refreshImage();
+            //buf.refreshImage();
             ctx.drawImage(buf.image, x, y, width, height);
         });
         this.guiManager.draw(ctx);
@@ -340,7 +360,7 @@ async function main() {
     let width = getWidth();
     let game = new Game(0, 0, height, width);
     window.game = game;
-    let low_fps = false;
+    let low_fps = true;
     let draw = false;
     game.guiManager.createHandlers(keyboardHandler, touchListener);
     /*touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
