@@ -3,7 +3,7 @@ import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLa
 import { srand, max_32_bit_signed, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 class LayerManagerTool {
-    constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers) {
+    constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array) {
         this.callback_add_layer = callback_add_layer;
         this.callback_checkbox_event = callback_checkbox_event;
         this.callback_delete_layer = callback_delete_layer;
@@ -11,12 +11,13 @@ class LayerManagerTool {
         this.callback_onclick_event = callback_onclick_event;
         this.callback_slide_event = callback_slide_event;
         this.callback_swap_layers = callback_swap_layers;
+        this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.layersLimit = isTouchSupported() ? limit - Math.floor(limit / 4) : limit;
-        this.layoutManager = new SimpleGridLayoutManager([2, 24], [200, getHeight()]);
+        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight()]);
         this.list = new GuiCheckList([1, this.layersLimit], [200, 520], 20, false, this.callback_swap_layers, (event) => {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
-        });
+        }, callback_get_error_parallel_array);
         this.buttonAddLayer = new GuiButton(() => { this.pushList(`${++this.runningId}*x`); this.callback_onclick_event(0); }, "Add Layer", 99, 40, 16);
         this.layoutManager.addElement(new GuiLabel("Layers list:", 200));
         this.layoutManager.addElement(this.list);
@@ -110,8 +111,14 @@ class Function {
             this.x_min = x_min;
             this.dx = dx;
             this.table.splice(0, this.table.length);
-            for (let i = x_min; i <= x_max; i += dx) {
-                this.table.push(this.compiled(i));
+            try {
+                for (let i = x_min; i <= x_max; i += dx) {
+                    this.table.push(this.compiled(i));
+                }
+            }
+            catch (error) {
+                console.log(error.message);
+                this.error_message = error.message;
             }
         }
         return this.table;
@@ -121,6 +128,7 @@ class Function {
 class Game extends SquareAABBCollidable {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        this.functions = [];
         this.draw_axises = true;
         this.x_min = this.x_translation * this.scale - 1 / this.scale;
         this.x_max = this.x_translation * this.scale + 1 / this.scale;
@@ -138,12 +146,11 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); }, () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => console.log('layer', layer, 'slider val', slider_value), (l1, l2) => this.swap_layers(l1, l2));
+        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); }, () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => console.log('layer', layer, 'slider val', slider_value), (l1, l2) => this.swap_layers(l1, l2), (layer) => this.functions[layer] ? this.functions[layer].error_message : null);
         this.axises = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
-        this.functions = [];
         this.try_render_functions();
     }
     calc_bounds() {

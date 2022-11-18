@@ -567,7 +567,8 @@ export class GuiCheckListError {
 }
 ;
 export class GuiCheckList {
-    constructor(matrixDim, pixelDim, fontSize, uniqueSelection, swap = null, slideMoved = null) {
+    constructor(matrixDim, pixelDim, fontSize, uniqueSelection, swap = null, slideMoved = null, get_error) {
+        this.get_error = get_error;
         this.focused = true;
         this.uniqueSelection = uniqueSelection;
         this.fontSize = fontSize;
@@ -651,6 +652,13 @@ export class GuiCheckList {
             }
             this.list[i].draw(ctx, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), offsetX, offsetY);
             offsetI++;
+            const row_errors = this.get_error(i);
+            if (row_errors) {
+                ctx.font = '18px Helvetica';
+                ctx.fillStyle = "#FF0000";
+                ctx.strokeStyle = "#000000";
+                ctx.fillText(row_errors, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]));
+            }
         }
         if (this.dragItem)
             this.dragItem.draw(ctx, x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, offsetX, offsetY);

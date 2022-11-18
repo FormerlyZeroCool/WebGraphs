@@ -17,6 +17,7 @@ class LayerManagerTool {
     callback_delete_layer:(layer:number) => void;
     callback_checkbox_event:(layer:number, state:boolean) => void;
     callback_onclick_event:(layer:number) => void;
+    callback_get_error_parallel_array:(layer:number) => string | null;
 
     constructor(limit:number = 16, callback_add_layer:() => void, 
     callback_checkbox_event:(layer:number, state:boolean) => void,
@@ -24,7 +25,8 @@ class LayerManagerTool {
     callback_layer_count:() => number,
     callback_onclick_event:(layer:number) => void,
     callback_slide_event:(layer:number, slider_value:number) => number,
-    callback_swap_layers:(l1:number, l2:number) => void)
+    callback_swap_layers:(l1:number, l2:number) => void,
+    callback_get_error_parallel_array:(layer:number) => string | null)
     {
         this.callback_add_layer = callback_add_layer;
         this.callback_checkbox_event = callback_checkbox_event;
@@ -33,13 +35,14 @@ class LayerManagerTool {
         this.callback_onclick_event = callback_onclick_event;
         this.callback_slide_event = callback_slide_event;
         this.callback_swap_layers = callback_swap_layers;
+        this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.layersLimit = isTouchSupported()?limit - Math.floor(limit / 4) : limit;
-        this.layoutManager = new SimpleGridLayoutManager([2, 24], [200, getHeight()]);
+        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight()]);
         this.list = new GuiCheckList([1, this.layersLimit], [200, 520], 20, false, this.callback_swap_layers,
         (event:SlideEvent) => {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
-        });
+        }, callback_get_error_parallel_array);
         this.buttonAddLayer = new GuiButton(() => { this.pushList(`${++this.runningId}*x`); this.callback_onclick_event(0) }, "Add Layer", 99, 40, 16);
         this.layoutManager.addElement(new GuiLabel("Layers list:", 200));
         this.layoutManager.addElement(this.list);
@@ -153,9 +156,15 @@ class Function {
             this.x_min = x_min;
             this.dx = dx;
             this.table.splice(0, this.table.length);
-            for(let i = x_min; i <= x_max; i += dx)
+            try {
+                for(let i = x_min; i <= x_max; i += dx)
+                {
+                    this.table.push(this.compiled(i));
+                }
+            } catch (error:any)
             {
-                this.table.push(this.compiled(i));
+                console.log(error.message);
+                this.error_message = error.message;
             }
         }
         return this.table;
@@ -184,6 +193,7 @@ class Game extends SquareAABBCollidable {
     constructor(x:number, y:number, width:number, height:number)
     {
         super(x, y, width, height);
+        this.functions = [];
         this.draw_axises = true;
         this.x_min = this.x_translation * this.scale - 1/this.scale;
         this.x_max = this.x_translation * this.scale + 1/this.scale;
@@ -207,13 +217,13 @@ class Game extends SquareAABBCollidable {
             () => this.screen_buf.length,
             (layer:number) => this.try_render_functions(),
             (layer:number, slider_value:number) => console.log('layer', layer,'slider val', slider_value),
-            (l1:number, l2:number) => this.swap_layers(l1, l2)
+            (l1:number, l2:number) => this.swap_layers(l1, l2),
+            (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null
             );
         this.axises = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
-        this.functions = [];
         this.try_render_functions();
     }
     calc_bounds():void

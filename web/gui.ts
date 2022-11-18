@@ -726,11 +726,12 @@ export class GuiCheckList implements GuiElement {
     fontSize:number;
     focused:boolean;
     uniqueSelection:boolean;
-    errors:GuiCheckListError[];
     swapElementsInParallelArray:((x1:number, x2:number) => void) | null;
+    get_error:(layer:number) => string | null;
     slideMoved:((event:SlideEvent) => void) | null;
-    constructor(matrixDim:number[], pixelDim:number[], fontSize:number, uniqueSelection:boolean, swap:((x1:number, x2:number) => void) | null = null, slideMoved:((event:SlideEvent) => void) | null = null)
+    constructor(matrixDim:number[], pixelDim:number[], fontSize:number, uniqueSelection:boolean, swap:((x1:number, x2:number) => void) | null = null, slideMoved:((event:SlideEvent) => void) | null = null, get_error:(layer:number)=>string|null)
     {
+        this.get_error = get_error;
         this.focused = true;
         this.uniqueSelection = uniqueSelection;
         this.fontSize = fontSize;
@@ -832,6 +833,14 @@ export class GuiCheckList implements GuiElement {
             }
             this.list[i].draw(ctx, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), offsetX, offsetY);
             offsetI++;
+            const row_errors = this.get_error(i);
+            if(row_errors)
+            {
+                ctx.font = '18px Helvetica';
+                ctx.fillStyle = "#FF0000";
+                ctx.strokeStyle = "#000000";
+                ctx.fillText(row_errors, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]));
+            }
         }
         if(this.dragItem)
             this.dragItem.draw(ctx, x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, offsetX, offsetY);
