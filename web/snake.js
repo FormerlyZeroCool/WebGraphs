@@ -12,9 +12,9 @@ class LayerManagerTool {
         this.callback_slide_event = callback_slide_event;
         this.callback_swap_layers = callback_swap_layers;
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
-        this.layersLimit = isTouchSupported() ? limit - Math.floor(limit / 4) : limit;
+        this.layersLimit = limit;
         this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight()]);
-        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 200], 20, false, this.callback_swap_layers, (event) => {
+        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 250], 20, false, this.callback_swap_layers, (event) => {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array);
@@ -128,6 +128,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
         this.functions = [];
         this.draw_axises = true;
+        this.draw_axis_labels = true;
         this.x_min = this.x_translation * this.scale - 1 / this.scale;
         this.x_max = this.x_translation * this.scale + 1 / this.scale;
         this.deltaX = this.x_max - this.x_min;
@@ -144,7 +145,7 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); }, () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => console.log('layer', layer, 'slider val', slider_value), (l1, l2) => this.swap_layers(l1, l2), (layer) => this.functions[layer] ? this.functions[layer].error_message : null);
+        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); }, () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); }, (l1, l2) => this.swap_layers(l1, l2), (layer) => this.functions[layer] ? this.functions[layer].error_message : null);
         this.axises = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
@@ -289,15 +290,7 @@ class Game extends SquareAABBCollidable {
             this.screen_buf[index].ctx.stroke();
         });
     }
-    draw(canvas, ctx, x, y, width, height) {
-        if (this.repaint) {
-            this.repaint = false;
-            this.try_render_functions();
-        }
-        const font_size = 24;
-        if (+ctx.font.split("px")[0] != font_size) {
-            ctx.font = `${font_size}px Helvetica`;
-        }
+    render_axises(canvas, ctx, x, y, width, height) {
         if (this.draw_axises) {
             const screen_space_x_axis = (0 - this.y_min) / this.deltaY * this.cell_dim[1];
             const screen_space_y_axis = (0 - this.x_min) / this.deltaX * this.cell_dim[0];
@@ -310,6 +303,17 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.stroke();
             ctx.drawImage(this.axises.image, x, y, width, height);
         }
+    }
+    draw(canvas, ctx, x, y, width, height) {
+        if (this.repaint) {
+            this.repaint = false;
+            this.try_render_functions();
+        }
+        const font_size = 24;
+        if (+ctx.font.split("px")[0] != font_size) {
+            ctx.font = `${font_size}px Helvetica`;
+        }
+        this.render_axises(canvas, ctx, x, y, width, height);
         for (let index = 0; index < this.screen_buf.length; index++) {
             const buf = this.screen_buf[index];
             //buf.refreshImage(); no need since we render directly onto sprite canvases

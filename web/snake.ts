@@ -36,9 +36,9 @@ class LayerManagerTool {
         this.callback_slide_event = callback_slide_event;
         this.callback_swap_layers = callback_swap_layers;
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
-        this.layersLimit = isTouchSupported()?limit - Math.floor(limit / 4) : limit;
+        this.layersLimit = limit;
         this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight()]);
-        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 200], 20, false, this.callback_swap_layers,
+        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 250], 20, false, this.callback_swap_layers,
         (event:SlideEvent) => {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
@@ -170,6 +170,7 @@ class Game extends SquareAABBCollidable {
     repaint:boolean;
     axises:Sprite;
     draw_axises:boolean;
+    draw_axis_labels:boolean;
     functions:Function[];
     screen_buf:Sprite[];
     background_color:RGB;
@@ -193,6 +194,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
         this.functions = [];
         this.draw_axises = true;
+        this.draw_axis_labels = true;
         this.x_min = this.x_translation * this.scale - 1/this.scale;
         this.x_max = this.x_translation * this.scale + 1/this.scale;
         this.deltaX = this.x_max - this.x_min;
@@ -214,7 +216,7 @@ class Game extends SquareAABBCollidable {
             (layer:number) => {this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1)},
             () => this.screen_buf.length,
             (layer:number) => this.try_render_functions(),
-            (layer:number, slider_value:number) => console.log('layer', layer,'slider val', slider_value),
+            (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); },
             (l1:number, l2:number) => this.swap_layers(l1, l2),
             (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null
             );
@@ -391,18 +393,8 @@ class Game extends SquareAABBCollidable {
             this.screen_buf[index].ctx.stroke();
         });
     }
-    draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
+    render_axises(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number):void
     {
-        if(this.repaint)
-        {
-            this.repaint = false;
-            this.try_render_functions();
-        }
-        const font_size = 24;
-        if(+ctx.font.split("px")[0] != font_size)
-        {
-            ctx.font = `${font_size}px Helvetica`;
-        }
         if(this.draw_axises)
         {
             const screen_space_x_axis = (0 - this.y_min) / this.deltaY * this.cell_dim[1];
@@ -419,6 +411,20 @@ class Game extends SquareAABBCollidable {
     
             ctx.drawImage(this.axises.image, x, y, width, height);
         }
+    }
+    draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
+    {
+        if(this.repaint)
+        {
+            this.repaint = false;
+            this.try_render_functions();
+        }
+        const font_size = 24;
+        if(+ctx.font.split("px")[0] != font_size)
+        {
+            ctx.font = `${font_size}px Helvetica`;
+        }
+        this.render_axises(canvas, ctx, x, y, width, height);
         for(let index = 0; index < this.screen_buf.length; index++) {
                 const buf = this.screen_buf[index]
                 //buf.refreshImage(); no need since we render directly onto sprite canvases
