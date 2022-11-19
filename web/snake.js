@@ -125,6 +125,7 @@ class Function {
 class Game extends SquareAABBCollidable {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        this.repaint = true;
         this.functions = [];
         this.draw_axises = true;
         this.x_min = this.x_translation * this.scale - 1 / this.scale;
@@ -268,7 +269,7 @@ class Game extends SquareAABBCollidable {
             this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
             this.screen_buf[index].ctx.lineWidth = 2;
             //build table to be rendered
-            foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0]);
+            foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 2);
             let last_x = 0;
             let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
             this.screen_buf[index].ctx.beginPath();
@@ -289,6 +290,10 @@ class Game extends SquareAABBCollidable {
         });
     }
     draw(canvas, ctx, x, y, width, height) {
+        if (this.repaint) {
+            this.repaint = false;
+            this.try_render_functions();
+        }
         const font_size = 24;
         if (+ctx.font.split("px")[0] != font_size) {
             ctx.font = `${font_size}px Helvetica`;
@@ -305,11 +310,13 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.stroke();
             ctx.drawImage(this.axises.image, x, y, width, height);
         }
-        this.screen_buf.forEach((buf, index) => {
+        for (let index = 0; index < this.screen_buf.length; index++) {
+            const buf = this.screen_buf[index];
             //buf.refreshImage(); no need since we render directly onto sprite canvases
             if (!this.layer_manager.list.list[index] || this.layer_manager.list.list[index].checkBox.checked)
                 ctx.drawImage(buf.image, x, y, width, height);
-        });
+        }
+        ;
         this.guiManager.draw(ctx);
     }
     cell_dist(cell1, cell2) {
@@ -377,12 +384,9 @@ async function main() {
     };
     canvas.addEventListener("wheel", (e) => {
         //e.preventDefault();
-        const scaler = game.deltaX < game.width / 100 ? game.deltaX / game.width : (game.scale < 1 ? .0001 : (game.scale < 3 ? 0.01 : (game.scale < 10 ? 0.1 : (game.scale < 50 ? 0.5 : 1))));
+        const scaler = game.scale / 100;
         game.scale += e.deltaY * scaler;
-        if (game.scale < 0) {
-            game.scale = 0.000001;
-        }
-        game.try_render_functions();
+        game.repaint = true;
     });
     canvas.width = getWidth();
     canvas.height = getHeight();
@@ -401,16 +405,18 @@ async function main() {
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
     });*/
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
-        const scaler = 1 / Math.pow(2, Math.log(game.scale)) / 40;
-        game.y_translation -= scaler * (event.deltaY / game.height * game.cell_dim[1] / game.scale);
-        game.x_translation -= scaler * (event.deltaX / game.width * game.cell_dim[0] / game.scale);
-        game.try_render_functions();
+        let scaler = game.deltaX / 200;
+        if (game.deltaX < 0.3)
+            scaler = game.deltaX / game.width;
+        game.y_translation -= scaler * (event.deltaY);
+        game.x_translation -= scaler * (event.deltaX);
+        game.repaint = true;
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
         if (!keyboardHandler.keysHeld["MetaLeft"] && !keyboardHandler.keysHeld["ControlLeft"] &&
             !keyboardHandler.keysHeld["MetaRight"] && !keyboardHandler.keysHeld["ControlRight"])
             event.preventDefault();
-        game.try_render_functions();
+        game.repaint = true;
         switch (event.code) {
             case ("ArrowUp"):
                 break;
