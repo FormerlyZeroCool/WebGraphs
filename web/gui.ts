@@ -663,7 +663,7 @@ export class GuiListItem extends SimpleGridLayoutManager {
         super([200, 1], pixelDim);
         this.callBackType = genericTouchType;
         this.callBack = genericCallBack;
-        this.checkBox = new GuiCheckBox(callBack, pixelDim[1], pixelDim[1], state);
+        this.checkBox = new GuiCheckBox(callBack, pixelDim[0] / 5, pixelDim[1], state);
         const width:number = (pixelDim[0] - this.checkBox.width())// >> (slideMoved ? 1: 0);
         this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags);
         this.textBox.setText(text);
@@ -1612,31 +1612,36 @@ export class GuiTextBox implements GuiElement {
             preventDefault = true;
             const oldText:string = this.text;
             const oldCursor:number = this.cursor;
+            console.log(e.code)
             if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
             {
                 if(type === "keydown")
                 switch(e.code)
                 {
+                    case("Backspace"):
+                    e.keysHeld["ShiftLeft"] = null;
+                    e.keysHeld["ShiftRight"] = null;
+                    break;
                     case("Equal"):
-                    this.insert_char("+");
+                    this.insert_char("+", e);
                     break;
                     case("Digit5"):
-                    this.insert_char("%");
+                    this.insert_char("%", e);
                     break;
                     case("Digit6"):
-                    this.insert_char("^");
+                    this.insert_char("^", e);
                     break;
                     case("Digit7"):
-                    this.insert_char("&");
+                    this.insert_char("&", e);
                     break;
                     case("Digit8"):
-                    this.insert_char("*");
+                    this.insert_char("*", e);
                     break;
                     case("Digit9"):
-                    this.insert_char("(");
+                    this.insert_char("(", e);
                     break;
                     case("Digit0"):
-                    this.insert_char(")");
+                    this.insert_char(")", e);
                     break;
                     default:
                         let letter:string = e.code.substring(e.code.length - 1);
@@ -1660,6 +1665,9 @@ export class GuiTextBox implements GuiElement {
                         case("Slash"):
                         this.insert_char("/", e);
                         break;
+                        case("Equal"):
+                        this.insert_char("=", e);
+                        break;
                         case("NumpadEnter"):
                         case("Enter"):
                         this.deactivate();
@@ -1668,6 +1676,9 @@ export class GuiTextBox implements GuiElement {
                             this.submissionButton.activate();
                             this.submissionButton.handleKeyBoardEvents(type, e);
                         }
+                        break;
+                        case("Semicolon"):
+                            this.insert_char(";", e);
                         break;
                         case("Space"):
                             this.text = this.text.substring(0, this.cursor) + ' ' + this.text.substring(this.cursor, this.text.length);

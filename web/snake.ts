@@ -38,19 +38,19 @@ class LayerManagerTool {
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.layersLimit = isTouchSupported()?limit - Math.floor(limit / 4) : limit;
         this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight()]);
-        this.list = new GuiCheckList([1, this.layersLimit], [200, 520], 20, false, this.callback_swap_layers,
+        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 200], 20, false, this.callback_swap_layers,
         (event:SlideEvent) => {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array);
-        this.buttonAddLayer = new GuiButton(() => { this.pushList(`${++this.runningId}*x`); this.callback_onclick_event(0) }, "Add Layer", 99, 40, 16);
-        this.layoutManager.addElement(new GuiLabel("Layers list:", 200));
+        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${++this.runningId}`); this.callback_onclick_event(0) }, "Add Layer", this.layoutManager.width() / 2, 40, 16);
+        this.layoutManager.addElement(new GuiLabel("Layers list:", this.layoutManager.width()));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
-        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", 99, 40, 16));
+        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 40, 16));
     
         this.runningId = ++LayerManagerTool.running_number;
-        this.pushList(`${this.runningId}*x`);
+        this.pushList(`x*x*${this.runningId}`);
         this.list.refresh();
     }
     deleteItem(index:number = this.list.selected()):void
@@ -66,10 +66,6 @@ class LayerManagerTool {
             if(this.callback_layer_count() < this.list.list.length)
             {
                 this.callback_add_layer();
-            }
-            else if(this.callback_layer_count() === this.list.list.length)
-            {
-                //noop
             }
             if(this.callback_layer_count() !== this.list.list.length)
                 console.log("Error field layers out of sync with layers tool");
@@ -367,11 +363,13 @@ class Game extends SquareAABBCollidable {
         functions.forEach((foo:Function, index:number) => {
             const view = new Int32Array(this.screen_buf[index].imageData!.data.buffer);
             this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
+            this.screen_buf[index].ctx.lineWidth = 2;
             //build table to be rendered
             foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0]);
 
             let last_x = 0;
-            let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];;
+            let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
+            
             this.screen_buf[index].ctx.beginPath();
             for(let i = 0; i < foo.table.length; i++)
             {
@@ -506,6 +504,13 @@ async function main()
     };
     canvas.addEventListener("wheel", (e) => {
         //e.preventDefault();
+        const scaler = game.deltaX < game.width/100 ? game.deltaX / game.width : (game.scale < 1 ? .0001 : (game.scale < 3 ? 0.01 : (game.scale < 10 ? 0.1 : (game.scale < 50 ? 0.5 : 1))));
+        game.scale += e.deltaY * scaler;
+        if(game.scale < 0)
+        {
+            game.scale = 0.000001;
+        }
+        game.try_render_functions();
     });
     canvas.width = getWidth();
     canvas.height = getHeight();
@@ -524,8 +529,9 @@ async function main()
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
     });*/
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
-        game.y_translation -= (event.deltaY / game.height * game.cell_dim[1] / game.scale) / 10;
-        game.x_translation -= (event.deltaX / game.width * game.cell_dim[0] / game.scale)  / 10;
+        const scaler = 1 / Math.pow(2, Math.log(game.scale)) / 40;
+        game.y_translation -= scaler * (event.deltaY / game.height * game.cell_dim[1] / game.scale);
+        game.x_translation -= scaler * (event.deltaX / game.width * game.cell_dim[0] / game.scale);
         game.try_render_functions();
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event:any) => {
