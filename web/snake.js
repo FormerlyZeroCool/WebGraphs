@@ -1,4 +1,4 @@
-import { SingleTouchListener, isTouchSupported, KeyboardHandler } from './io.js';
+import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
 import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel } from './gui.js';
 import { srand, max_32_bit_signed, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
@@ -390,6 +390,8 @@ async function main() {
         //e.preventDefault();
         const scaler = game.scale / 100;
         game.scale += e.deltaY * scaler;
+        if (game.scale < 0)
+            game.scale = 0.00000000001;
         game.repaint = true;
     });
     canvas.width = getWidth();
@@ -397,6 +399,21 @@ async function main() {
     canvas.style.cursor = "pointer";
     let counter = 0;
     const touchScreen = isTouchSupported();
+    const multi_touch_listener = new MultiTouchListener(canvas);
+    multi_touch_listener.registerCallBack("pinchIn", () => true, (event) => {
+        const scaler = game.scale / 20;
+        game.scale += scaler;
+        if (game.scale < 0)
+            game.scale = 0.00000000001;
+        game.repaint = true;
+    });
+    multi_touch_listener.registerCallBack("pinchOut", () => true, (event) => {
+        const scaler = game.scale / 20;
+        game.scale -= scaler;
+        if (game.scale < 0)
+            game.scale = 0.00000000001;
+        game.repaint = true;
+    });
     let height = getHeight();
     let width = getWidth();
     let game = new Game(0, 0, height, width);
