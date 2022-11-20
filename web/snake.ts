@@ -380,7 +380,7 @@ class Game extends SquareAABBCollidable {
             this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
             this.screen_buf[index].ctx.lineWidth = 2;
             //build table to be rendered
-            foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 2);
+            foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
 
             let last_x = 0;
             let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
