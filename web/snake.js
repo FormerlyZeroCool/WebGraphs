@@ -147,6 +147,7 @@ class Game extends SquareAABBCollidable {
         this.guiManager = new SimpleGridLayoutManager([1, 1], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => console.log(state), (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); }, () => this.screen_buf.length, (layer) => this.try_render_functions(), (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); }, (l1, l2) => this.swap_layers(l1, l2), (layer) => this.functions[layer] ? this.functions[layer].error_message : null);
         this.axises = this.new_sprite();
+        this.main_buf = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.activate();
         //this.restart_game();
@@ -308,19 +309,21 @@ class Game extends SquareAABBCollidable {
         if (this.repaint) {
             this.repaint = false;
             this.try_render_functions();
+            const font_size = 24;
+            if (+ctx.font.split("px")[0] != font_size) {
+                ctx.font = `${font_size}px Helvetica`;
+            }
+            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
+            this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
+            for (let index = 0; index < this.screen_buf.length; index++) {
+                const buf = this.screen_buf[index];
+                //buf.refreshImage(); no need since we render directly onto sprite canvases
+                if (!this.layer_manager.list.list[index] || this.layer_manager.list.list[index].checkBox.checked)
+                    this.main_buf.ctx.drawImage(buf.image, x, y, buf.width, buf.height);
+            }
+            ;
         }
-        const font_size = 24;
-        if (+ctx.font.split("px")[0] != font_size) {
-            ctx.font = `${font_size}px Helvetica`;
-        }
-        this.render_axises(canvas, ctx, x, y, width, height);
-        for (let index = 0; index < this.screen_buf.length; index++) {
-            const buf = this.screen_buf[index];
-            //buf.refreshImage(); no need since we render directly onto sprite canvases
-            if (!this.layer_manager.list.list[index] || this.layer_manager.list.list[index].checkBox.checked)
-                ctx.drawImage(buf.image, x, y, width, height);
-        }
-        ;
+        ctx.drawImage(this.main_buf.image, x, y, width, height);
         this.guiManager.draw(ctx);
     }
     cell_dist(cell1, cell2) {
