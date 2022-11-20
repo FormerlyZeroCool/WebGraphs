@@ -2,7 +2,15 @@ import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandl
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem} from './gui.js'
 import {random, srand, max_32_bit_signed, DynamicInt32Array, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
-
+window.sin = Math.sin;
+window.cos = Math.cos;
+window.tan = Math.tan;
+window.asin = Math.asin;
+window.acos = Math.acos;
+window.atan = Math.atan;
+window.log = Math.log;
+window.pow = Math.pow;
+window.sqrt = Math.sqrt;
 class LayerManagerTool {
     list:GuiCheckList;
     layoutManager:SimpleGridLayoutManager;
@@ -43,11 +51,11 @@ class LayerManagerTool {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array);
-        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${++this.runningId}`); this.callback_onclick_event(0) }, "Add Layer", this.layoutManager.width() / 2, 40, 16);
+        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${++this.runningId}`); this.callback_onclick_event(0) }, "Add Layer", this.layoutManager.width() / 2, 80, 16);
         this.layoutManager.addElement(new GuiLabel("Layers list:", this.layoutManager.width()));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
-        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 40, 16));
+        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 80, 16));
     
         this.runningId = ++LayerManagerTool.running_number;
         this.pushList(`x*x*${this.runningId}`);

@@ -2,6 +2,15 @@ import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHand
 import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel } from './gui.js';
 import { srand, max_32_bit_signed, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
+window.sin = Math.sin;
+window.cos = Math.cos;
+window.tan = Math.tan;
+window.asin = Math.asin;
+window.acos = Math.acos;
+window.atan = Math.atan;
+window.log = Math.log;
+window.pow = Math.pow;
+window.sqrt = Math.sqrt;
 class LayerManagerTool {
     constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array) {
         this.callback_add_layer = callback_add_layer;
@@ -18,11 +27,11 @@ class LayerManagerTool {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array);
-        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${++this.runningId}`); this.callback_onclick_event(0); }, "Add Layer", this.layoutManager.width() / 2, 40, 16);
+        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${++this.runningId}`); this.callback_onclick_event(0); }, "Add Layer", this.layoutManager.width() / 2, 80, 16);
         this.layoutManager.addElement(new GuiLabel("Layers list:", this.layoutManager.width()));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
-        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 40, 16));
+        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 80, 16));
         this.runningId = ++LayerManagerTool.running_number;
         this.pushList(`x*x*${this.runningId}`);
         this.list.refresh();
