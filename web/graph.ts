@@ -455,7 +455,6 @@ class Game extends SquareAABBCollidable {
             const nearest_x = Math.floor(touchPos[0] / this.width * selected_function.table.length);
             const world_y = -selected_function.table[nearest_x];
             const world_x = this.x_min + nearest_x * selected_function.dx;
-            //this.auto_round_world_x(world_x)
             this.render_x_y_label_world_space(ctx, this.round(world_x, 5), this.round(world_y, 5));
         }
     }
@@ -481,8 +480,11 @@ class Game extends SquareAABBCollidable {
     {
         const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;
         const screen_y = ((world_y - this.y_min) / this.deltaY) * this.height;
-        ctx.fillText(`x: ${world_x} y: ${world_y}`, screen_x, screen_y);
-        ctx.strokeText(`x: ${world_x} y: ${world_y}`, screen_x, screen_y);
+        const dim = 10;
+        ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
+        ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
+        ctx.fillText(`x: ${world_x} y: ${world_y}`, screen_x + dim, screen_y + dim / 2);
+        ctx.strokeText(`x: ${world_x} y: ${world_y}`, screen_x + dim, screen_y + dim / 2);
     }
     cell_dist(cell1:number, cell2:number):number
     {
