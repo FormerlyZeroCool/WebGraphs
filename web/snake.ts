@@ -221,7 +221,7 @@ class Game extends SquareAABBCollidable {
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1,1], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, 
-            (layer:number, state:boolean) => console.log(state),
+            (layer:number, state:boolean) => this.repaint = true,
             (layer:number) => {this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1)},
             () => this.screen_buf.length,
             (layer:number) => this.try_render_functions(),
