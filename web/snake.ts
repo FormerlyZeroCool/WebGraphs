@@ -228,11 +228,11 @@ class Game extends SquareAABBCollidable {
     }
     calc_bounds():void
     {
-        this.x_min = this.x_translation * this.scale - 1/this.scale;
-        this.x_max = this.x_translation * this.scale + 1/this.scale;
+        this.x_min = this.x_translation - 1/this.scale;
+        this.x_max = this.x_translation + 1/this.scale;
         this.deltaX = this.x_max - this.x_min;
-        this.y_min = this.y_translation * this.scale - this.deltaX / 2;
-        this.y_max = this.y_translation * this.scale + this.deltaX / 2;
+        this.y_min = this.y_translation - this.deltaX / 2;
+        this.y_max = this.y_translation + this.deltaX / 2;
         this.deltaY = this.y_max - this.y_min;
     }
     add_layer():void
@@ -540,9 +540,7 @@ async function main()
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
     });*/
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
-        let scaler = game.deltaX / 200;
-        if(game.deltaX < 0.3)
-            scaler = game.deltaX / game.width;
+        let scaler = game.deltaX / (game.width / 2);
             
         game.y_translation -= scaler * (event.deltaY);
         game.x_translation -= scaler * (event.deltaX);
