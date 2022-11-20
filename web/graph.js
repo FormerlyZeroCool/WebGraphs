@@ -132,9 +132,10 @@ class Function {
 }
 ;
 class Game extends SquareAABBCollidable {
-    constructor(x, y, width, height) {
+    constructor(touchListener, x, y, width, height) {
         super(x, y, width, height);
         this.repaint = true;
+        this.touchListener = touchListener;
         this.functions = [];
         this.draw_axises = true;
         this.draw_axis_labels = true;
@@ -335,6 +336,37 @@ class Game extends SquareAABBCollidable {
         }
         ctx.drawImage(this.main_buf.image, x, y, width, height);
         this.guiManager.draw(ctx, x, y);
+        const touchPos = this.touchListener.touchPos;
+        this.render_x_y_label_screen_space(ctx, touchPos);
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if (selected_function) {
+            const nearest_x = Math.floor(touchPos[0] / this.width * selected_function.table.length);
+            const world_y = -selected_function.table[nearest_x];
+            const world_x = this.x_min + nearest_x * selected_function.dx;
+            //this.auto_round_world_x(world_x)
+            this.render_x_y_label_world_space(ctx, this.round(world_x, 5), this.round(world_y, 5));
+        }
+    }
+    auto_round_world_x(x) {
+        const logarithm = Math.log10(Math.abs(x));
+        const rounded = Math.round(x * (Math.pow(1, -logarithm) * 100)) * Math.floor(Math.pow(1, logarithm)) / 100;
+        console.log(rounded, logarithm);
+        return rounded;
+    }
+    round(value, places) {
+        return +("" + Math.round(value * Math.pow(10, places)) * Math.pow(10, -places)).substring(0, places + 1);
+    }
+    render_x_y_label_screen_space(ctx, touchPos) {
+        const world_x = Math.round(((touchPos[0] / this.width) * this.deltaX + this.x_min) * 10000) / 10000;
+        const world_y = Math.round(((touchPos[1] / this.height) * this.deltaY + this.y_min) * 10000) / 10000;
+        ctx.fillText(`x: ${world_x} y: ${world_y}`, touchPos[0], touchPos[1]);
+        ctx.strokeText(`x: ${world_x} y: ${world_y}`, touchPos[0], touchPos[1]);
+    }
+    render_x_y_label_world_space(ctx, world_x, world_y) {
+        const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;
+        const screen_y = ((world_y - this.y_min) / this.deltaY) * this.height;
+        ctx.fillText(`x: ${world_x} y: ${world_y}`, screen_x, screen_y);
+        ctx.strokeText(`x: ${world_x} y: ${world_y}`, screen_x, screen_y);
     }
     cell_dist(cell1, cell2) {
         const c1x = cell1 % this.cell_dim[0];
@@ -431,7 +463,7 @@ async function main() {
     });
     let height = getHeight();
     let width = getWidth();
-    let game = new Game(0, 0, height, width);
+    let game = new Game(touchListener, 0, 0, height, width);
     window.game = game;
     let low_fps = true;
     let draw = false;
