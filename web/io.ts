@@ -386,7 +386,7 @@ export class MultiTouchListener {
         if(isTouchSupported())
         {
             component.addEventListener('touchmove', event => this.touchMoveHandler(event), false);
-            component.addEventListener('touchend', event => {this.registeredMultiTouchEvent = false; event.preventDefault()}, false);
+            component.addEventListener('touchend', event => {this.registeredMultiTouchEvent = false; this.lastDistance = 0; event.preventDefault()}, false);
         }
     }    
     registerCallBack(listenerType:string, predicate:(event:any) => boolean, callBack:(event:any) => void):void
@@ -410,6 +410,8 @@ export class MultiTouchListener {
         if(SingleTouchListener.mouseDown.getTouchCount() > 1)
         {
             this.registeredMultiTouchEvent = true;
+            if(this.lastDistance === 0)
+                this.lastDistance = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX),2) + Math.pow(touch1.clientY - touch2.clientY, 2));
         }
         if(this.registeredMultiTouchEvent)
         {

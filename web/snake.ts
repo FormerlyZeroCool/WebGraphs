@@ -531,18 +531,18 @@ async function main()
     const touchScreen:boolean = isTouchSupported();
     const multi_touch_listener = new MultiTouchListener(canvas);
     multi_touch_listener.registerCallBack("pinchIn", () => true, (event:any) => {
-
-        const scaler = game.scale / 20;
-        game.scale += scaler;
-        if(game.scale < 0)
+        const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
+        const scaler = game.scale / 4;
+        game.scale += scaler * Math.abs(normalized_delta) * 100;
+        if(game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
     });
     multi_touch_listener.registerCallBack("pinchOut", () => true, (event:any) => {
-
-        const scaler = game.scale / 20;
-        game.scale -= scaler;
-        if(game.scale < 0)
+        const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
+        const scaler = game.scale / 4;
+        game.scale -= scaler * Math.abs(normalized_delta) * 100;
+        if(game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
     });
