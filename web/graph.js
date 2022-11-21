@@ -340,10 +340,15 @@ class Game extends SquareAABBCollidable {
         this.render_x_y_label_screen_space(ctx, touchPos);
         const selected_function = this.functions[this.layer_manager.list.selected()];
         if (selected_function) {
-            const nearest_x = Math.floor(touchPos[0] / this.width * selected_function.table.length);
-            const world_y = -selected_function.table[nearest_x];
-            const world_x = this.x_min + nearest_x * selected_function.dx;
-            this.render_x_y_label_world_space(ctx, this.round(world_x, 5), this.round(-world_y, 5));
+            try {
+                const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
+                const world_y = selected_function.compiled(nearest_x);
+                const world_x = nearest_x;
+                console.log(world_x, world_y);
+                this.render_x_y_label_world_space(ctx, world_x, world_y);
+                //this.render_formatted_point(ctx, world_x, world_y, touchPos[0], (-world_y - this.y_min) / this.deltaY * this.height)
+            }
+            catch (error) { }
         }
     }
     auto_round_world_x(x) {
@@ -358,7 +363,7 @@ class Game extends SquareAABBCollidable {
     render_x_y_label_screen_space(ctx, touchPos, precision = 2) {
         const world_x = ((touchPos[0] / this.width) * this.deltaX + this.x_min);
         const world_y = ((touchPos[1] / this.height) * this.deltaY + this.y_min);
-        this.render_formatted_point(ctx, world_x, world_y, touchPos[0], touchPos[1], precision);
+        this.render_formatted_point(ctx, world_x, -world_y, touchPos[0], touchPos[1], precision);
     }
     render_x_y_label_world_space(ctx, world_x, world_y, precision = 2) {
         const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;

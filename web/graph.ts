@@ -452,10 +452,15 @@ class Game extends SquareAABBCollidable {
         const selected_function = this.functions[this.layer_manager.list.selected()];
         if(selected_function)
         {
-            const nearest_x = Math.floor(touchPos[0] / this.width * selected_function.table.length);
-            const world_y = -selected_function.table[nearest_x];
-            const world_x = this.x_min + nearest_x * selected_function.dx;
-            this.render_x_y_label_world_space(ctx, this.round(world_x, 5), this.round(-world_y, 5));
+            try{
+            const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
+            const world_y = selected_function.compiled(nearest_x);
+            const world_x = nearest_x;
+            console.log(world_x, world_y)
+            this.render_x_y_label_world_space(ctx, world_x, world_y);
+            //this.render_formatted_point(ctx, world_x, world_y, touchPos[0], (-world_y - this.y_min) / this.deltaY * this.height)
+
+            }catch(error:any){}
         }
     }
     auto_round_world_x(x:number):number
@@ -473,7 +478,7 @@ class Game extends SquareAABBCollidable {
     {
         const world_x = ((touchPos[0] / this.width) * this.deltaX + this.x_min);
         const world_y = ((touchPos[1] / this.height) * this.deltaY + this.y_min);
-        this.render_formatted_point(ctx, world_x, world_y, touchPos[0], touchPos[1], precision);
+        this.render_formatted_point(ctx, world_x, -world_y, touchPos[0], touchPos[1], precision);
     }
     render_x_y_label_world_space(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, precision:number = 2):void
     {
