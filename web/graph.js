@@ -373,14 +373,20 @@ class Game extends SquareAABBCollidable {
         const dim = 10;
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
+        let text;
         if (Math.abs(world_x) < 2 << 16 && Math.abs(world_x) > 0.000001) {
-            ctx.fillText(`x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`, screen_x + dim, screen_y + dim / 2);
-            ctx.strokeText(`x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`, screen_x + dim, screen_y + dim / 2);
+            text = `x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`;
         }
         else {
-            ctx.fillText(`x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`, screen_x + dim, screen_y + dim / 2);
-            ctx.strokeText(`x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`, screen_x + dim, screen_y + dim / 2);
+            text = `x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`;
         }
+        const text_width = ctx.measureText(text).width;
+        if (text_width + screen_x + dim > this.width) {
+            screen_x -= text_width + dim * 2;
+            screen_y += 3;
+        }
+        ctx.fillText(text, screen_x + dim, screen_y + dim / 2);
+        ctx.strokeText(text, screen_x + dim, screen_y + dim / 2);
     }
     cell_dist(cell1, cell2) {
         const c1x = cell1 % this.cell_dim[0];
@@ -492,8 +498,8 @@ async function main() {
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
-        game.y_translation -= scaler_y * (event.deltaY);
-        game.x_translation -= scaler_x * (event.deltaX);
+        game.y_translation -= 2 * scaler_y * (event.deltaY);
+        game.x_translation -= 2 * scaler_x * (event.deltaX);
         game.repaint = true;
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
