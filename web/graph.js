@@ -1,5 +1,5 @@
 import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
-import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel } from './gui.js';
+import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider } from './gui.js';
 import { srand, max_32_bit_signed, round_with_precision, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 window.sin = Math.sin;
@@ -22,7 +22,7 @@ class LayerManagerTool {
         this.callback_swap_layers = callback_swap_layers;
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.layersLimit = limit;
-        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight()]);
+        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight() - 100]);
         this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 250], 20, false, this.callback_swap_layers, (event) => {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
@@ -134,6 +134,7 @@ class Function {
 class Game extends SquareAABBCollidable {
     constructor(touchListener, x, y, width, height) {
         super(x, y, width, height);
+        this.scaling_multiplier = 1;
         this.repaint = true;
         this.touchListener = touchListener;
         this.functions = [];
@@ -154,11 +155,14 @@ class Game extends SquareAABBCollidable {
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
-        this.guiManager = new SimpleGridLayoutManager([1, 1], [this.graph_start_x, getHeight()], 0, 0);
+        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); this.repaint = true; }, () => this.screen_buf.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null);
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
+        this.guiManager.addElement(new GuiSlider(0, [this.guiManager.width(), 50], (e) => {
+            this.scaling_multiplier = e.value * 3 + 1;
+        }));
         this.guiManager.activate();
         //this.restart_game();
         this.try_render_functions();
@@ -364,7 +368,7 @@ class Game extends SquareAABBCollidable {
         const world_y = ((touchPos[1] / this.height) * this.deltaY + this.y_min);
         this.render_formatted_point(ctx, world_x, -world_y, touchPos[0], touchPos[1], precision);
     }
-    render_x_y_label_world_space(ctx, world_x, world_y, precision = 2) {
+    render_x_y_label_world_space(ctx, world_x, world_y, precision = 1) {
         const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;
         const screen_y = ((-world_y - this.y_min) / this.deltaY) * this.height;
         this.render_formatted_point(ctx, world_x, world_y, screen_x, screen_y, precision);
@@ -374,7 +378,7 @@ class Game extends SquareAABBCollidable {
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         let text;
-        if (Math.abs(world_x) < 2 << 16 && Math.abs(world_x) > 0.000001) {
+        if (Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > 0.000001) {
             text = `x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`;
         }
         else {
@@ -498,8 +502,8 @@ async function main() {
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
-        game.y_translation -= 2 * scaler_y * (event.deltaY);
-        game.x_translation -= 2 * scaler_x * (event.deltaX);
+        game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
+        game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
         game.repaint = true;
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
@@ -507,14 +511,20 @@ async function main() {
             !keyboardHandler.keysHeld["MetaRight"] && !keyboardHandler.keysHeld["ControlRight"])
             event.preventDefault();
         game.repaint = true;
+        let scaler_x = game.deltaX / (game.width);
+        let scaler_y = game.deltaY / (game.height);
         switch (event.code) {
             case ("ArrowUp"):
+                game.y_translation -= scaler_y;
                 break;
             case ("ArrowDown"):
+                game.y_translation += scaler_y;
                 break;
             case ("ArrowLeft"):
+                game.x_translation -= scaler_x;
                 break;
             case ("ArrowRight"):
+                game.x_translation += scaler_x;
                 break;
         }
     });
