@@ -345,9 +345,7 @@ class Game extends SquareAABBCollidable {
                 const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
                 const world_y = selected_function.compiled(nearest_x);
                 const world_x = nearest_x;
-                console.log(world_x, world_y);
                 this.render_x_y_label_world_space(ctx, world_x, world_y);
-                //this.render_formatted_point(ctx, world_x, world_y, touchPos[0], (-world_y - this.y_min) / this.deltaY * this.height)
             }
             catch (error) { }
         }
@@ -450,10 +448,11 @@ async function main() {
     canvas.addEventListener("wheel", (e) => {
         //e.preventDefault();
         const scaler = game.scale / 100;
-        game.scale += e.deltaY * scaler;
+        game.scale -= e.deltaY * scaler;
         if (game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
+        e.preventDefault();
     });
     canvas.width = getWidth();
     canvas.height = getHeight();
@@ -468,6 +467,7 @@ async function main() {
         if (game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
+        event.preventDefault();
     });
     multi_touch_listener.registerCallBack("pinchOut", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
@@ -476,6 +476,7 @@ async function main() {
         if (game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
+        event.preventDefault();
     });
     let height = getHeight();
     let width = getWidth();
@@ -489,9 +490,10 @@ async function main() {
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
     });*/
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
-        let scaler = game.deltaX / (game.width / 2);
-        game.y_translation -= scaler * (event.deltaY);
-        game.x_translation -= scaler * (event.deltaX);
+        let scaler_x = game.deltaX / (game.width);
+        let scaler_y = game.deltaY / (game.height);
+        game.y_translation -= scaler_y * (event.deltaY);
+        game.x_translation -= scaler_x * (event.deltaX);
         game.repaint = true;
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {

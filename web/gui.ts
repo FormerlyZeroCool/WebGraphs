@@ -1670,6 +1670,12 @@ export class GuiTextBox implements GuiElement {
                     case("Digit0"):
                     this.insert_char(")", e);
                     break;
+                    case("BracketLeft"):
+                    this.insert_char("{", e);
+                    break;
+                    case("BracketRight"):
+                    this.insert_char("}", e);
+                    break;
                     default:
                         let letter:string = e.code.substring(e.code.length - 1);
                         if((<any> GuiTextBox.textLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
@@ -1703,6 +1709,12 @@ export class GuiTextBox implements GuiElement {
                             this.submissionButton.activate();
                             this.submissionButton.handleKeyBoardEvents(type, e);
                         }
+                        break;
+                        case("BracketLeft"):
+                        this.insert_char("[", e);
+                        break;
+                        case("BracketRight"):
+                        this.insert_char("]", e);
                         break;
                         case("Semicolon"):
                             this.insert_char(";", e);
