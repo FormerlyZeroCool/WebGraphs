@@ -469,22 +469,33 @@ class Game extends SquareAABBCollidable {
     {
         return +(""+Math.round(value * Math.pow(10, places)) * Math.pow(10, -places)).substring(0, places + 1);
     }
-    render_x_y_label_screen_space(ctx:CanvasRenderingContext2D, touchPos:number[]):void
+    render_x_y_label_screen_space(ctx:CanvasRenderingContext2D, touchPos:number[], precision:number = 2):void
     {
-        const world_x = Math.round(((touchPos[0] / this.width) * this.deltaX + this.x_min) * 10000) / 10000;
-        const world_y = -Math.round(((touchPos[1] / this.height) * this.deltaY + this.y_min) * 10000) / 10000;
-        ctx.fillText(`x: ${world_x} y: ${world_y}`, touchPos[0], touchPos[1]);
-        ctx.strokeText(`x: ${world_x} y: ${world_y}`, touchPos[0], touchPos[1]);
+        const world_x = ((touchPos[0] / this.width) * this.deltaX + this.x_min);
+        const world_y = ((touchPos[1] / this.height) * this.deltaY + this.y_min);
+        this.render_formatted_point(ctx, world_x, world_y, touchPos[0], touchPos[1], precision);
     }
-    render_x_y_label_world_space(ctx:CanvasRenderingContext2D, world_x:number, world_y:number):void
+    render_x_y_label_world_space(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, precision:number = 2):void
     {
         const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;
         const screen_y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+        this.render_formatted_point(ctx, world_x, world_y, screen_x, screen_y, precision);
+    }
+    render_formatted_point(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, screen_x:number, screen_y:number, precision:number = 2):void
+    {
         const dim = 10;
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
-        ctx.fillText(`x: ${world_x} y: ${world_y}`, screen_x + dim, screen_y + dim / 2);
-        ctx.strokeText(`x: ${world_x} y: ${world_y}`, screen_x + dim, screen_y + dim / 2);
+        if(Math.abs(world_x) < 2 << 16 && Math.abs(world_x) > 0.000001)
+        {
+            ctx.fillText(`x: ${Math.round(world_x * 10000) / 10000} y: ${Math.round(world_y* 10000) / 10000}`, screen_x + dim, screen_y + dim / 2);
+            ctx.strokeText(`x: ${Math.round(world_x * 10000) / 10000} y: ${Math.round(world_x* 10000) / 10000}`, screen_x + dim, screen_y + dim / 2);
+        }
+        else
+        {
+            ctx.fillText(`x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`, screen_x + dim, screen_y + dim / 2);
+            ctx.strokeText(`x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`, screen_x + dim, screen_y + dim / 2);
+        }
     }
     cell_dist(cell1:number, cell2:number):number
     {
