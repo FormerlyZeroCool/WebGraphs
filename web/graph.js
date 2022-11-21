@@ -370,8 +370,10 @@ class Game extends SquareAABBCollidable {
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         if (Math.abs(world_x) < 2 << 16 && Math.abs(world_x) > 0.000001) {
-            ctx.fillText(`x: ${Math.round(world_x * 10000) / 10000} y: ${Math.round(world_y * 10000) / 10000}`, screen_x + dim, screen_y + dim / 2);
-            ctx.strokeText(`x: ${Math.round(world_x * 10000) / 10000} y: ${Math.round(world_x * 10000) / 10000}`, screen_x + dim, screen_y + dim / 2);
+            const mult_x = Math.pow(10, Math.ceil(5 - Math.log10(Math.abs(world_x))));
+            const mult_y = Math.pow(10, Math.ceil(5 - Math.log10(Math.abs(world_y))));
+            ctx.fillText(`x: ${Math.round(world_x * mult_x) / mult_x} y: ${Math.round(world_y * mult_y) / mult_y}`, screen_x + dim, screen_y + dim / 2);
+            ctx.strokeText(`x: ${Math.round(world_x * mult_x) / mult_x} y: ${Math.round(world_y * mult_y) / mult_y}`, screen_x + dim, screen_y + dim / 2);
         }
         else {
             ctx.fillText(`x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`, screen_x + dim, screen_y + dim / 2);
