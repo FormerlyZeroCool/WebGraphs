@@ -837,14 +837,14 @@ export class GuiCheckList implements GuiElement {
             if(row_errors)
             {
                 const font_size = 18;
-                ctx.fillStyle = new RGB(0, 0, 0, 180).htmlRBGA();
+                ctx.fillStyle = new RGB(0, 0, 0, 200).htmlRBGA();
                 let error_row_offset = 2;
                 ctx.fillRect(x, y + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width(), this.height() / this.layoutManager.matrixDim[1]);
 
                 ctx.font = `${font_size}px Helvetica`;
                 ctx.fillStyle = "#FF0000";
                 ctx.strokeStyle = "#FFFFFF";
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 3;
                 const text_width = ctx.measureText(row_errors).width;
                 if(text_width <= this.width())
                 {
