@@ -655,8 +655,9 @@ export class GuiCheckList {
             const row_errors = this.get_error(i);
             if (row_errors) {
                 const font_size = 18;
-                ctx.fillStyle = new RGB(0, 0, 0, 100).htmlRBGA();
-                ctx.fillRect(x, y + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width(), this.height() / this.layoutManager.matrixDim[1]);
+                ctx.fillStyle = new RGB(0, 0, 0, 180).htmlRBGA();
+                let error_row_offset = 2;
+                ctx.fillRect(x, y + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width(), this.height() / this.layoutManager.matrixDim[1]);
                 ctx.font = `${font_size}px Helvetica`;
                 ctx.fillStyle = "#FF0000";
                 ctx.strokeStyle = "#FFFFFF";
@@ -664,19 +665,22 @@ export class GuiCheckList {
                 const text_width = ctx.measureText(row_errors).width;
                 if (text_width <= this.width()) {
                     ctx.fillStyle = "#FF0000";
-                    ctx.strokeText(row_errors, x, y + font_size + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
-                    ctx.fillText(row_errors, x, y + font_size + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
+                    ctx.strokeText(row_errors, x, y + font_size + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
+                    ctx.fillText(row_errors, x, y + font_size + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
                 }
                 else {
                     const split_index = row_errors.indexOf(' ', Math.floor(row_errors.length / 2));
                     let j = 1;
                     let split_text = row_errors.substring(0, split_index);
-                    ctx.strokeText(split_text, x, y + j * font_size + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
-                    ctx.fillText(split_text, x, y + j++ * font_size + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
+                    ctx.strokeText(split_text, x, y + j * font_size + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
+                    ctx.fillText(split_text, x, y + j++ * font_size + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
                     split_text = row_errors.substring(split_index + 1);
-                    ctx.strokeText(split_text, x, y + j * font_size + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
-                    ctx.fillText(split_text, x, y + j * font_size + (offsetI - 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
+                    ctx.strokeText(split_text, x, y + j * font_size + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
+                    ctx.fillText(split_text, x, y + j * font_size + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width());
                 }
+                ctx.strokeStyle = "#FF0000";
+                ctx.strokeRect(x, y + (offsetI - error_row_offset) * (this.height() / this.layoutManager.matrixDim[1]), this.width(), this.height() / this.layoutManager.matrixDim[1]);
+                ctx.strokeRect(x, y + (offsetI - error_row_offset + 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width(), this.height() / this.layoutManager.matrixDim[1] - 5);
             }
         }
         if (this.dragItem)
