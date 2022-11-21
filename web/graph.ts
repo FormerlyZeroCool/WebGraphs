@@ -448,7 +448,8 @@ class Game extends SquareAABBCollidable {
         ctx.drawImage(this.main_buf.image, x, y, width, height);
         this.guiManager.draw(ctx, x, y);
         const touchPos = this.touchListener.touchPos;
-        this.render_x_y_label_screen_space(ctx, touchPos);
+        if(!isTouchSupported())
+            this.render_x_y_label_screen_space(ctx, touchPos);
         const selected_function = this.functions[this.layer_manager.list.selected()];
         if(selected_function)
         {
