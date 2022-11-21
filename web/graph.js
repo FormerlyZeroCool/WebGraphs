@@ -437,7 +437,7 @@ async function main() {
         //e.preventDefault();
         const scaler = game.scale / 100;
         game.scale += e.deltaY * scaler;
-        if (game.scale < 0)
+        if (game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
     });
