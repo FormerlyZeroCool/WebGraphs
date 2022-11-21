@@ -340,7 +340,7 @@ class Game extends SquareAABBCollidable {
         if (!isTouchSupported())
             this.render_x_y_label_screen_space(ctx, touchPos);
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function) {
+        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
             try {
                 const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
                 const world_y = selected_function.compiled(nearest_x);
