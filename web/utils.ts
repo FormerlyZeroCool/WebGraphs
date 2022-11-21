@@ -2,6 +2,12 @@
 export interface FilesHaver{
     files:FileList;
 };
+export function round_with_precision(value:number, precision:number):number
+{
+    const mult = Math.pow(10, Math.ceil(precision - Math.log10(Math.abs(value))));
+    const rounded = Math.round(value * mult) / mult;
+    return rounded;
+}
 export function normalize(vec:number[]):number[]
 {
     const mag = Math.sqrt(vec[0]*vec[0] + vec[1]+vec[1]);

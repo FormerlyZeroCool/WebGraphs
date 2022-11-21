@@ -1,6 +1,6 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem} from './gui.js'
-import {random, srand, max_32_bit_signed, DynamicInt32Array, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
+import {random, srand, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 window.sin = Math.sin;
 window.cos = Math.cos;
@@ -488,10 +488,8 @@ class Game extends SquareAABBCollidable {
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         if(Math.abs(world_x) < 2 << 16 && Math.abs(world_x) > 0.000001)
         {
-            const mult_x = Math.pow(10, Math.ceil(5 - Math.log10(Math.abs(world_x))));
-            const mult_y = Math.pow(10, Math.ceil(5 - Math.log10(Math.abs(world_y))));
-            ctx.fillText(`x: ${Math.round(world_x * mult_x) / mult_x} y: ${Math.round(world_y* mult_y) / mult_y}`, screen_x + dim, screen_y + dim / 2);
-            ctx.strokeText(`x: ${Math.round(world_x * mult_x) / mult_x} y: ${Math.round(world_y* mult_y) / mult_y}`, screen_x + dim, screen_y + dim / 2);
+            ctx.fillText(`x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`, screen_x + dim, screen_y + dim / 2);
+            ctx.strokeText(`x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`, screen_x + dim, screen_y + dim / 2);
         }
         else
         {
