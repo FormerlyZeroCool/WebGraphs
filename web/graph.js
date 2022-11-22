@@ -145,10 +145,11 @@ class Function {
 }
 ;
 class Game extends SquareAABBCollidable {
-    constructor(touchListener, x, y, width, height) {
+    constructor(multi_touchListener, touchListener, x, y, width, height) {
         super(x, y, width, height);
         this.scaling_multiplier = 1;
         this.repaint = true;
+        this.multi_touchListener = multi_touchListener;
         this.touchListener = touchListener;
         this.functions = [];
         this.draw_axises = true;
@@ -413,7 +414,7 @@ class Game extends SquareAABBCollidable {
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
         }
         ctx.drawImage(this.main_buf.image, x, y);
-        if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width()) {
+        if (!this.multi_touchListener.registeredMultiTouchEvent && this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width()) {
             this.guiManager.draw(ctx);
             this.layer_manager.list.pos[0] = this.guiManager.x;
             this.layer_manager.list.pos[1] = this.guiManager.y;
