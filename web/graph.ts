@@ -427,6 +427,8 @@ class Game extends SquareAABBCollidable {
                 this.main_buf.ctx.stroke();
             }
         });
+        this.main_buf.ctx.beginPath();
+        this.main_buf.ctx.stroke();
     }
     render_axises(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number):void
     {

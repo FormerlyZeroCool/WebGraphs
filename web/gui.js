@@ -708,15 +708,22 @@ export class GuiCheckList {
         this.layoutManager.handleKeyBoardEvents(type, e);
     }
     handleTouchEvents(type, e) {
-        const clicked = Math.floor((e.touchPos[1] / this.height()) * this.layoutManager.matrixDim[1]);
+        this.layoutManager.activate();
+        e.translateEvent(e, -this.pos[0], -this.pos[1] + 30);
+        const clicked = Math.floor(((e.touchPos[1]) / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
+        e.translateEvent(e, this.pos[0], this.pos[1] - 30);
         if (element) {
-            e.translateEvent(e, this.pos[0], this.pos[1]);
-            element.element.handleTouchEvents(type, e);
-            e.translateEvent(e, -this.pos[0], -this.pos[1]);
+            element.element.elements.forEach(el => {
+                if (e.touchPos[0] <= this.pos[0] + el.width() && e.touchPos[1] >= this.pos[0])
+                    el.handleTouchEvents(type, e);
+            });
         }
+        this.layoutManager.deactivate();
         switch (type) {
+            case ("touchstart"):
+                break;
             case ("touchend"):
                 if (this.dragItem) {
                     this.list.splice(clicked, 0, this.dragItem);
