@@ -543,10 +543,13 @@ class Game extends SquareAABBCollidable {
             
         }
         ctx.drawImage(this.main_buf.image, x, y);
-        this.guiManager.draw(ctx);
-        this.layer_manager.list.pos[0] = this.guiManager.x;
-        this.layer_manager.list.pos[1] = this.guiManager.y;
-        this.options_gui_manager.draw(ctx);
+        if(this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
+        {
+            this.guiManager.draw(ctx);
+            this.layer_manager.list.pos[0] = this.guiManager.x;
+            this.layer_manager.list.pos[1] = this.guiManager.y;
+            this.options_gui_manager.draw(ctx);
+        }
         const touchPos = this.touchListener.touchPos;
         if(this.draw_point_labels)
         {
