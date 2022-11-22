@@ -715,9 +715,9 @@ export class GuiCheckList {
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         e.translateEvent(e, this.pos[0], this.pos[1] - 30);
         if (element) {
-            element.element.elements.forEach(el => {
-                if (e.touchPos[0] <= this.pos[0] + el.width() && e.touchPos[1] >= this.pos[0])
-                    el.handleTouchEvents(type, e);
+            element.element.elementsPositions.forEach(el => {
+                if (e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[1] > this.pos[0] + el.x)
+                    el.element.handleTouchEvents(type, e);
             });
         }
         this.layoutManager.deactivate();
