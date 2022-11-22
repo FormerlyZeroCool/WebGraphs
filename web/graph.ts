@@ -241,7 +241,7 @@ class Game extends SquareAABBCollidable {
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [getWidth(), getHeight() - 50];
-        this.init(width, height, this.cell_dim[0], this.cell_dim[1]);
+        this.init(this.cell_dim[0], this.cell_dim[1], this.cell_dim[0], this.cell_dim[1]);
         this.guiManager = new SimpleGridLayoutManager([1,1000], [this.graph_start_x, getHeight()], 0, 30);
         this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
@@ -802,7 +802,6 @@ async function main()
     const header = document.getElementById("header");
     srand(Math.random() * max_32_bit_signed);
 
-
     const drawLoop = () => 
     {
         frame_count++;
@@ -845,7 +844,6 @@ async function main()
         requestAnimationFrame(drawLoop);
     }
     drawLoop();
-    game.resize(width, height - header!.clientHeight - 50);
 
 }
 main();
