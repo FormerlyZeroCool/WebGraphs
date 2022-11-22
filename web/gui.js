@@ -1158,7 +1158,7 @@ export class GuiCheckBox {
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
         ctx.clearRect(0, 0, this.width(), this.height());
-        ctx.fillRect(0, 0, this.width(), this.height());
+        //ctx.fillRect(0, 0, this.width(), this.height());
         ctx.fillStyle = "#000000";
         ctx.strokeStyle = "#000000";
         ctx.strokeRect(1, 1, this.canvas.width - 2, this.canvas.height - 2);
