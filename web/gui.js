@@ -1194,7 +1194,7 @@ export class Optional {
 ;
 ;
 export class GuiTextBox {
-    constructor(keyListener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "textBox_default", customFontFace = null) {
+    constructor(keyListener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "Helvetica", customFontFace = null) {
         this.handleKeyEvents = keyListener;
         this.outlineTextBox = outline;
         this.validationCallback = validationCallback;
@@ -1220,19 +1220,22 @@ export class GuiTextBox {
         this.dimensions = [width, height];
         this.fontSize = fontSize;
         this.fontName = fontName;
+        const customFontName = "textBox_default";
         {
             if (customFontFace) {
                 this.font = customFontFace;
                 this.font.family;
             }
             else
-                this.font = new FontFace(fontName, 'url(/web/fonts/Minecraft.ttf)');
+                this.font = new FontFace(customFontName, 'url(/web/fonts/Minecraft.ttf)');
             this.font.load().then((loaded_face) => {
+                this.fontName = fontName;
                 document.fonts.add(loaded_face);
                 this.drawInternalAndClear();
             }, (error) => {
-                this.font = new FontFace(fontName, 'url(/fonts/Minecraft.ttf)');
+                this.font = new FontFace(customFontName, 'url(/fonts/Minecraft.ttf)');
                 this.font.load().then((loaded_face) => {
+                    this.fontName = fontName;
                     document.fonts.add(loaded_face);
                     this.refresh();
                 }, (error) => {

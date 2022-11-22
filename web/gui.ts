@@ -1551,7 +1551,7 @@ export class GuiTextBox implements GuiElement {
     outlineTextBox:boolean;
     validationCallback:((tb:TextBoxEvent) => boolean) | null;
     constructor(keyListener:boolean, width:number, submit:GuiButton | null = null, fontSize:number = 16, height:number = 2*fontSize, flags:number = GuiTextBox.default,
-        validationCallback:((event:TextBoxEvent) => boolean) | null = null, selectedColor:RGB = new RGB(80, 80, 220), unSelectedColor:RGB = new RGB(100, 100, 100), outline:boolean = true, fontName = "textBox_default", customFontFace:FontFace | null = null)
+        validationCallback:((event:TextBoxEvent) => boolean) | null = null, selectedColor:RGB = new RGB(80, 80, 220), unSelectedColor:RGB = new RGB(100, 100, 100), outline:boolean = true, fontName = "Helvetica", customFontFace:FontFace | null = null)
     {
         this.handleKeyEvents = keyListener;
         this.outlineTextBox = outline;
@@ -1578,19 +1578,23 @@ export class GuiTextBox implements GuiElement {
         this.dimensions = [width, height];
         this.fontSize = fontSize;
         this.fontName = fontName;
+
+        const customFontName = "textBox_default"
         {
             if(customFontFace){
                 this.font = customFontFace;
                 this.font.family
             }
             else
-                this.font = new FontFace(fontName, 'url(/web/fonts/Minecraft.ttf)');
+                this.font = new FontFace(customFontName, 'url(/web/fonts/Minecraft.ttf)');
             this.font.load().then((loaded_face) =>{
+                this.fontName = fontName
                 document.fonts.add(loaded_face);
                 this.drawInternalAndClear();
             }, (error:Error) => {
-                this.font = new FontFace(fontName, 'url(/fonts/Minecraft.ttf)');
+                this.font = new FontFace(customFontName, 'url(/fonts/Minecraft.ttf)');
                 this.font.load().then((loaded_face:any) => {
+                        this.fontName = fontName
                         document.fonts.add(loaded_face);
                         this.refresh();
                     }, (error:Error) => {
