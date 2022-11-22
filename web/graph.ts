@@ -183,7 +183,6 @@ class Game extends SquareAABBCollidable {
     draw_axises:boolean;
     draw_axis_labels:boolean;
     functions:Function[];
-    screen_buf:Sprite[];
     main_buf:Sprite;
     background_color:RGB;
     guiManager:SimpleGridLayoutManager;
@@ -229,8 +228,8 @@ class Game extends SquareAABBCollidable {
         this.guiManager = new SimpleGridLayoutManager([1,1000], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, 
             (layer:number, state:boolean) => this.repaint = true,
-            (layer:number) => {this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); this.repaint = true},
-            () => this.screen_buf.length,
+            (layer:number) => {this.functions.splice(layer, 1); this.repaint = true},
+            () => this.functions.length,
             (layer:number) => this.repaint = true,
             (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); return 0},
             (l1:number, l2:number) => {this.swap_layers(l1, l2); this.repaint = true;},
@@ -249,6 +248,16 @@ class Game extends SquareAABBCollidable {
         //this.restart_game();
         this.try_render_functions();
     }
+    init(width:number, height:number, cell_width:number, cell_height:number):void
+    {
+        this.resize(width, height);
+
+        this.background_color = new RGB(0, 0, 0, 0);
+        this.cell_dim = [cell_width, cell_height];
+        this.main_buf = this.new_sprite();
+        this.axises = this.new_sprite();
+        this.repaint = true;
+    }
     calc_bounds():void
     {
         this.x_min = this.x_translation - 1/this.scale;
@@ -260,7 +269,6 @@ class Game extends SquareAABBCollidable {
     }
     add_layer():void
     {
-        this.screen_buf.push(this.new_sprite());
         this.functions.push(new Function(""));
         this.repaint = true;
     }
@@ -271,7 +279,7 @@ class Game extends SquareAABBCollidable {
     }
     set_place(index:number, color:number):boolean
     {
-        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         if(view[index] !== undefined)
         {
             view[index] = color;
@@ -281,7 +289,7 @@ class Game extends SquareAABBCollidable {
     }
     get_place(index:number):number | null
     {
-        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         if(view[index] !== undefined)
         {
             return view[index];
@@ -290,12 +298,12 @@ class Game extends SquareAABBCollidable {
     }
     is_background(index:number):boolean
     {
-        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         return this.get_place(index) == this.background_color.color;
     }
     clear_place(removed:number):boolean
     {
-        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         if(view[removed] !== undefined)
         {
             view[removed] = this.background_color.color;
@@ -307,15 +315,6 @@ class Game extends SquareAABBCollidable {
     {
         this.init(this.width, this.height, this.cell_dim[0], this.cell_dim[1]);
     }
-    init(width:number, height:number, cell_width:number, cell_height:number):void
-    {
-        this.resize(width, height);
-        this.background_color = new RGB(0, 0, 0, 0);
-        this.cell_dim = [cell_width, cell_height];
-        const pixels = (new Array<RGB>(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
-        const old_buf = this.screen_buf;
-        this.screen_buf = [];
-    }
     new_sprite():Sprite
     {   
         const pixels = (new Array<RGB>(this.cell_dim[1] * this.cell_dim[0])).fill(this.background_color, 0, this.cell_dim[1] * this.cell_dim[0]);
@@ -326,6 +325,7 @@ class Game extends SquareAABBCollidable {
     {
         this.width = width;
         this.height = height;
+        this.calc_bounds();
     }
     draw_point(x:number, y:number, color:number, view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer)):void
     {
@@ -370,12 +370,12 @@ class Game extends SquareAABBCollidable {
         this.calc_bounds();
         let functions:Function[] = this.functions;
         //this.screen_buf = [];
-        this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
+        //this.main_buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
         this.layer_manager.list.list.forEach((li:GuiListItem, index:number) => {
             const text = li.textBox.text;
-            if(!this.screen_buf[index])
+            if(!this.main_buf)
             {
-                this.screen_buf.push(this.new_sprite());
+                this.main_buf = (this.new_sprite());
             }
             if(!this.functions[index])
             {
@@ -388,37 +388,37 @@ class Game extends SquareAABBCollidable {
                 functions[index].compile(text);
         });
         
+        const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         functions.forEach((foo:Function, index:number) => {
-            if(!this.screen_buf[index].imageData)
+            if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
-                this.screen_buf[index].imageData = this.screen_buf[index].createImageData();
-            }
-            const view = new Int32Array(this.screen_buf[index].imageData!.data.buffer);
-            this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
-            this.screen_buf[index].ctx.lineWidth = 2;
-            //build table to be rendered
-            foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
+                //build table to be rendered
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
 
-            let last_x = 0;
-            let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
-            
-            this.screen_buf[index].ctx.beginPath();
-            for(let i = 0; i < foo.table.length; i++)
-            {
-                const x = this.x_min + foo.dx * i;
-                const y = -foo.table[i];
-                const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
-                const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
-                //render to buffers
-                if(sx !== last_x || sy !== last_y)
+                //render table to main buffer
+                let last_x = 0;
+                let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
+                
+                this.main_buf.ctx.beginPath();
+                this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
+                this.main_buf.ctx.lineWidth = 2;
+                for(let i = 0; i < foo.table.length; i++)
                 {
-                    this.screen_buf[index].ctx.moveTo(last_x, last_y)
-                    this.screen_buf[index].ctx.lineTo(sx, sy);
+                    const x = this.x_min + foo.dx * i;
+                    const y = -foo.table[i];
+                    const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
+                    const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
+                    //render to buffers
+                    if(sx !== last_x || sy !== last_y)
+                    {
+                        this.main_buf.ctx.moveTo(last_x, last_y)
+                        this.main_buf.ctx.lineTo(sx, sy);
+                    }
+                    last_x = sx;
+                    last_y = sy;
                 }
-                last_x = sx;
-                last_y = sy;
+                this.main_buf.ctx.stroke();
             }
-            this.screen_buf[index].ctx.stroke();
         });
     }
     render_axises(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number):void
@@ -467,7 +467,7 @@ class Game extends SquareAABBCollidable {
                 while(i < this.x_max)
                 {
                     const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
-                    if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*3/4)
+                    if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*15/16)
                     {
                         last_render_x = screen_x + 3;
                         const text = this.format_number(i);
@@ -515,6 +515,7 @@ class Game extends SquareAABBCollidable {
     {
         if(this.repaint)
         {
+            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
             this.try_render_functions();
             const font_size = 24;
@@ -522,13 +523,8 @@ class Game extends SquareAABBCollidable {
             {
                 ctx.font = `${font_size}px Helvetica`;
             }
-            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
-            for(let index = 0; index < this.screen_buf.length; index++) {
-                    const buf = this.screen_buf[index];
-                    if(!this.layer_manager.list.list[index] || this.layer_manager.list.list[index].checkBox.checked)
-                    this.main_buf.ctx.drawImage(buf.image, x, y, buf.width, buf.height);
-                };
+            
         }
         ctx.drawImage(this.main_buf.image, x, y, width, height);
         this.guiManager.draw(ctx, x, y);
@@ -679,6 +675,12 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time: number): void 
     {
+        if(this.width !== getWidth() || this.height !== getHeight())
+        {
+            this.init(getWidth(), getHeight(), getWidth(), getHeight());
+            this.calc_bounds();
+            this.repaint = true;
+        }
     }
 };
 const keyboardHandler = new KeyboardHandler();

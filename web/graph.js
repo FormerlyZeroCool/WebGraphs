@@ -157,7 +157,7 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); this.repaint = true; }, () => this.screen_buf.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
+        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
             return this.functions[layer] ? this.functions[layer].color : null;
         });
         this.axises = this.new_sprite();
@@ -170,6 +170,14 @@ class Game extends SquareAABBCollidable {
         //this.restart_game();
         this.try_render_functions();
     }
+    init(width, height, cell_width, cell_height) {
+        this.resize(width, height);
+        this.background_color = new RGB(0, 0, 0, 0);
+        this.cell_dim = [cell_width, cell_height];
+        this.main_buf = this.new_sprite();
+        this.axises = this.new_sprite();
+        this.repaint = true;
+    }
     calc_bounds() {
         this.x_min = this.x_translation - 1 / this.scale;
         this.x_max = this.x_translation + 1 / this.scale;
@@ -179,7 +187,6 @@ class Game extends SquareAABBCollidable {
         this.deltaY = this.y_max - this.y_min;
     }
     add_layer() {
-        this.screen_buf.push(this.new_sprite());
         this.functions.push(new Function(""));
         this.repaint = true;
     }
@@ -188,7 +195,7 @@ class Game extends SquareAABBCollidable {
         this.functions.splice(l2, 0, temp);
     }
     set_place(index, color) {
-        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData.data.buffer);
         if (view[index] !== undefined) {
             view[index] = color;
             return true;
@@ -196,18 +203,18 @@ class Game extends SquareAABBCollidable {
         return false;
     }
     get_place(index) {
-        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData.data.buffer);
         if (view[index] !== undefined) {
             return view[index];
         }
         return null;
     }
     is_background(index) {
-        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData.data.buffer);
         return this.get_place(index) == this.background_color.color;
     }
     clear_place(removed) {
-        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const view = new Int32Array(this.main_buf.imageData.data.buffer);
         if (view[removed] !== undefined) {
             view[removed] = this.background_color.color;
             return true;
@@ -217,14 +224,6 @@ class Game extends SquareAABBCollidable {
     restart_game() {
         this.init(this.width, this.height, this.cell_dim[0], this.cell_dim[1]);
     }
-    init(width, height, cell_width, cell_height) {
-        this.resize(width, height);
-        this.background_color = new RGB(0, 0, 0, 0);
-        this.cell_dim = [cell_width, cell_height];
-        const pixels = (new Array(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
-        const old_buf = this.screen_buf;
-        this.screen_buf = [];
-    }
     new_sprite() {
         const pixels = (new Array(this.cell_dim[1] * this.cell_dim[0])).fill(this.background_color, 0, this.cell_dim[1] * this.cell_dim[0]);
         return new Sprite(pixels, this.cell_dim[0], this.cell_dim[1], false);
@@ -232,6 +231,7 @@ class Game extends SquareAABBCollidable {
     resize(width, height) {
         this.width = width;
         this.height = height;
+        this.calc_bounds();
     }
     draw_point(x, y, color, view = new Int32Array(this.screen_buf.imageData.data.buffer)) {
         const x_scale = 1 / this.width * this.cell_dim[0];
@@ -269,11 +269,11 @@ class Game extends SquareAABBCollidable {
         this.calc_bounds();
         let functions = this.functions;
         //this.screen_buf = [];
-        this.screen_buf.forEach(buf => buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]));
+        //this.main_buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
         this.layer_manager.list.list.forEach((li, index) => {
             const text = li.textBox.text;
-            if (!this.screen_buf[index]) {
-                this.screen_buf.push(this.new_sprite());
+            if (!this.main_buf) {
+                this.main_buf = (this.new_sprite());
             }
             if (!this.functions[index]) {
                 const color = new RGB(index * 30 % 256, (index + 1) * 150 % 256, index * 85 % 256, 255);
@@ -284,32 +284,32 @@ class Game extends SquareAABBCollidable {
             else
                 functions[index].compile(text);
         });
+        const view = new Int32Array(this.main_buf.imageData.data.buffer);
         functions.forEach((foo, index) => {
-            if (!this.screen_buf[index].imageData) {
-                this.screen_buf[index].imageData = this.screen_buf[index].createImageData();
-            }
-            const view = new Int32Array(this.screen_buf[index].imageData.data.buffer);
-            this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
-            this.screen_buf[index].ctx.lineWidth = 2;
-            //build table to be rendered
-            foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
-            let last_x = 0;
-            let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
-            this.screen_buf[index].ctx.beginPath();
-            for (let i = 0; i < foo.table.length; i++) {
-                const x = this.x_min + foo.dx * i;
-                const y = -foo.table[i];
-                const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
-                const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
-                //render to buffers
-                if (sx !== last_x || sy !== last_y) {
-                    this.screen_buf[index].ctx.moveTo(last_x, last_y);
-                    this.screen_buf[index].ctx.lineTo(sx, sy);
+            if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
+                //build table to be rendered
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
+                //render table to main buffer
+                let last_x = 0;
+                let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
+                this.main_buf.ctx.beginPath();
+                this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
+                this.main_buf.ctx.lineWidth = 2;
+                for (let i = 0; i < foo.table.length; i++) {
+                    const x = this.x_min + foo.dx * i;
+                    const y = -foo.table[i];
+                    const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
+                    const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
+                    //render to buffers
+                    if (sx !== last_x || sy !== last_y) {
+                        this.main_buf.ctx.moveTo(last_x, last_y);
+                        this.main_buf.ctx.lineTo(sx, sy);
+                    }
+                    last_x = sx;
+                    last_y = sy;
                 }
-                last_x = sx;
-                last_y = sy;
+                this.main_buf.ctx.stroke();
             }
-            this.screen_buf[index].ctx.stroke();
         });
     }
     render_axises(canvas, ctx, x, y, width, height) {
@@ -351,7 +351,7 @@ class Game extends SquareAABBCollidable {
                 ctx.lineWidth = 3;
                 while (i < this.x_max) {
                     const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
-                    if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x * 3 / 4) {
+                    if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x * 15 / 16) {
                         last_render_x = screen_x + 3;
                         const text = this.format_number(i);
                         const text_width = ctx.measureText(text).width;
@@ -390,20 +390,14 @@ class Game extends SquareAABBCollidable {
     }
     draw(canvas, ctx, x, y, width, height) {
         if (this.repaint) {
+            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
             this.try_render_functions();
             const font_size = 24;
             if (+ctx.font.split("px")[0] != font_size) {
                 ctx.font = `${font_size}px Helvetica`;
             }
-            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
-            for (let index = 0; index < this.screen_buf.length; index++) {
-                const buf = this.screen_buf[index];
-                if (!this.layer_manager.list.list[index] || this.layer_manager.list.list[index].checkBox.checked)
-                    this.main_buf.ctx.drawImage(buf.image, x, y, buf.width, buf.height);
-            }
-            ;
         }
         ctx.drawImage(this.main_buf.image, x, y, width, height);
         this.guiManager.draw(ctx, x, y);
@@ -524,6 +518,11 @@ class Game extends SquareAABBCollidable {
         }
     }
     update_state(delta_time) {
+        if (this.width !== getWidth() || this.height !== getHeight()) {
+            this.init(getWidth(), getHeight(), getWidth(), getHeight());
+            this.calc_bounds();
+            this.repaint = true;
+        }
     }
 }
 ;
