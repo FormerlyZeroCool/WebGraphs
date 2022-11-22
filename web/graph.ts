@@ -697,8 +697,8 @@ async function main()
         console.log(normalized_delta * multiplier);
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
-        if(game.scale > Math.pow(2, 51))
-            game.scale = Math.pow(2, 51);
+        if(Math.abs(game.scale) > Math.pow(2, 51))
+            game.scale = Math.pow(2, 51) * (game.scale < 0 ? -1 : 1);
         else if(game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
@@ -714,8 +714,8 @@ async function main()
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale += scaler * Math.abs(normalized_delta) * 100;
-        if(game.scale > Math.pow(2, 51))
-            game.scale = Math.pow(2, 51);
+        if(Math.abs(game.scale) > Math.pow(2, 51))
+            game.scale = Math.pow(2, 51) * (game.scale < 0 ? -1 : 1);
         game.repaint = true;
         event.preventDefault();
     });
@@ -723,8 +723,8 @@ async function main()
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale -= scaler * Math.abs(normalized_delta) * 100;
-        if(game.scale <= Math.pow(2, -51))
-            game.scale = Math.pow(2, -51);
+        if(Math.abs(game.scale) < Math.pow(2, -51))
+            game.scale = Math.pow(2, -51) * (game.scale < 0 ? -1 : 1);
         game.repaint = true;
         event.preventDefault();
     });
