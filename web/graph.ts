@@ -705,13 +705,19 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time: number): void 
     {
-        const ms_to_fade = 250
-        if(this.ui_alpha < 1 && this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
-            this.ui_alpha += delta_time / ms_to_fade;
-        else if(this.ui_alpha > 0)
-            this.ui_alpha -= delta_time / ms_to_fade;
+        const ms_to_fade = 250;
+        if(!this.multi_touchListener.registeredMultiTouchEvent)
+        {
+            if(this.ui_alpha < 1 && this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
+                this.ui_alpha += delta_time / ms_to_fade;
+            else if(this.ui_alpha > 0)
+                this.ui_alpha -= delta_time / ms_to_fade;
+                
+            this.ui_alpha = clamp(this.ui_alpha, 0, 1);
+        }
+        else
+            this.ui_alpha = 0;
 
-        this.ui_alpha = clamp(this.ui_alpha, 0, 1);
     }
 };
 const keyboardHandler = new KeyboardHandler();
