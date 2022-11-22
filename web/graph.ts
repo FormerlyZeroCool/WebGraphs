@@ -350,44 +350,6 @@ class Game extends SquareAABBCollidable {
         this.height = height;
         this.calc_bounds();
     }
-    draw_point(x:number, y:number, color:number, view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer)):void
-    {
-        const x_scale:number = 1/this.width * this.cell_dim[0];
-        const y_scale:number = 1/this.height * this.cell_dim[1];
-        const x1 = x * x_scale;
-        const y1 = y * y_scale;
-        view[Math.floor(x1) + Math.floor(y1) * this.cell_dim[0]] = color;
-    }
-    draw_line_segment(x1:number, x2:number, y1:number, y2:number, color:number, view:Int32Array = new Int32Array(this.screen_buf[0].imageData!.data.buffer)):void
-    {
-        //draw line from current touch pos to the touchpos minus the deltas
-        //calc equation for line
-        const deltaY = y2 - y1;
-        const deltaX = x2 - x1;
-        const m:number = deltaY/deltaX;
-        const b:number = y2-m*x2;
-        const delta:number = 1;
-        if(Math.abs(deltaX) > Math.abs(deltaY))
-        {
-            const min:number = Math.min(x1, x2);
-            const max:number = Math.max(x1, x2);
-            for(let x = min; x < max; x+=delta)
-            {
-                let y:number = Math.abs(deltaX) > 0 ? m*(x) + b : y2;
-                view[Math.floor(x) + Math.floor(y) * this.cell_dim[0]] = color;
-            }
-        }
-        else
-        {
-            const min:number = Math.min(y1, y2);
-            const max:number = Math.max(y1, y2);
-            for(let y = min; y < max; y+=delta)
-            {
-                const x:number = Math.abs(deltaX)>0?(y - b)/m:x2;
-                view[Math.floor(x) + Math.floor(y) * this.cell_dim[0]] = color;
-            }
-        } 
-    }
     try_render_functions()
     {
         this.calc_bounds();
@@ -449,7 +411,7 @@ class Game extends SquareAABBCollidable {
         if(this.draw_axises)
         {
             const font_size = 20;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? font_size : this.main_buf.height;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
             let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
             
             this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
@@ -496,10 +458,16 @@ class Game extends SquareAABBCollidable {
                         const text = this.format_number(i);
                         const text_width = ctx.measureText(text).width;
                         last_render_text_width = text_width;
-                        ctx.strokeText(text, screen_x + 3, screen_space_x_axis - 6);
-                        ctx.fillText(text, screen_x + 3, screen_space_x_axis - 6);
+
                         ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                         ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                        let text_y = screen_space_x_axis;
+                        if(text_y - font_size < 0)
+                        {
+                            text_y += font_size + 10;
+                        }
+                        ctx.strokeText(text, screen_x + 3, text_y - 6);
+                        ctx.fillText(text, screen_x + 3, text_y - 6);
                     }
                     
                     i += delta_x;
@@ -538,6 +506,7 @@ class Game extends SquareAABBCollidable {
     {
         if(this.repaint)
         {
+            this.main_buf.ctx.imageSmoothingEnabled = false;
             this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
             this.try_render_functions();
