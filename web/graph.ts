@@ -693,8 +693,11 @@ async function main()
     };
     canvas.addEventListener("wheel", (e) => {
         //e.preventDefault();
+        const normalized_delta = e.deltaY / getHeight();
+        const multiplier = 100;
+        console.log(normalized_delta * multiplier);
         const scaler = game.scale / 100;
-        game.scale -= e.deltaY * scaler;
+        game.scale -= normalized_delta * multiplier * scaler;
         if(game.scale <= 0)
             game.scale = 0.00000000001;
         game.repaint = true;
