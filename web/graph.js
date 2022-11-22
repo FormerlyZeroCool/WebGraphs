@@ -400,7 +400,6 @@ class Game extends SquareAABBCollidable {
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             for (let index = 0; index < this.screen_buf.length; index++) {
                 const buf = this.screen_buf[index];
-                //buf.refreshImage(); no need since we render directly onto sprite canvases
                 if (!this.layer_manager.list.list[index] || this.layer_manager.list.list[index].checkBox.checked)
                     this.main_buf.ctx.drawImage(buf.image, x, y, buf.width, buf.height);
             }
@@ -554,7 +553,7 @@ async function main() {
     const multi_touch_listener = new MultiTouchListener(canvas);
     multi_touch_listener.registerCallBack("pinchIn", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
-        const scaler = game.scale / 4;
+        const scaler = game.scale / 10;
         game.scale += scaler * Math.abs(normalized_delta) * 100;
         if (game.scale <= 0)
             game.scale = 0.00000000001;
@@ -563,7 +562,7 @@ async function main() {
     });
     multi_touch_listener.registerCallBack("pinchOut", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
-        const scaler = game.scale / 4;
+        const scaler = game.scale / 10;
         game.scale -= scaler * Math.abs(normalized_delta) * 100;
         if (game.scale <= 0)
             game.scale = 0.00000000001;
