@@ -748,7 +748,7 @@ async function main()
     });
     let height = getHeight();
     let width = getWidth();
-    let game = new Game(touchListener, 0, 0, height, width);
+    let game = new Game(multi_touch_listener, touchListener, 0, 0, height, width);
     window.game = game;
     let low_fps:boolean = true;
     let draw = false;
