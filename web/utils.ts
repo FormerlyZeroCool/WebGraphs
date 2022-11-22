@@ -2,6 +2,8 @@
 export interface FilesHaver{
     files:FileList;
 };
+
+export function clamp(num, min, max):number { return Math.min(Math.max(num, min), max) }
 export function round_with_precision(value:number, precision:number):number
 {
     const mult = Math.pow(10, Math.ceil(precision - Math.log10(Math.abs(value))));

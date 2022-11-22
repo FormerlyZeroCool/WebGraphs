@@ -1,4 +1,5 @@
 ;
+export function clamp(num, min, max) { return Math.min(Math.max(num, min), max); }
 export function round_with_precision(value, precision) {
     const mult = Math.pow(10, Math.ceil(precision - Math.log10(Math.abs(value))));
     const rounded = Math.round(value * mult) / mult;
