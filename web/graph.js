@@ -157,9 +157,7 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
-            return this.functions[layer] ? this.functions[layer].color : null;
-        });
+        this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
@@ -177,6 +175,15 @@ class Game extends SquareAABBCollidable {
         this.main_buf = this.new_sprite();
         this.axises = this.new_sprite();
         this.repaint = true;
+    }
+    new_layer_manager() {
+        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
+            return this.functions[layer] ? this.functions[layer].color : null;
+        });
+        if (this.layer_manager) {
+            layer_manager.list.list = this.layer_manager.list.list;
+        }
+        return layer_manager;
     }
     calc_bounds() {
         this.x_min = this.x_translation - 1 / this.scale;
@@ -518,11 +525,6 @@ class Game extends SquareAABBCollidable {
         }
     }
     update_state(delta_time) {
-        if (this.width !== getWidth() || this.height !== getHeight()) {
-            this.init(getWidth(), getHeight(), getWidth(), getHeight());
-            this.calc_bounds();
-            this.repaint = true;
-        }
     }
 }
 ;
@@ -629,9 +631,9 @@ async function main() {
         if (getWidth() !== width || getHeight() !== height) {
             width = getWidth();
             height = getHeight();
-            game.resize(width, height - 100);
             canvas.width = width;
             canvas.height = height;
+            game.init(width, height - 50, width, height - 50);
         }
         dt = Date.now() - start;
         time_queue.push(dt);
@@ -659,6 +661,6 @@ async function main() {
         requestAnimationFrame(drawLoop);
     };
     drawLoop();
-    game.resize(width, height - header.clientHeight - 100);
+    game.resize(width, height - header.clientHeight - 50);
 }
 main();

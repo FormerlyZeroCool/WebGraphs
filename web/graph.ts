@@ -226,18 +226,7 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1,1000], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, 
-            (layer:number, state:boolean) => this.repaint = true,
-            (layer:number) => {this.functions.splice(layer, 1); this.repaint = true},
-            () => this.functions.length,
-            (layer:number) => this.repaint = true,
-            (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); return 0},
-            (l1:number, l2:number) => {this.swap_layers(l1, l2); this.repaint = true;},
-            (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null,
-            (layer:number) => {
-                return this.functions[layer]? this.functions[layer].color : null;
-            }
-            );
+        this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
@@ -257,6 +246,26 @@ class Game extends SquareAABBCollidable {
         this.main_buf = this.new_sprite();
         this.axises = this.new_sprite();
         this.repaint = true;
+    }
+    new_layer_manager():LayerManagerTool
+    {
+        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, 
+        (layer:number, state:boolean) => this.repaint = true,
+        (layer:number) => {this.functions.splice(layer, 1); this.repaint = true},
+        () => this.functions.length,
+        (layer:number) => this.repaint = true,
+        (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); return 0},
+        (l1:number, l2:number) => {this.swap_layers(l1, l2); this.repaint = true;},
+        (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null,
+        (layer:number) => {
+            return this.functions[layer]? this.functions[layer].color : null;
+        }
+        );
+        if(this.layer_manager)
+        {
+            layer_manager.list.list = this.layer_manager.list.list;
+        }
+        return layer_manager;
     }
     calc_bounds():void
     {
@@ -675,12 +684,6 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time: number): void 
     {
-        if(this.width !== getWidth() || this.height !== getHeight())
-        {
-            this.init(getWidth(), getHeight(), getWidth(), getHeight());
-            this.calc_bounds();
-            this.repaint = true;
-        }
     }
 };
 const keyboardHandler = new KeyboardHandler();
@@ -797,9 +800,10 @@ async function main()
         {
             width = getWidth();
             height = getHeight();
-            game.resize(width, height - 100);
+
             canvas.width = width;
             canvas.height = height;
+            game.init(width, height - 50, width, height - 50);
         }
         dt = Date.now() - start;
         time_queue.push(dt);
@@ -830,7 +834,7 @@ async function main()
         requestAnimationFrame(drawLoop);
     }
     drawLoop();
-    game.resize(width, height - header!.clientHeight - 100);
+    game.resize(width, height - header!.clientHeight - 50);
 
 }
 main();
