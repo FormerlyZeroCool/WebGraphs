@@ -320,49 +320,51 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
             this.axises.ctx.moveTo(screen_space_y_axis, 0);
             this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
-            const msd_x = Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
-            const delta_x = Math.floor(this.deltaX * msd_x * 10) / (msd_x * 100);
-            let closest_start_x = Math.ceil(this.x_min * msd_x * 100) / (msd_x * 100);
-            closest_start_x -= closest_start_x % delta_x;
-            const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.deltaY)));
-            const delta_y = Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
-            let closest_start_y = Math.ceil(this.y_min * msd_y * 10) / (msd_y * 10);
-            closest_start_y -= closest_start_y % delta_y;
-            let i = closest_start_x;
-            let last_render_x = -1;
-            let last_render_text_width = 0;
-            ctx.font = `${font_size}px Helvetica`;
-            while (i < this.x_max) {
-                const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
-                if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x / 16) {
-                    last_render_x = screen_x + 3;
-                    const text = this.format_number(i);
-                    const text_width = ctx.measureText(text).width;
-                    last_render_text_width = text_width;
-                    ctx.fillText(text, screen_x + 3, screen_space_x_axis);
-                    ctx.strokeText(text, screen_x + 3, screen_space_x_axis);
-                    ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                }
-                i += delta_x;
-            }
-            i = closest_start_y;
-            let last_render_y = -font_size;
-            const old_screen_space_y_axis = screen_space_y_axis;
-            while (i <= this.y_max) {
-                const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
-                screen_space_y_axis = old_screen_space_y_axis;
-                if (screen_y > last_render_y + font_size * 2) {
-                    last_render_y = screen_y;
-                    const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 + "";
-                    const text_width = ctx.measureText(text).width;
-                    if (screen_space_y_axis + text_width > this.main_buf.width) {
-                        screen_space_y_axis -= text_width + 10;
+            if (this.draw_axis_labels) {
+                const msd_x = Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
+                const delta_x = Math.floor(this.deltaX * msd_x * 10) / (msd_x * 100);
+                let closest_start_x = Math.ceil(this.x_min * msd_x * 100) / (msd_x * 100);
+                closest_start_x -= closest_start_x % delta_x;
+                const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.deltaY)));
+                const delta_y = Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
+                let closest_start_y = Math.ceil(this.y_min * msd_y * 10) / (msd_y * 10);
+                closest_start_y -= closest_start_y % delta_y;
+                let i = closest_start_x;
+                let last_render_x = -1;
+                let last_render_text_width = 0;
+                ctx.font = `${font_size}px Helvetica`;
+                while (i < this.x_max) {
+                    const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
+                    if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x / 16) {
+                        last_render_x = screen_x + 3;
+                        const text = this.format_number(i);
+                        const text_width = ctx.measureText(text).width;
+                        last_render_text_width = text_width;
+                        ctx.fillText(text, screen_x + 3, screen_space_x_axis);
+                        ctx.strokeText(text, screen_x + 3, screen_space_x_axis);
+                        ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                     }
-                    ctx.fillText(text, screen_space_y_axis + 3, screen_y);
-                    ctx.strokeText(text, screen_space_y_axis + 3, screen_y);
-                    ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                    i += delta_x;
                 }
-                i += delta_y;
+                i = closest_start_y;
+                let last_render_y = -font_size;
+                const old_screen_space_y_axis = screen_space_y_axis;
+                while (i <= this.y_max) {
+                    const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
+                    screen_space_y_axis = old_screen_space_y_axis;
+                    if (screen_y > last_render_y + font_size * 2) {
+                        last_render_y = screen_y;
+                        const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 + "";
+                        const text_width = ctx.measureText(text).width;
+                        if (screen_space_y_axis + text_width > this.main_buf.width) {
+                            screen_space_y_axis -= text_width + 10;
+                        }
+                        ctx.fillText(text, screen_space_y_axis + 3, screen_y);
+                        ctx.strokeText(text, screen_space_y_axis + 3, screen_y);
+                        ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                    }
+                    i += delta_y;
+                }
             }
             this.axises.ctx.stroke();
             ctx.drawImage(this.axises.image, x, y, width, height);
