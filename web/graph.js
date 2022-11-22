@@ -334,7 +334,7 @@ class Game extends SquareAABBCollidable {
             ctx.font = `${font_size}px Helvetica`;
             while (i < this.x_max) {
                 const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
-                if (screen_x > last_render_x + last_render_text_width + 10) {
+                if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x / 16) {
                     last_render_x = screen_x + 3;
                     const text = this.format_number(i);
                     const text_width = ctx.measureText(text).width;
@@ -353,7 +353,7 @@ class Game extends SquareAABBCollidable {
                 screen_space_y_axis = old_screen_space_y_axis;
                 if (screen_y > last_render_y + font_size * 2) {
                     last_render_y = screen_y;
-                    const text = this.format_number(-i);
+                    const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 + "";
                     const text_width = ctx.measureText(text).width;
                     if (screen_space_y_axis + text_width > this.main_buf.width) {
                         screen_space_y_axis -= text_width + 10;
