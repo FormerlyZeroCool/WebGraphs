@@ -155,21 +155,7 @@ class Function {
             this.dx = 0;
         }
     }
-    calc_for(x:number):number
-    {
-        if(this.error_message === null)
-        {
-            try {
-                return this.compiled(x);
-            } catch (error:any)
-            {
-                console.log(error.message);
-                this.error_message = error.message;
-            }
-        }
-        return this.table;
-    }
-    call(x_min:number, x_max:number, dx:number):number[]
+    calc_for(x_min:number, x_max:number, dx:number):number[]
     {
         if(this.error_message === null)
         {
@@ -189,6 +175,20 @@ class Function {
             }
         }
         return this.table;
+    }
+    call(x:number):number | null
+    {
+        if(this.error_message === null)
+        {
+            try {
+                return this.compiled(x);
+            } catch (error:any)
+            {
+                console.log(error.message);
+                this.error_message = error.message;
+            }
+        }
+        return null;
     }
 };
 class Game extends SquareAABBCollidable {

@@ -112,19 +112,7 @@ class Function {
             this.dx = 0;
         }
     }
-    calc_for(x) {
-        if (this.error_message === null) {
-            try {
-                return this.compiled(x);
-            }
-            catch (error) {
-                console.log(error.message);
-                this.error_message = error.message;
-            }
-        }
-        return this.table;
-    }
-    call(x_min, x_max, dx) {
+    calc_for(x_min, x_max, dx) {
         if (this.error_message === null) {
             this.x_max = x_max;
             this.x_min = x_min;
@@ -141,6 +129,18 @@ class Function {
             }
         }
         return this.table;
+    }
+    call(x) {
+        if (this.error_message === null) {
+            try {
+                return this.compiled(x);
+            }
+            catch (error) {
+                console.log(error.message);
+                this.error_message = error.message;
+            }
+        }
+        return null;
     }
 }
 ;
