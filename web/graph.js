@@ -28,13 +28,13 @@ class LayerManagerTool {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array, callback_get_non_error_background_color);
-        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${this.runningId++}`); this.callback_onclick_event(0); }, "Add Function", this.layoutManager.width() / 2, 80, 16);
+        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${this.runningId++}`); this.callback_onclick_event(0); }, "Add Function", this.layoutManager.width() / 2, 75, 16);
         this.layoutManager.addElement(new GuiLabel("Functions list:", this.layoutManager.width()));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
-        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 80, 16));
+        this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 75, 16));
         this.runningId = 2;
-        this.pushList(`x*x`);
+        this.pushList(`sin(x*x)`);
         this.list.refresh();
     }
     deleteItem(index = this.list.selected()) {
