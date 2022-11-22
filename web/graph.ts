@@ -155,7 +155,21 @@ class Function {
             this.dx = 0;
         }
     }
-    calc_for(x_min:number, x_max:number, dx:number):number[]
+    calc_for(x:number):number
+    {
+        if(this.error_message === null)
+        {
+            try {
+                return this.compiled(x);
+            } catch (error:any)
+            {
+                console.log(error.message);
+                this.error_message = error.message;
+            }
+        }
+        return this.table;
+    }
+    call(x_min:number, x_max:number, dx:number):number[]
     {
         if(this.error_message === null)
         {
@@ -603,10 +617,9 @@ class Game extends SquareAABBCollidable {
     {
         const dim = 10;
         let text:string;
-        if(Math.abs(value) < 1 << 16 && Math.abs(value) > 0.000001)
+        if(Math.abs(value) < 1 << 16 && Math.abs(value) > 0.0001)
         {
             text = `${round_with_precision(value, precision + 2)}`;
-
         }
         else
         {
@@ -650,7 +663,7 @@ class Game extends SquareAABBCollidable {
     }
     traverse_df(start:number, apply:(index:number, color:number) => number, verifier:(index:number, color:number) => boolean):void
     {
-        const view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const view:Int32Array = new Int32Array(this.main_buf.imageData!.data.buffer);
         const checked_map:Int32Array = new Int32Array(view.length);
         checked_map.fill(0, 0, checked_map.length);
         const stack:number[] = [];
