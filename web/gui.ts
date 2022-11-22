@@ -911,7 +911,7 @@ export class GuiCheckList implements GuiElement {
         if(element)
         {
             (<GuiListItem> element.element).elementsPositions.forEach(el => {
-                if(e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[1] > this.pos[0] + el.x)
+                if(e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[0] > this.pos[0] + el.x)
                     el.element.handleTouchEvents(type, e);
             });
         }
