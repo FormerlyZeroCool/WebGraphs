@@ -1296,13 +1296,15 @@ export class GuiButton implements GuiElement {
     {
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
+        ctx.fillStyle = new RGB(0, 0, 0, 75).htmlRBGA();
         ctx.fillRect(0, 0, this.width(), this.height());
-        ctx.strokeRect(0, 0, this.width(), this.height());
+        
         ctx.fillStyle = "#000000";
         const textWidth:number = ctx.measureText(this.text).width;
         const textHeight:number = this.fontSize;
         ctx.strokeStyle = "#FFFFFF";
         ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, this.width(), this.height());
         if(textWidth < this.width() - 10)
         {
             ctx.strokeText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
@@ -1314,15 +1316,11 @@ export class GuiButton implements GuiElement {
             ctx.fillText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
+        ctx.strokeRect(0, 0, this.width(), this.height());
     } 
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0):void
     {
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
-        if(!this.active())
-        {
-            ctx.fillStyle = new RGB(0, 0, 0, 125).htmlRBGA();
-            ctx.fillRect(x, y, this.width(), this.height());
-        }
     }
 };
 

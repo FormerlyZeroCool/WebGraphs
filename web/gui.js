@@ -1022,13 +1022,14 @@ export class GuiButton {
     drawInternal(ctx = this.ctx) {
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
+        ctx.fillStyle = new RGB(0, 0, 0, 75).htmlRBGA();
         ctx.fillRect(0, 0, this.width(), this.height());
-        ctx.strokeRect(0, 0, this.width(), this.height());
         ctx.fillStyle = "#000000";
         const textWidth = ctx.measureText(this.text).width;
         const textHeight = this.fontSize;
         ctx.strokeStyle = "#FFFFFF";
         ctx.lineWidth = 4;
+        ctx.strokeRect(0, 0, this.width(), this.height());
         if (textWidth < this.width() - 10) {
             ctx.strokeText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
             ctx.fillText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
@@ -1038,13 +1039,10 @@ export class GuiButton {
             ctx.fillText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
+        ctx.strokeRect(0, 0, this.width(), this.height());
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
-        if (!this.active()) {
-            ctx.fillStyle = new RGB(0, 0, 0, 125).htmlRBGA();
-            ctx.fillRect(x, y, this.width(), this.height());
-        }
     }
 }
 ;
