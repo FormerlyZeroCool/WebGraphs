@@ -1294,6 +1294,7 @@ export class GuiButton implements GuiElement {
     }
     drawInternal(ctx:CanvasRenderingContext2D = this.ctx):void
     {
+        ctx.clearRect(0, 0, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
         ctx.fillStyle = new RGB(0, 0, 0, 75).htmlRBGA();

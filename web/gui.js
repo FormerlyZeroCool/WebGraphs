@@ -1020,6 +1020,7 @@ export class GuiButton {
         this.drawInternal();
     }
     drawInternal(ctx = this.ctx) {
+        ctx.clearRect(0, 0, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
         ctx.fillStyle = new RGB(0, 0, 0, 75).htmlRBGA();
