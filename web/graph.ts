@@ -421,8 +421,9 @@ class Game extends SquareAABBCollidable {
     {
         if(this.draw_axises)
         {
-            const screen_space_x_axis = (0 - this.y_min) / this.deltaY * this.cell_dim[1];
-            const screen_space_y_axis = (0 - this.x_min) / this.deltaX * this.cell_dim[0];
+            const font_size = 20;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? font_size : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
             
             this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
     
@@ -443,7 +444,6 @@ class Game extends SquareAABBCollidable {
             let i = closest_start_x;
             let last_render_x:number = -1;
             let last_render_text_width = 0;
-            const font_size = 20;
             ctx.font = `${font_size}px Helvetica`;
             while(i < this.x_max)
             {
@@ -463,16 +463,23 @@ class Game extends SquareAABBCollidable {
             }
             i = closest_start_y;
             let last_render_y = -font_size;
+            const old_screen_space_y_axis = screen_space_y_axis;
             while(i <= this.y_max)
             {
                 const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
+                screen_space_y_axis = old_screen_space_y_axis;
                 if(screen_y > last_render_y + font_size*2)
                 {
                     last_render_y = screen_y;
                     const text = this.format_number(-i);
+                    const text_width = ctx.measureText(text).width;
+                    if(screen_space_y_axis + text_width > this.main_buf.width)
+                    {
+                        screen_space_y_axis -= text_width + 10;
+                    }
                     ctx.fillText(text, screen_space_y_axis + 3, screen_y);
                     ctx.strokeText(text, screen_space_y_axis + 3, screen_y);
-                    ctx.fillRect(screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                    ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 }
                 i += delta_y;
             }
