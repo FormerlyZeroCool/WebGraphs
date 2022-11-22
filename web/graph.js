@@ -12,7 +12,7 @@ window.log = Math.log;
 window.pow = Math.pow;
 window.sqrt = Math.sqrt;
 class LayerManagerTool {
-    constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array) {
+    constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array, callback_get_non_error_background_color) {
         this.callback_add_layer = callback_add_layer;
         this.callback_checkbox_event = callback_checkbox_event;
         this.callback_delete_layer = callback_delete_layer;
@@ -21,12 +21,13 @@ class LayerManagerTool {
         this.callback_slide_event = callback_slide_event;
         this.callback_swap_layers = callback_swap_layers;
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
+        this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.layersLimit = limit;
         this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight() - 100]);
         this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 250], 20, false, this.callback_swap_layers, (event) => {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
-        }, callback_get_error_parallel_array);
+        }, callback_get_error_parallel_array, callback_get_non_error_background_color);
         this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${this.runningId++}`); this.callback_onclick_event(0); }, "Add Layer", this.layoutManager.width() / 2, 80, 16);
         this.layoutManager.addElement(new GuiLabel("Functions list:", this.layoutManager.width()));
         this.layoutManager.addElement(this.list);
@@ -156,12 +157,14 @@ class Game extends SquareAABBCollidable {
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
-        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); this.repaint = true; }, () => this.screen_buf.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null);
+        this.layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.screen_buf.splice(layer, 1); this.functions.splice(layer, 1); this.repaint = true; }, () => this.screen_buf.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
+            return this.functions[layer] ? this.functions[layer].color : null;
+        });
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.addElement(new GuiSlider(0, [this.guiManager.width(), 50], (e) => {
-            this.scaling_multiplier = e.value * 3 + 1;
+            this.scaling_multiplier = e.value * 4 + 1;
         }));
         this.guiManager.activate();
         //this.restart_game();
@@ -273,7 +276,7 @@ class Game extends SquareAABBCollidable {
                 this.screen_buf.push(this.new_sprite());
             }
             if (!this.functions[index]) {
-                const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
+                const color = new RGB(index * 30 % 256, (index + 1) * 150 % 256, index * 85 % 256, 255);
                 const foo = new Function(text);
                 foo.color = color;
                 functions.push(foo);
@@ -316,6 +319,8 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
             this.axises.ctx.moveTo(screen_space_y_axis, 0);
             this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            //const msd = 10 * Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
+            //console.log(this.x_min * 10 * msd);
             this.axises.ctx.stroke();
             ctx.drawImage(this.axises.image, x, y, width, height);
         }

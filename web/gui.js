@@ -567,8 +567,9 @@ export class GuiCheckListError {
 }
 ;
 export class GuiCheckList {
-    constructor(matrixDim, pixelDim, fontSize, uniqueSelection, swap = null, slideMoved = null, get_error) {
+    constructor(matrixDim, pixelDim, fontSize, uniqueSelection, swap = null, slideMoved = null, get_error, callback_get_non_error_background_color) {
         this.get_error = get_error;
+        this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.focused = true;
         this.uniqueSelection = uniqueSelection;
         this.fontSize = fontSize;
@@ -582,6 +583,7 @@ export class GuiCheckList {
         this.slideMoved = slideMoved;
         this.swapElementsInParallelArray = swap;
     }
+    ;
     push(text, state = true, checkBoxCallback, onClickGeneral) {
         const newElement = new GuiListItem(text, state, [this.width(),
             this.height() / this.layoutManager.matrixDim[1] - 5], this.fontSize, checkBoxCallback, onClickGeneral, this.slideMoved);
@@ -650,6 +652,14 @@ export class GuiCheckList {
             if (this.dragItem && this.dragItemLocation[1] !== -1 && i === Math.floor((this.dragItemLocation[1] / this.height()) * this.layoutManager.matrixDim[1])) {
                 offsetI++;
             }
+            const background_color = this.callback_get_non_error_background_color(i);
+            if (background_color) {
+                const alpha = background_color.alpha();
+                background_color.setAlpha(140);
+                ctx.fillStyle = background_color.htmlRBGA();
+                background_color.setAlpha(alpha);
+                ctx.fillRect(x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), this.width(), (this.height() / this.layoutManager.matrixDim[1]) - 5);
+            }
             this.list[i].draw(ctx, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), offsetX, offsetY);
             offsetI++;
             const row_errors = this.get_error(i);
@@ -683,8 +693,17 @@ export class GuiCheckList {
                 ctx.strokeRect(x, y + (offsetI - error_row_offset + 1) * (this.height() / this.layoutManager.matrixDim[1]), this.width(), this.height() / this.layoutManager.matrixDim[1] - 5);
             }
         }
-        if (this.dragItem)
+        if (this.dragItem) {
+            const background_color = this.callback_get_non_error_background_color(this.dragItemInitialIndex);
+            if (background_color) {
+                const alpha = background_color.alpha();
+                background_color.setAlpha(140);
+                ctx.fillStyle = background_color.htmlRBGA();
+                background_color.setAlpha(alpha);
+                ctx.fillRect(x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, this.width(), (this.height() / this.layoutManager.matrixDim[1]) - 5);
+            }
             this.dragItem.draw(ctx, x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, offsetX, offsetY);
+        }
     }
     handleKeyBoardEvents(type, e) {
         this.layoutManager.handleKeyBoardEvents(type, e);

@@ -726,12 +726,15 @@ export class GuiCheckList implements GuiElement {
     fontSize:number;
     focused:boolean;
     uniqueSelection:boolean;
+    callback_get_non_error_background_color:(layer:number) => RGB | null);
     swapElementsInParallelArray:((x1:number, x2:number) => void) | null;
     get_error:(layer:number) => string | null;
     slideMoved:((event:SlideEvent) => void) | null;
-    constructor(matrixDim:number[], pixelDim:number[], fontSize:number, uniqueSelection:boolean, swap:((x1:number, x2:number) => void) | null = null, slideMoved:((event:SlideEvent) => void) | null = null, get_error:(layer:number)=>string|null)
+    constructor(matrixDim:number[], pixelDim:number[], fontSize:number, uniqueSelection:boolean, swap:((x1:number, x2:number) => void) | null = null, slideMoved:((event:SlideEvent) => void) | null = null, get_error:(layer:number)=>string|null,
+        callback_get_non_error_background_color:(layer:number) => RGB | null)
     {
         this.get_error = get_error;
+        this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.focused = true;
         this.uniqueSelection = uniqueSelection;
         this.fontSize = fontSize;
@@ -831,6 +834,15 @@ export class GuiCheckList implements GuiElement {
             {
                 offsetI++;
             }
+            const background_color:RGB | null = this.callback_get_non_error_background_color(i);
+            if(background_color)
+            {
+                const alpha = background_color.alpha();
+                background_color.setAlpha(140);
+                ctx.fillStyle = background_color.htmlRBGA();
+                background_color.setAlpha(alpha);
+                ctx.fillRect(x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), this.width(), (this.height() / this.layoutManager.matrixDim[1]) - 5);
+            }
             this.list[i].draw(ctx, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), offsetX, offsetY);
             offsetI++;
             const row_errors = this.get_error(i);
@@ -870,7 +882,18 @@ export class GuiCheckList implements GuiElement {
             }
         }
         if(this.dragItem)
+        {
+            const background_color:RGB | null = this.callback_get_non_error_background_color(this.dragItemInitialIndex);
+            if(background_color)
+            {
+                const alpha = background_color.alpha();
+                background_color.setAlpha(140);
+                ctx.fillStyle = background_color.htmlRBGA();
+                background_color.setAlpha(alpha);
+                ctx.fillRect(x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, this.width(), (this.height() / this.layoutManager.matrixDim[1]) - 5);
+            }
             this.dragItem.draw(ctx, x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, offsetX, offsetY);
+        }
     }
     handleKeyBoardEvents(type:string, e:any):void
     {

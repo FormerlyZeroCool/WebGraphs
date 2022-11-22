@@ -26,6 +26,7 @@ class LayerManagerTool {
     callback_checkbox_event:(layer:number, state:boolean) => void;
     callback_onclick_event:(layer:number) => void;
     callback_get_error_parallel_array:(layer:number) => string | null;
+    callback_get_non_error_background_color:(layer:number) => RGB | null;
 
     constructor(limit:number = 16, callback_add_layer:() => void, 
     callback_checkbox_event:(layer:number, state:boolean) => void,
@@ -34,7 +35,8 @@ class LayerManagerTool {
     callback_onclick_event:(layer:number) => void,
     callback_slide_event:(layer:number, slider_value:number) => number,
     callback_swap_layers:(l1:number, l2:number) => void,
-    callback_get_error_parallel_array:(layer:number) => string | null)
+    callback_get_error_parallel_array:(layer:number) => string | null,
+    callback_get_non_error_background_color:(layer:number) => RGB | null)
     {
         this.callback_add_layer = callback_add_layer;
         this.callback_checkbox_event = callback_checkbox_event;
@@ -44,13 +46,14 @@ class LayerManagerTool {
         this.callback_slide_event = callback_slide_event;
         this.callback_swap_layers = callback_swap_layers;
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
+        this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.layersLimit = limit;
         this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight() - 100]);
         this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 250], 20, false, this.callback_swap_layers,
         (event:SlideEvent) => {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
-        }, callback_get_error_parallel_array);
+        }, callback_get_error_parallel_array, callback_get_non_error_background_color);
         this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${this.runningId++}`); this.callback_onclick_event(0) }, "Add Layer", this.layoutManager.width() / 2, 80, 16);
         this.layoutManager.addElement(new GuiLabel("Functions list:", this.layoutManager.width()));
         this.layoutManager.addElement(this.list);
@@ -231,13 +234,16 @@ class Game extends SquareAABBCollidable {
             (layer:number) => this.repaint = true,
             (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); return 0},
             (l1:number, l2:number) => {this.swap_layers(l1, l2); this.repaint = true;},
-            (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null
+            (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null,
+            (layer:number) => {
+                return this.functions[layer]? this.functions[layer].color : null;
+            }
             );
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
         this.guiManager.addElement(this.layer_manager.layoutManager);
         this.guiManager.addElement(new GuiSlider(0, [this.guiManager.width(), 50], (e:SlideEvent) => {
-            this.scaling_multiplier = e.value * 3 + 1;
+            this.scaling_multiplier = e.value * 4 + 1;
         }));
         this.guiManager.activate();
         //this.restart_game();
@@ -373,7 +379,7 @@ class Game extends SquareAABBCollidable {
             }
             if(!this.functions[index])
             {
-                const color = new RGB(index * 30 % 256, index * 50 % 256, index * 20 % 256, 255);
+                const color = new RGB(index * 30 % 256, (index+1) * 150 % 256, index * 85 % 256, 255);
                 const foo = new Function(text);
                 foo.color = color;
                 functions.push(foo);
@@ -425,6 +431,9 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
             this.axises.ctx.moveTo(screen_space_y_axis, 0);
             this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            //const msd = 10 * Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
+            //console.log(this.x_min * 10 * msd);
+
             this.axises.ctx.stroke();
     
             ctx.drawImage(this.axises.image, x, y, width, height);
