@@ -23,8 +23,8 @@ class LayerManagerTool {
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.layersLimit = limit;
-        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight() - 100]);
-        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 250], 20, false, this.callback_swap_layers, (event) => {
+        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, getHeight() - 130]);
+        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), getHeight() - 280], 20, false, this.callback_swap_layers, (event) => {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array, callback_get_non_error_background_color);
@@ -169,7 +169,7 @@ class Game extends SquareAABBCollidable {
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
-        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
+        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 30);
         this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
@@ -411,7 +411,7 @@ class Game extends SquareAABBCollidable {
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
         }
         ctx.drawImage(this.main_buf.image, x, y, width, height);
-        this.guiManager.draw(ctx, x, y);
+        this.guiManager.draw(ctx);
         this.options_gui_manager.draw(ctx);
         const touchPos = this.touchListener.touchPos;
         if (this.draw_point_labels) {
