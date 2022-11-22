@@ -1,5 +1,5 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
-import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent} from './gui.js'
+import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox} from './gui.js'
 import {random, srand, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 window.sin = Math.sin;
@@ -194,12 +194,14 @@ class Function {
 class Game extends SquareAABBCollidable {
     repaint:boolean;
     axises:Sprite;
+    draw_point_labels:boolean;
     draw_axises:boolean;
     draw_axis_labels:boolean;
     functions:Function[];
     main_buf:Sprite;
     background_color:RGB;
     guiManager:SimpleGridLayoutManager;
+    options_gui_manager:SimpleGridLayoutManager;
     layer_manager:LayerManagerTool;
     touchListener:SingleTouchListener;
     scaling_multiplier:number;
@@ -224,6 +226,7 @@ class Game extends SquareAABBCollidable {
         this.functions = [];
         this.draw_axises = true;
         this.draw_axis_labels = true;
+        this.draw_point_labels = true;
         this.x_min = this.x_translation * this.scale - 1/this.scale;
         this.x_max = this.x_translation * this.scale + 1/this.scale;
         this.deltaX = this.x_max - this.x_min;
@@ -248,6 +251,24 @@ class Game extends SquareAABBCollidable {
             this.scaling_multiplier = e.value * 4 + 1;
         }));
         this.guiManager.activate();
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 20], [200, 140], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
+        this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
+        this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
+            this.draw_axises = event.checkBox.checked;
+            this.repaint = true;
+        }, 50, 50, this.draw_axis_labels));
+        this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
+            this.draw_axis_labels = event.checkBox.checked
+            this.repaint = true;
+        }, 50, 50, this.draw_axis_labels));
+        const show_label = new GuiLabel("Show point", 100, 18, 50);
+        this.options_gui_manager.addElement(show_label);
+        this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
+            this.draw_point_labels = event.checkBox.checked;
+        }, 50, 50, this.draw_axis_labels));
+
+        this.options_gui_manager.activate();
         //this.restart_game();
         this.try_render_functions();
     }
@@ -520,19 +541,23 @@ class Game extends SquareAABBCollidable {
         }
         ctx.drawImage(this.main_buf.image, x, y, width, height);
         this.guiManager.draw(ctx, x, y);
+        this.options_gui_manager.draw(ctx);
         const touchPos = this.touchListener.touchPos;
-        if(!isTouchSupported())
-            this.render_x_y_label_screen_space(ctx, touchPos);
-        const selected_function = this.functions[this.layer_manager.list.selected()];
-        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+        if(this.draw_point_labels)
         {
-            try{
-                const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
-                const world_y = selected_function.compiled(nearest_x);
-                const world_x = nearest_x;
-                this.render_x_y_label_world_space(ctx, world_x, world_y);
+            if(!isTouchSupported())
+                this.render_x_y_label_screen_space(ctx, touchPos);
+            const selected_function = this.functions[this.layer_manager.list.selected()];
+            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+            {
+                try{
+                    const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
+                    const world_y = selected_function.compiled(nearest_x);
+                    const world_x = nearest_x;
+                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                }
+                catch(error:any){}
             }
-            catch(error:any){}
         }
     }
     auto_round_world_x(x:number):number
@@ -723,6 +748,7 @@ async function main()
     let low_fps:boolean = true;
     let draw = false;
     game.guiManager.createHandlers(keyboardHandler, touchListener);
+    game.options_gui_manager.createHandlers(keyboardHandler, touchListener);
     /*touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
     });
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
