@@ -389,6 +389,10 @@ class Game extends SquareAABBCollidable {
         });
         
         functions.forEach((foo:Function, index:number) => {
+            if(!this.screen_buf[index].imageData)
+            {
+                this.screen_buf[index].imageData = this.screen_buf[index].createImageData();
+            }
             const view = new Int32Array(this.screen_buf[index].imageData!.data.buffer);
             this.screen_buf[index].ctx.strokeStyle = foo.color.htmlRBG();
             this.screen_buf[index].ctx.lineWidth = 2;
@@ -428,10 +432,21 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
     
             this.axises.ctx.beginPath();
+            this.axises.ctx.lineWidth = 4;
+            this.axises.ctx.strokeStyle = "#FFFFFF";
             this.axises.ctx.moveTo(0, screen_space_x_axis);
             this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
             this.axises.ctx.moveTo(screen_space_y_axis, 0);
             this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            this.axises.ctx.stroke();
+            this.axises.ctx.beginPath();
+            this.axises.ctx.lineWidth = 3;
+            this.axises.ctx.strokeStyle = "#000000";
+            this.axises.ctx.moveTo(0, screen_space_x_axis);
+            this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
+            this.axises.ctx.moveTo(screen_space_y_axis, 0);
+            this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            ctx.stroke();
             if(this.draw_axis_labels)
             {
                 const msd_x = Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
@@ -447,17 +462,20 @@ class Game extends SquareAABBCollidable {
                 let last_render_x:number = -1;
                 let last_render_text_width = 0;
                 ctx.font = `${font_size}px Helvetica`;
+                ctx.strokeStyle = "#FFFFFF";
+                ctx.lineWidth = 3;
                 while(i < this.x_max)
                 {
                     const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
-                    if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x/16)
+                    if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*3/4)
                     {
                         last_render_x = screen_x + 3;
                         const text = this.format_number(i);
                         const text_width = ctx.measureText(text).width;
                         last_render_text_width = text_width;
-                        ctx.fillText(text, screen_x + 3, screen_space_x_axis);
-                        ctx.strokeText(text, screen_x + 3, screen_space_x_axis);
+                        ctx.strokeText(text, screen_x + 3, screen_space_x_axis - 6);
+                        ctx.fillText(text, screen_x + 3, screen_space_x_axis - 6);
+                        ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                         ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                     }
                     
@@ -479,8 +497,9 @@ class Game extends SquareAABBCollidable {
                         {
                             screen_space_y_axis -= text_width + 10;
                         }
-                        ctx.fillText(text, screen_space_y_axis + 3, screen_y);
-                        ctx.strokeText(text, screen_space_y_axis + 3, screen_y);
+                        ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
+                        ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
+                        ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                         ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                     }
                     i += delta_y;

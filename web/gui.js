@@ -583,7 +583,6 @@ export class GuiCheckList {
         this.slideMoved = slideMoved;
         this.swapElementsInParallelArray = swap;
     }
-    ;
     push(text, state = true, checkBoxCallback, onClickGeneral) {
         const newElement = new GuiListItem(text, state, [this.width(),
             this.height() / this.layoutManager.matrixDim[1] - 5], this.fontSize, checkBoxCallback, onClickGeneral, this.slideMoved);

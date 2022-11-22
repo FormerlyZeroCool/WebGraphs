@@ -726,7 +726,7 @@ export class GuiCheckList implements GuiElement {
     fontSize:number;
     focused:boolean;
     uniqueSelection:boolean;
-    callback_get_non_error_background_color:(layer:number) => RGB | null);
+    callback_get_non_error_background_color:(layer:number) => RGB | null;
     swapElementsInParallelArray:((x1:number, x2:number) => void) | null;
     get_error:(layer:number) => string | null;
     slideMoved:((event:SlideEvent) => void) | null;
