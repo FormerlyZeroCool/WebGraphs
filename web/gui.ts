@@ -902,12 +902,12 @@ export class GuiCheckList implements GuiElement {
     handleTouchEvents(type:string, e:any):void
     {
         this.layoutManager.activate();
-        e.translateEvent(e,  -this.pos[0], -this.pos[1] + 30);
+        e.translateEvent(e,  -this.pos[0], -this.pos[1]);
         const clicked:number = Math.floor(((e.touchPos[1]) / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element:RowRecord = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         
-        e.translateEvent(e,  this.pos[0], this.pos[1] - 30);
+        e.translateEvent(e,  this.pos[0], this.pos[1]);
         if(element)
         {
             (<GuiListItem> element.element).elementsPositions.forEach(el => {

@@ -240,8 +240,8 @@ class Game extends SquareAABBCollidable {
         const whratio = width / (height > 0 ? height : width);
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
-        this.cell_dim = [rough_dim, Math.floor(rough_dim * whratio)];
-        this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
+        this.cell_dim = [getWidth(), getHeight() - 50];
+        this.init(width, height, this.cell_dim[0], this.cell_dim[1]);
         this.guiManager = new SimpleGridLayoutManager([1,1000], [this.graph_start_x, getHeight()], 0, 30);
         this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
@@ -542,8 +542,10 @@ class Game extends SquareAABBCollidable {
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             
         }
-        ctx.drawImage(this.main_buf.image, x, y, width, height);
+        ctx.drawImage(this.main_buf.image, x, y);
         this.guiManager.draw(ctx);
+        this.layer_manager.list.pos[0] = this.guiManager.x;
+        this.layer_manager.list.pos[1] = this.guiManager.y;
         this.options_gui_manager.draw(ctx);
         const touchPos = this.touchListener.touchPos;
         if(this.draw_point_labels)
