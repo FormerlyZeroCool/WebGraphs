@@ -432,7 +432,6 @@ class Game extends SquareAABBCollidable {
     auto_round_world_x(x) {
         const logarithm = Math.log10(Math.abs(x));
         const rounded = Math.round(x * (Math.pow(1, -logarithm) * 100)) * Math.floor(Math.pow(1, logarithm)) / 100;
-        console.log(rounded, logarithm);
         return rounded;
     }
     round(value, places) {
@@ -500,9 +499,6 @@ class Game extends SquareAABBCollidable {
         return Math.floor(x) + Math.floor(y) * this.cell_dim[0];
     }
     fill(start, color_p) {
-        //const view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer);
-        //const start_color = view[start];
-        console.log("trying to fill");
         this.traverse_df(start, (index, color) => color_p, (index, color) => color == this.background_color.color);
     }
     traverse_df(start, apply, verifier) {
@@ -546,7 +542,6 @@ async function main() {
         //e.preventDefault();
         const normalized_delta = e.deltaY / getHeight();
         const multiplier = 100;
-        console.log(normalized_delta * multiplier);
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
         if (Math.abs(game.scale) > Math.pow(2, power_of_2_bounds))
