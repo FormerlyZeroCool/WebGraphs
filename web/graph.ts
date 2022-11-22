@@ -596,7 +596,7 @@ class Game extends SquareAABBCollidable {
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         let text:string;
-        if(Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > 0.000001)
+        if(Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > 0.00001)
         {
             text = `x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`;
 
