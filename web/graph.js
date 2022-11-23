@@ -451,15 +451,9 @@ class Game extends SquareAABBCollidable {
                 }
                 catch (error) { }
             }
-            if (!isTouchSupported()) {
-                //don't receive ui input when it isn't fully vis
+            {
                 this.render_x_y_label_screen_space(ctx, touchPos);
                 ctx.beginPath();
-                /*
-                ctx.moveTo(screen_space_y_axis, touchPos[1]);
-                ctx.lineTo(touchPos[0], touchPos[1]);
-                ctx.moveTo(touchPos[0], screen_space_x_axis);
-                ctx.lineTo(touchPos[0], touchPos[1]);*/
                 const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
                 ctx.moveTo(screen_space_y_axis, y);
                 ctx.lineTo(touchPos[0], y);
@@ -569,15 +563,17 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time) {
         const ms_to_fade = 250;
-        if (!this.multi_touchListener.registeredMultiTouchEvent) {
-            if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
-                this.ui_alpha += delta_time / ms_to_fade;
+        if (!this.touchListener.registeredTouch) {
+            if (!this.multi_touchListener.registeredMultiTouchEvent) {
+                if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
+                    this.ui_alpha += delta_time / ms_to_fade;
+                else
+                    this.ui_alpha -= delta_time / ms_to_fade;
+                this.ui_alpha = clamp(this.ui_alpha, 0, 1);
+            }
             else
-                this.ui_alpha -= delta_time / ms_to_fade;
-            this.ui_alpha = clamp(this.ui_alpha, 0, 1);
+                this.ui_alpha = 0;
         }
-        else
-            this.ui_alpha = 0;
     }
 }
 ;
