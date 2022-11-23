@@ -361,13 +361,18 @@ class Game extends SquareAABBCollidable {
                 ctx.lineWidth = 3;
                 while (i < this.x_max) {
                     const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
+                    ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                    ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                    {
+                        const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
+                        ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                        ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                    }
                     if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x * 15 / 16) {
                         last_render_x = screen_x + 3;
                         const text = this.format_number(i);
                         const text_width = ctx.measureText(text).width;
                         last_render_text_width = text_width;
-                        ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                        ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                         let text_y = screen_space_x_axis;
                         if (text_y - font_size < 0) {
                             text_y += font_size + 10;
@@ -383,6 +388,14 @@ class Game extends SquareAABBCollidable {
                 while (i <= this.y_max) {
                     const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
                     screen_space_y_axis = old_screen_space_y_axis;
+                    ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                    ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                    {
+                        const screen_y = (i + delta_y / 2 - this.y_min) / this.deltaY * this.main_buf.height;
+                        screen_space_y_axis = old_screen_space_y_axis;
+                        ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                        ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                    }
                     if (screen_y > last_render_y + font_size * 2) {
                         last_render_y = screen_y;
                         const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 + "";
@@ -392,8 +405,6 @@ class Game extends SquareAABBCollidable {
                         }
                         ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
                         ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
-                        ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                        ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                     }
                     i += delta_y;
                 }
@@ -427,17 +438,34 @@ class Game extends SquareAABBCollidable {
         }
         const touchPos = this.touchListener.touchPos;
         if (this.draw_point_labels) {
-            if (!isTouchSupported())
-                this.render_x_y_label_screen_space(ctx, touchPos);
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] : -this.y_min < 0 ? 0 : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+            let world_y = 0;
             const selected_function = this.functions[this.layer_manager.list.selected()];
             if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
                 try {
                     const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
-                    const world_y = selected_function.compiled(nearest_x);
+                    world_y = selected_function.compiled(nearest_x);
                     const world_x = nearest_x;
                     this.render_x_y_label_world_space(ctx, world_x, world_y);
                 }
                 catch (error) { }
+            }
+            if (!isTouchSupported()) {
+                //don't receive ui input when it isn't fully vis
+                this.render_x_y_label_screen_space(ctx, touchPos);
+                ctx.beginPath();
+                /*
+                ctx.moveTo(screen_space_y_axis, touchPos[1]);
+                ctx.lineTo(touchPos[0], touchPos[1]);
+                ctx.moveTo(touchPos[0], screen_space_x_axis);
+                ctx.lineTo(touchPos[0], touchPos[1]);*/
+                const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                ctx.moveTo(screen_space_y_axis, y);
+                ctx.lineTo(touchPos[0], y);
+                ctx.moveTo(touchPos[0], screen_space_x_axis);
+                ctx.lineTo(touchPos[0], y);
+                ctx.stroke();
             }
         }
     }
@@ -542,9 +570,9 @@ class Game extends SquareAABBCollidable {
     update_state(delta_time) {
         const ms_to_fade = 250;
         if (!this.multi_touchListener.registeredMultiTouchEvent) {
-            if (this.ui_alpha < 1 && this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
+            if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
                 this.ui_alpha += delta_time / ms_to_fade;
-            else if (this.ui_alpha > 0)
+            else
                 this.ui_alpha -= delta_time / ms_to_fade;
             this.ui_alpha = clamp(this.ui_alpha, 0, 1);
         }
@@ -603,23 +631,35 @@ async function main() {
     window.game = game;
     let low_fps = true;
     let draw = false;
-    game.guiManager.createHandlers(keyboardHandler, touchListener);
-    game.options_gui_manager.createHandlers(keyboardHandler, touchListener);
-    /*touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
+    touchListener.registerCallBack("touchstart", (event) => game.ui_alpha >= 0.99, (event) => {
+        game.guiManager.handleTouchEvents("touchstart", event);
+        game.options_gui_manager.handleTouchEvents("touchstart", event);
     });
-    touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
-    });*/
+    touchListener.registerCallBack("touchend", (event) => game.ui_alpha >= 0.99, (event) => {
+        game.guiManager.handleTouchEvents("touchend", event);
+        game.options_gui_manager.handleTouchEvents("touchend", event);
+    });
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
         game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
         game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
+        if (game.ui_alpha >= 0.99) {
+            game.guiManager.handleTouchEvents("touchmove", event);
+            game.options_gui_manager.handleTouchEvents("touchmove", event);
+        }
         game.repaint = true;
+    });
+    keyboardHandler.registerCallBack("keyup", () => true, (event) => {
+        game.guiManager.handleKeyBoardEvents("keyup", event);
+        game.options_gui_manager.handleKeyBoardEvents("keyup", event);
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
         if (!keyboardHandler.keysHeld["MetaLeft"] && !keyboardHandler.keysHeld["ControlLeft"] &&
             !keyboardHandler.keysHeld["MetaRight"] && !keyboardHandler.keysHeld["ControlRight"])
             event.preventDefault();
+        game.guiManager.handleKeyBoardEvents("keydown", event);
+        game.options_gui_manager.handleKeyBoardEvents("keydown", event);
         game.repaint = true;
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);

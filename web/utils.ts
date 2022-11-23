@@ -3,7 +3,10 @@ export interface FilesHaver{
     files:FileList;
 };
 
-export function clamp(num, min, max):number { return Math.min(Math.max(num, min), max) }
+export function clamp(num:number, min:number, max:number):number 
+{ 
+    return Math.min(Math.max(num, min), max);
+}
 export function round_with_precision(value:number, precision:number):number
 {
     const mult = Math.pow(10, Math.ceil(precision - Math.log10(Math.abs(value))));
@@ -12,7 +15,7 @@ export function round_with_precision(value:number, precision:number):number
 }
 export function normalize(vec:number[]):number[]
 {
-    const mag = Math.sqrt(vec[0]*vec[0] + vec[1]+vec[1]);
+    const mag = Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
     return [vec[0] / mag, vec[1] / mag];
 }
 export function scalarDotProduct(a:number[], b:number[]):number
