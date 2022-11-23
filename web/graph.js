@@ -603,8 +603,7 @@ async function main() {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale += scaler * Math.abs(normalized_delta) * 100;
-        if (Math.abs(game.scale) > Math.pow(2, power_of_2_bounds))
-            game.scale = Math.pow(2, power_of_2_bounds) * (game.scale < 0 ? -1 : 1);
+        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
         game.repaint = true;
         event.preventDefault();
     });
@@ -612,8 +611,7 @@ async function main() {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale -= scaler * Math.abs(normalized_delta) * 100;
-        if (Math.abs(game.scale) < Math.pow(2, -power_of_2_bounds))
-            game.scale = Math.pow(2, -power_of_2_bounds) * (game.scale < 0 ? -1 : 1);
+        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
         game.repaint = true;
         event.preventDefault();
     });
