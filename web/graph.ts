@@ -757,15 +757,12 @@ async function main()
     };
     const power_of_2_bounds = 300;
     canvas.addEventListener("wheel", (e) => {
-        //e.preventDefault();
-        const normalized_delta = e.deltaY / getHeight();
+        const normalized_delta = (e.deltaY + 1) / getHeight();
         const multiplier = 100;
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
-        if(Math.abs(game.scale) > Math.pow(2, power_of_2_bounds))
-            game.scale = Math.pow(2, power_of_2_bounds) * (game.scale < 0 ? -1 : 1);
-        else if(Math.abs(game.scale) < Math.pow(2, -power_of_2_bounds))
-            game.scale = Math.pow(2, -power_of_2_bounds) * (game.scale < 0 ? -1 : 1);
+        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+
         game.repaint = true;
         e.preventDefault();
     });
