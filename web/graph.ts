@@ -208,13 +208,11 @@ class Function {
                     {
                         this.local_maxima.push(x_max);
                         this.local_maxima.push(this.compiled(x_max));
-                        console.log("good")
                     }
                     else
                     {
                         this.local_maxima.push(x);
                         this.local_maxima.push(y);
-                        console.log("bad")
                     }
                 }
                 else if(prev_delta_y > 0 && current_delta_y < 0)//minima
