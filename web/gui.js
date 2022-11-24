@@ -278,6 +278,44 @@ export class RowRecord {
         this.element = element;
     }
 }
+;
+;
+export class StateManagedUI {
+    constructor(state) {
+        this.state = state;
+    }
+    draw(ctx, canvas, x, y, width, height) {
+        this.state.draw(ctx, canvas, x, y, width, height);
+    }
+    handleKeyboardEvents(type, event) {
+        this.state.handleKeyboardEvents(type, event);
+    }
+    handleTouchEvents(type, event) {
+        this.state.handleTouchEvents(type, event);
+    }
+    transition(delta_time) {
+        this.state = this.state.transition(delta_time);
+    }
+}
+;
+export class StateManagedUIElement {
+    constructor() {
+        this.layouts = [];
+    }
+    draw(ctx, canvas, x, y, width, height) {
+        this.layouts.forEach(layout => layout.draw(ctx));
+    }
+    handleKeyboardEvents(type, event) {
+        this.layouts.forEach(layout => layout.handleKeyBoardEvents(type, event));
+    }
+    handleTouchEvents(type, event) {
+        this.layouts.forEach(layout => layout.handleTouchEvents(type, event));
+    }
+    transition(delta_time) {
+        throw new Error("Method not implemented.");
+    }
+}
+;
 export class SimpleGridLayoutManager {
     constructor(matrixDim, pixelDim, x = 0, y = 0) {
         this.lastTouched = 0;

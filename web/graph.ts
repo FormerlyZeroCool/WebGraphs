@@ -1,5 +1,6 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
-import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox} from './gui.js'
+import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox, 
+    StateManagedUIElement, StateManagedUI, UIState} from './gui.js'
 import {random, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 window.sin = Math.sin;
@@ -115,6 +116,9 @@ class Function {
     source:string;
     color:RGB;
     compiled:(x:number) => number;
+    local_minima:number[];//x,y pairs
+    local_maxima:number[];//x,y pairs
+
     error_message:string | null;
     x_min:number;
     x_max:number;
@@ -131,6 +135,8 @@ class Function {
             console.log(e.message);
             this.error_message = e.message;
         }
+        this.local_maxima = [];
+        this.local_minima = [];
         this.table = [];
         this.x_max = 0;
         this.x_min = 0;
@@ -163,18 +169,95 @@ class Function {
             this.x_min = x_min;
             this.dx = dx;
             this.table.splice(0, this.table.length);
+            this.local_maxima.splice(0, this.local_maxima.length);
+            this.local_minima.splice(0, this.local_minima.length);
             try {
-                for(let i = x_min; i <= x_max; i += dx)
+                const iterations = (this.x_max - this.x_min) / this.dx;
+                for(let j = 0; j < iterations; j++)
                 {
-                    this.table.push(this.compiled(i));
+                    const x = this.x_min + j * dx;
+                    this.table.push(this.compiled(x));
                 }
             } catch (error:any)
             {
                 console.log(error.message);
                 this.error_message = error.message;
             }
+            for(let x = x_min, i = 1; i < this.table.length - 1; x += dx, i++)
+            {
+                const prev_y = this.table[i - 1];
+                const y = this.table[i];
+                const next_y = this.table[i + 1];
+                const prev_delta_y = prev_y - y;
+                const current_delta_y = y - next_y;
+                if(prev_delta_y < 0 && current_delta_y > 0)// maxima
+                {
+                    this.local_maxima.push(x);
+                    this.local_maxima.push(y);
+                }
+                else if(prev_delta_y > 0 && current_delta_y < 0)//minima
+                {
+                    this.local_minima.push(x);
+                    this.local_minima.push(y);
+                }
+            }
         }
         return this.table;
+    }
+    dist(a:number, b:number):number
+    {
+        return Math.abs(a-b);
+    }
+    /*optimize_ima(prev_x:number, cur_x:number, next_x:number, it:number):number
+    {
+        if(it === 0)
+            return cur_x;
+
+        const delta_y
+    }*/
+    index_to_x(index:number):number
+    {
+        return this.x_min + index * this.dx;
+    }
+    closest_max(x:number):number | null
+    {
+        if(this.local_maxima.length > 0)
+        {
+            let closest_max = 0;
+            let dist = Math.abs(x - this.local_maxima[closest_max]);
+            for(let i = 0;  i < this.local_maxima.length; i+=2)
+            {
+                const xi = this.local_maxima[i];
+                const dist_xi = Math.abs(x - xi);
+                if(dist! > dist_xi)
+                {
+                    dist = dist_xi;
+                    closest_max = i;
+                }
+            }
+            return closest_max;
+        }
+        return null;
+    }
+    closest_min(x:number):number | null
+    {
+        let closest_min = 0;
+        let dist = this.local_minima.length > 0 ? Math.abs(x - this.local_minima[closest_min]) : null;
+        if(dist !== null)
+        {
+            for(let i = 2;  i < this.local_minima.length; i+=2)
+            {
+                const xi = this.local_minima[i];
+                const dist_xi = Math.abs(x - xi);
+                if(dist > dist_xi)
+                {
+                    dist = dist_xi;
+                    closest_min = i;
+                }
+            }
+            return closest_min;
+        }
+        return null;
     }
     call(x:number):number | null
     {
@@ -191,7 +274,55 @@ class Function {
         return null;
     }
 };
+class FollowCursor implements UIState {
+    grid:Game;
+    constructor(grid:Game)
+    {
+        this.grid = grid;
+    }
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        this.grid.render_labels_floating(ctx);
+        if(this.grid.draw_point_labels)
+            this.grid.render_x_y_label_screen_space(ctx, this.grid.touchListener.touchPos);
+    }
+    handleKeyboardEvents(type: string, event: KeyboardEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type: string, event: TouchMoveEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    transition(delta_time: number): UIState {
+        return this;
+    }
+
+};
+class FollowNearestMinMax implements UIState {
+    grid:Game;
+    constructor(grid:Game)
+    {
+        this.grid = grid;
+    }
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        this.grid.render_labels_min(ctx);
+        this.grid.render_labels_max(ctx);
+    }
+    handleKeyboardEvents(type: string, event: KeyboardEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type: string, event: TouchMoveEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    transition(delta_time: number): UIState {
+        return this;
+    }
+
+};
+//ui should switch between 
+//free form following cursor exactly
+//finding nearest minima/maxima to cursor
+
 class Game extends SquareAABBCollidable {
+    state_manager_grid:StateManagedUI;
     repaint:boolean;
     axises:Sprite;
     draw_point_labels:boolean;
@@ -222,6 +353,7 @@ class Game extends SquareAABBCollidable {
     constructor(multi_touchListener:MultiTouchListener, touchListener:SingleTouchListener, x:number, y:number, width:number, height:number)
     {
         super(x, y, width, height);
+        this.state_manager_grid = new StateManagedUI(new FollowCursor(this));
         this.scaling_multiplier = 1;
         this.ui_alpha = 0;
         this.repaint = true;
@@ -256,7 +388,7 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 140 + touch_mod * 2.1], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 190 + touch_mod * 3.1], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
@@ -273,6 +405,14 @@ class Game extends SquareAABBCollidable {
             this.draw_point_labels = event.checkBox.checked;
         }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
 
+        const minmax_label = new GuiLabel("Min Max", 100, 18, 50 + touch_mod);
+        this.options_gui_manager.addElement(minmax_label);
+        this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
+            if(event.checkBox.checked)
+                this.state_manager_grid.state = new FollowNearestMinMax(this);
+            else
+                this.state_manager_grid.state = new FollowCursor(this);
+        }, 50 + touch_mod, 50 + touch_mod, false));
         this.options_gui_manager.activate();
         //this.restart_game();
         this.try_render_functions();
@@ -380,8 +520,6 @@ class Game extends SquareAABBCollidable {
     {
         this.calc_bounds();
         let functions:Function[] = this.functions;
-        //this.screen_buf = [];
-        //this.main_buf.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
         this.layer_manager.list.list.forEach((li:GuiListItem, index:number) => {
             const text = li.textBox.text;
             if(!this.main_buf)
@@ -405,7 +543,6 @@ class Game extends SquareAABBCollidable {
             {
                 //build table to be rendered
                 foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
-
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
@@ -413,6 +550,8 @@ class Game extends SquareAABBCollidable {
                 this.main_buf.ctx.beginPath();
                 this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
                 this.main_buf.ctx.lineWidth = 2;
+                let minima_iterator:number = 0;
+                let maxima_iterator:number = 0;
                 for(let i = 0; i < foo.table.length; i++)
                 {
                     const x = this.x_min + foo.dx * i;
@@ -425,6 +564,7 @@ class Game extends SquareAABBCollidable {
                         this.main_buf.ctx.moveTo(last_x, last_y)
                         this.main_buf.ctx.lineTo(sx, sy);
                     }
+                    const dim = 6;
                     last_x = sx;
                     last_y = sy;
                 }
@@ -570,10 +710,13 @@ class Game extends SquareAABBCollidable {
             if(this.ui_alpha !== 1)
                 ctx.globalAlpha = 1;
         }
-
-        const touchPos = this.touchListener.touchPos;
+        this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
+    }
+    render_labels_floating(ctx:CanvasRenderingContext2D):void
+    {
         if(this.draw_point_labels)
         {
+            const touchPos = this.touchListener.touchPos;
             const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
             let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
             let world_y:number = 0;
@@ -581,15 +724,11 @@ class Game extends SquareAABBCollidable {
             if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
             {
                 try{
-                    const nearest_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
-                    world_y = selected_function.compiled(nearest_x);
-                    const world_x = nearest_x;
+                    const world_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
+                    world_y = selected_function.compiled(world_x);
                     this.render_x_y_label_world_space(ctx, world_x, world_y);
                 }
                 catch(error:any){}
-            }
-            {
-                this.render_x_y_label_screen_space(ctx, touchPos);
                 ctx.beginPath();
                 const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
                 ctx.moveTo(screen_space_y_axis, y);
@@ -600,6 +739,88 @@ class Game extends SquareAABBCollidable {
             }
             
         }
+    }
+    render_labels_max(ctx:CanvasRenderingContext2D):void
+    {
+        if(this.draw_point_labels)
+        {
+            const touchPos = this.touchListener.touchPos;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+            let world_y:number = 0;
+            let world_x = 0;
+            const selected_function = this.functions[this.layer_manager.list.selected()];
+            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+            {
+                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
+                const closest_max = selected_function.closest_max(touch_world_x);
+                let x_index = closest_max;
+                if(closest_max !== null)
+                {
+                    world_x = selected_function.local_maxima[x_index!];
+                    world_y = selected_function.local_maxima[x_index! + 1];
+                }
+                
+                if(x_index !== null)
+                {
+                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
+                    ctx.beginPath();
+                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
+                    ctx.moveTo(sx, screen_space_x_axis);
+                    ctx.lineTo(sx, y);
+                    ctx.stroke();
+                }
+            }
+            
+        }
+    }
+    render_labels_min(ctx:CanvasRenderingContext2D):void
+    {
+        if(this.draw_point_labels)
+        {
+            const touchPos = this.touchListener.touchPos;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+            let world_y:number = 0;
+            let world_x = 0;
+            const selected_function = this.functions[this.layer_manager.list.selected()];
+            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+            {
+                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
+                const closest_min = selected_function.closest_min(touch_world_x);
+                let x_index = closest_min;
+                if(closest_min !== null)
+                {
+                    world_x = selected_function.local_minima[x_index!];
+                    world_y = selected_function.local_minima[x_index! + 1];
+                }
+                
+                if(x_index !== null)
+                {
+                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
+                    ctx.beginPath();
+                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
+                    ctx.moveTo(sx, screen_space_x_axis);
+                    ctx.lineTo(sx, y);
+                    ctx.stroke();
+                }
+            }
+            
+        }
+    }
+    world_x_to_screen(x:number):number
+    {
+        return (x - this.x_min) / this.deltaX * this.main_buf.width;
+    }
+    world_y_to_screen(y:number):number
+    {
+        return (-y - this.y_min) / this.deltaY * this.main_buf.height;
     }
     auto_round_world_x(x:number):number
     {
