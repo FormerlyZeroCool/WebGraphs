@@ -150,7 +150,7 @@ class Function {
                 //const min_x = this.calc_x_minmax(prev_y, y, next_y);
                 if (prev_delta_y < 0 && current_delta_y > 0) // maxima
                  {
-                    const x_max = this.optimize_xmax(x - dx, x + dx, 128);
+                    const x_max = this.optimize_xmax(x - dx, x + dx, 32);
                     if (this.compiled(x_max) > y) {
                         this.local_maxima.push(x_max);
                         this.local_maxima.push(this.compiled(x_max));
@@ -162,7 +162,7 @@ class Function {
                 }
                 else if (prev_delta_y > 0 && current_delta_y < 0) //minima
                  {
-                    const x_min = this.optimize_xmin(x - dx, x + dx, 128);
+                    const x_min = this.optimize_xmin(x - dx, x + dx, 32);
                     if (this.compiled(x_min) > y) {
                         this.local_minima.push(x_min);
                         this.local_minima.push(this.compiled(x_min));
@@ -180,24 +180,16 @@ class Function {
         return Math.abs(a - b);
     }
     optimize_xmax(min_x, max_x, it) {
-        const y = [];
         while (it > 0) {
             const delta = max_x - min_x;
             const dx = delta / 5;
             const mid = (min_x + max_x) / 2;
-            y.splice(0, y.length);
-            for (let i = 0; i < 5; i++) {
-                y.push(this.compiled(min_x + dx * i));
-            }
-            {
-                if (y[1] > y[3]) {
-                    max_x = mid;
-                }
-                else // if(sign(y[2] - y[3]) !== sign(y[3] - y[4]))
-                 {
-                    min_x = mid;
-                }
-            }
+            const ly = this.compiled(min_x + dx);
+            const hy = this.compiled(min_x + dx * 3);
+            if (ly > hy)
+                max_x = mid;
+            else
+                min_x = mid;
             it--;
         }
         return (min_x + max_x) / 2;
@@ -208,19 +200,12 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta / 5;
             const mid = (min_x + max_x) / 2;
-            y.splice(0, y.length);
-            for (let i = 0; i < 5; i++) {
-                y.push(this.compiled(min_x + dx * i));
-            }
-            {
-                if (y[1] < y[3]) {
-                    max_x = mid;
-                }
-                else // if(sign(y[2] - y[3]) !== sign(y[3] - y[4]))
-                 {
-                    min_x = mid;
-                }
-            }
+            const ly = this.compiled(min_x + dx);
+            const hy = this.compiled(min_x + dx * 3);
+            if (ly < hy)
+                max_x = mid;
+            else
+                min_x = mid;
             it--;
         }
         return (min_x + max_x) / 2;
