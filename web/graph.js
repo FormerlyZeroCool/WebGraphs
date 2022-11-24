@@ -150,7 +150,7 @@ class Function {
                 //const min_x = this.calc_x_minmax(prev_y, y, next_y);
                 if (prev_delta_y < 0 && current_delta_y > 0) // maxima
                  {
-                    const x_max = this.optimize_xmax(x - dx, x + dx, 32);
+                    const x_max = this.optimize_xmax(x - dx, x + dx, 128);
                     if (this.compiled(x_max) > y) {
                         this.local_maxima.push(x_max);
                         this.local_maxima.push(this.compiled(x_max));
@@ -162,7 +162,7 @@ class Function {
                 }
                 else if (prev_delta_y > 0 && current_delta_y < 0) //minima
                  {
-                    const x_min = this.optimize_xmin(x - dx, x + dx, 32);
+                    const x_min = this.optimize_xmin(x - dx, x + dx, 128);
                     if (this.compiled(x_min) > y) {
                         this.local_minima.push(x_min);
                         this.local_minima.push(this.compiled(x_min));
