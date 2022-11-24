@@ -1,4 +1,7 @@
 ;
+export function sign(val) {
+    return val < 0 ? -1 : 1;
+}
 export function clamp(num, min, max) {
     return Math.min(Math.max(num, min), max);
 }

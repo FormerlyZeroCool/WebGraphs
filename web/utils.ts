@@ -2,7 +2,10 @@
 export interface FilesHaver{
     files:FileList;
 };
-
+export function sign(val:number):number
+{
+    return val < 0 ? -1 : 1;
+}
 export function clamp(num:number, min:number, max:number):number 
 { 
     return Math.min(Math.max(num, min), max);

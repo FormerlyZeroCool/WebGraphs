@@ -1,7 +1,7 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox, 
     StateManagedUIElement, StateManagedUI, UIState} from './gui.js'
-import {random, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
+import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 window.sin = Math.sin;
 window.cos = Math.cos;
@@ -161,6 +161,14 @@ class Function {
             this.dx = 0;
         }
     }
+    calc_x_minmax(x:number, y1:number, y2:number, y3:number):number//returns der for x value
+    {
+        const dxsq = this.dx*this.dx;
+        const xsq = x*x;
+        return -(((dxsq * y1 - xsq * y1 + 2 * x * y2 - y3) * (-this.dx * x * y1 + xsq * y1 + this.dx * y2 - 2 * x * y2 +
+            y3))/dxsq*dxsq);
+       
+    }
     calc_for(x_min:number, x_max:number, dx:number):number[]
     {
         if(this.error_message === null)
@@ -183,22 +191,45 @@ class Function {
                 console.log(error.message);
                 this.error_message = error.message;
             }
-            for(let x = x_min, i = 1; i < this.table.length - 1; x += dx, i++)
+            let x = x_min;
+            for(let i = 1; i < this.table.length - 1; i++)
             {
                 const prev_y = this.table[i - 1];
+                x = x_min + i * dx;
                 const y = this.table[i];
                 const next_y = this.table[i + 1];
                 const prev_delta_y = prev_y - y;
                 const current_delta_y = y - next_y;
+                //const min_x = this.calc_x_minmax(prev_y, y, next_y);
                 if(prev_delta_y < 0 && current_delta_y > 0)// maxima
                 {
-                    this.local_maxima.push(x);
-                    this.local_maxima.push(y);
+                    const x_max = this.optimize_xmax(x-dx, x+dx, 32);
+                    if(this.compiled(x_max) > y)
+                    {
+                        this.local_maxima.push(x_max);
+                        this.local_maxima.push(this.compiled(x_max));
+                        console.log("good")
+                    }
+                    else
+                    {
+                        this.local_maxima.push(x);
+                        this.local_maxima.push(y);
+                        console.log("bad")
+                    }
                 }
                 else if(prev_delta_y > 0 && current_delta_y < 0)//minima
                 {
-                    this.local_minima.push(x);
-                    this.local_minima.push(y);
+                    const x_min = this.optimize_xmin(x-dx, x+dx, 32);
+                    if(this.compiled(x_min) > y)
+                    {
+                        this.local_minima.push(x_min);
+                        this.local_minima.push(this.compiled(x_min));
+                    }
+                    else
+                    {
+                        this.local_minima.push(x);
+                        this.local_minima.push(y);
+                    }
                 }
             }
         }
@@ -208,13 +239,60 @@ class Function {
     {
         return Math.abs(a-b);
     }
-    /*optimize_ima(prev_x:number, cur_x:number, next_x:number, it:number):number
+    optimize_xmax(min_x:number, max_x:number, it:number):number
     {
-        if(it === 0)
-            return cur_x;
-
-        const delta_y
-    }*/
+        const y:number[] = [];
+        while(it > 0)
+        {
+            const delta = max_x - min_x;
+            const dx = delta / 5;
+            const mid = (min_x + max_x) / 2;
+            y.splice(0, y.length);
+            for(let i = 0; i < 5; i++)
+            {
+                y.push(this.compiled(min_x + dx * i));
+            }
+            {
+                if(y[1] > y[3])
+                {
+                    max_x = mid;
+                }
+                else// if(sign(y[2] - y[3]) !== sign(y[3] - y[4]))
+                {
+                    min_x = mid;
+                }
+            }
+            it--;
+        }
+        return (min_x + max_x) / 2;
+    }
+    optimize_xmin(min_x:number, max_x:number, it:number):number
+    {
+        const y:number[] = [];
+        while(it > 0)
+        {
+            const delta = max_x - min_x;
+            const dx = delta / 5;
+            const mid = (min_x + max_x) / 2;
+            y.splice(0, y.length);
+            for(let i = 0; i < 5; i++)
+            {
+                y.push(this.compiled(min_x + dx * i));
+            }
+            {
+                if(y[1] < y[3])
+                {
+                    max_x = mid;
+                }
+                else// if(sign(y[2] - y[3]) !== sign(y[3] - y[4]))
+                {
+                    min_x = mid;
+                }
+            }
+            it--;
+        }
+        return (min_x + max_x) / 2;
+    }
     index_to_x(index:number):number
     {
         return this.x_min + index * this.dx;
