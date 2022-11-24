@@ -218,7 +218,7 @@ class Function {
                 else if(prev_delta_y > 0 && current_delta_y < 0)//minima
                 {
                     const x_min = this.optimize_xmin(x-dx, x+dx, 32);
-                    if(this.compiled(x_min) > y)
+                    if(this.compiled(x_min) < y)
                     {
                         this.local_minima.push(x_min);
                         this.local_minima.push(this.compiled(x_min));
@@ -245,7 +245,7 @@ class Function {
             const dx = delta / 5;
             const mid = (min_x + max_x) / 2;
             const ly = this.compiled(min_x + dx);
-            const hy = this.compiled(min_x + dx * 3);
+            const hy = this.compiled(max_x - dx);
             if(ly > hy)
                 max_x = mid;
             else
@@ -264,7 +264,7 @@ class Function {
             const dx = delta / 5;
             const mid = (min_x + max_x) / 2;
             const ly = this.compiled(min_x + dx);
-            const hy = this.compiled(min_x + dx * 3);
+            const hy = this.compiled(max_x - dx);
             if(ly < hy)
                 max_x = mid;
             else
