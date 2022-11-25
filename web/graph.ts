@@ -185,6 +185,7 @@ class Function {
             this.x_min = x_min;
             this.dx = dx;
             this.table.splice(0, this.table.length);
+            this.zeros.splice(0, this.zeros.length);
             this.local_maxima.splice(0, this.local_maxima.length);
             this.local_minima.splice(0, this.local_minima.length);
             try {
@@ -361,8 +362,8 @@ class Function {
     }
     closest_zero(x:number):number | null
     {
-        let closest_min = 0;
-        let dist = this.zeros.length > 0 ? Math.abs(x - this.zeros[closest_min]) : null;
+        let closest_zero = 0;
+        let dist = this.zeros.length > 0 ? Math.abs(x - this.zeros[closest_zero]) : null;
         if(dist !== null)
         {
             for(let i = 2;  i < this.zeros.length; i+=2)
@@ -372,10 +373,10 @@ class Function {
                 if(dist > dist_xi)
                 {
                     dist = dist_xi;
-                    closest_min = i;
+                    closest_zero = i;
                 }
             }
-            return closest_min;
+            return closest_zero;
         }
         return null;
     }
@@ -945,7 +946,7 @@ class Game extends SquareAABBCollidable {
                 
                 if(x_index !== null)
                 {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, +ctx.font.split("px")[0]);
                     const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
                     ctx.beginPath();
                     const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
@@ -982,7 +983,7 @@ class Game extends SquareAABBCollidable {
                 
                 if(x_index !== null)
                 {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, -1 * +ctx.font.split("px")[0]);
                     const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
                     ctx.beginPath();
                     const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
@@ -1019,7 +1020,7 @@ class Game extends SquareAABBCollidable {
                 
                 if(x_index !== null)
                 {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, +ctx.font.split("px")[0]);
                     const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
                     ctx.beginPath();
                     const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
@@ -1057,13 +1058,13 @@ class Game extends SquareAABBCollidable {
         const world_y = ((touchPos[1] / this.height) * this.deltaY + this.y_min);
         this.render_formatted_point(ctx, world_x, -world_y, touchPos[0], touchPos[1], precision);
     }
-    render_x_y_label_world_space(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, precision:number = 1):void
+    render_x_y_label_world_space(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, precision:number = 1, offset_y:number = 0):void
     {
         const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;
         const screen_y = ((-world_y - this.y_min) / this.deltaY) * this.height;
-        this.render_formatted_point(ctx, world_x, world_y, screen_x, screen_y, precision);
+        this.render_formatted_point(ctx, world_x, world_y, screen_x, screen_y, precision, offset_y);
     }
-    render_formatted_point(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, screen_x:number, screen_y:number, precision:number = 2):void
+    render_formatted_point(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, screen_x:number, screen_y:number, precision:number = 2, offset_y:number = 0):void
     {
         const dim = 10;
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
@@ -1080,8 +1081,8 @@ class Game extends SquareAABBCollidable {
             screen_x -= text_width + dim * 2;
             screen_y += 3;
         }
-        ctx.fillText(text, screen_x + dim, screen_y + dim / 2);
-        ctx.strokeText(text, screen_x + dim, screen_y + dim / 2);
+        ctx.fillText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
+        ctx.strokeText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
     }
     format_number(value:number, precision:number = 2):string
     {
