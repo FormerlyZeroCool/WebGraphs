@@ -316,7 +316,6 @@ class FollowCursor {
     }
     draw(ctx, canvas, x, y, width, height) {
         this.grid.render_labels_floating(ctx);
-        this.grid.render_labels_zeros(ctx);
         if (this.grid.draw_point_labels)
             this.grid.render_x_y_label_screen_space(ctx, this.grid.touchListener.touchPos);
     }
@@ -327,6 +326,40 @@ class FollowCursor {
         throw new Error('Method not implemented.');
     }
     transition(delta_time) {
+        if (this.grid.chkbx_render_zeros.checked)
+            return new FollowNearestZero(this.grid);
+        else if (this.grid.chkbx_render_min_max.checked)
+            return new FollowNearestMinMax(this.grid);
+        return this;
+    }
+}
+;
+class FollowNearestZero {
+    constructor(grid) {
+        this.grid = grid;
+    }
+    draw(ctx, canvas, x, y, width, height) {
+        this.grid.render_labels_zeros(ctx);
+    }
+    handleKeyboardEvents(type, event) {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type, event) {
+        throw new Error('Method not implemented.');
+    }
+    transition(delta_time) {
+        if (this.grid.chkbx_render_min_max.checked) {
+            this.grid.chkbx_render_zeros.checked = false;
+            this.grid.chkbx_render_zeros.refresh();
+            this.grid.options_gui_manager.refresh();
+            return new FollowNearestMinMax(this.grid);
+        }
+        else if (!this.grid.chkbx_render_zeros.checked) {
+            this.grid.chkbx_render_zeros.checked = false;
+            this.grid.chkbx_render_zeros.refresh();
+            this.grid.options_gui_manager.refresh();
+            return new FollowCursor(this.grid);
+        }
         return this;
     }
 }
@@ -346,6 +379,18 @@ class FollowNearestMinMax {
         throw new Error('Method not implemented.');
     }
     transition(delta_time) {
+        if (this.grid.chkbx_render_zeros.checked) {
+            this.grid.chkbx_render_min_max.checked = false;
+            this.grid.chkbx_render_min_max.refresh();
+            this.grid.options_gui_manager.refresh();
+            return new FollowNearestZero(this.grid);
+        }
+        else if (!this.grid.chkbx_render_min_max.checked) {
+            this.grid.chkbx_render_min_max.checked = false;
+            this.grid.chkbx_render_min_max.refresh();
+            this.grid.options_gui_manager.refresh();
+            return new FollowCursor(this.grid);
+        }
         return this;
     }
 }
@@ -391,7 +436,7 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 200 + touch_mod * 3.1], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 250 + touch_mod * 4.3], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
@@ -402,6 +447,7 @@ class Game extends SquareAABBCollidable {
             this.draw_axis_labels = event.checkBox.checked;
             this.repaint = true;
         }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
+        chkbx_render_zeros: GuiCheckBox;
         const show_label = new GuiLabel("Show point", 100, 18, 50 + touch_mod);
         this.options_gui_manager.addElement(show_label);
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
@@ -409,12 +455,14 @@ class Game extends SquareAABBCollidable {
         }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
         const minmax_label = new GuiLabel("Min Max", 100, 18, 50 + touch_mod);
         this.options_gui_manager.addElement(minmax_label);
-        this.options_gui_manager.addElement(new GuiCheckBox((event) => {
-            if (event.checkBox.checked)
-                this.state_manager_grid.state = new FollowNearestMinMax(this);
-            else
-                this.state_manager_grid.state = new FollowCursor(this);
-        }, 50 + touch_mod, 50 + touch_mod, false));
+        this.chkbx_render_min_max = new GuiCheckBox((event) => {
+        }, 50 + touch_mod, 50 + touch_mod, false);
+        this.options_gui_manager.addElement(this.chkbx_render_min_max);
+        const zeros_label = new GuiLabel("Zeros", 100, 18, 50 + touch_mod);
+        this.options_gui_manager.addElement(zeros_label);
+        this.chkbx_render_zeros = new GuiCheckBox((event) => {
+        }, 50 + touch_mod, 50 + touch_mod, false);
+        this.options_gui_manager.addElement(this.chkbx_render_zeros);
         this.options_gui_manager.activate();
         //this.restart_game();
         this.try_render_functions();
@@ -873,6 +921,7 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time) {
         const ms_to_fade = 250;
+        this.state_manager_grid.transition(delta_time);
         if (!this.touchListener.registeredTouch) {
             if (!this.multi_touchListener.registeredMultiTouchEvent) {
                 if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
