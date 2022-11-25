@@ -127,7 +127,7 @@ class Function {
         return -(((dxsq * y1 - xsq * y1 + 2 * x * y2 - y3) * (-this.dx * x * y1 + xsq * y1 + this.dx * y2 - 2 * x * y2 +
             y3)) / dxsq * dxsq);
     }
-    calc_for(x_min, x_max, dx) {
+    calc_for(x_min, x_max, dx, calc_minmax, calc_zeros) {
         if (this.error_message === null) {
             this.x_max = x_max;
             this.x_min = x_min;
@@ -149,47 +149,52 @@ class Function {
             }
             let x = x_min;
             const max = getWidth();
+            const o_opt_count = 128;
+            let optimization_count = 128;
             for (let i = 1; i < this.table.length - 1; i++) {
-                if (this.zeros.length + this.local_maxima.length + this.local_minima.length > max)
-                    break;
+                const number_calced = Math.min((this.zeros.length + this.local_maxima.length + this.local_minima.length), max);
+                optimization_count = o_opt_count * (max - number_calced) / max;
                 const prev_y = this.table[i - 1];
                 x = x_min + i * dx;
                 const y = this.table[i];
                 const next_y = this.table[i + 1];
                 const prev_delta_y = prev_y - y;
                 const current_delta_y = y - next_y;
-                //const min_x = this.calc_x_minmax(prev_y, y, next_y);
-                if (prev_y < 0 && y > 0) {
-                    const zero_x = this.optimize_zero(x - dx, x + dx, 48);
-                    this.zeros.push(zero_x);
-                    this.zeros.push(this.compiled(zero_x));
-                }
-                else if (y === 0) {
-                    this.zeros.push(x);
-                    this.zeros.push(y);
-                }
-                if (prev_delta_y < 0 && current_delta_y > 0) // maxima
-                 {
-                    const x_max = this.optimize_xmax(x - dx, x + dx, 48);
-                    if (this.compiled(x_max) > y) {
-                        this.local_maxima.push(x_max);
-                        this.local_maxima.push(this.compiled(x_max));
+                if (calc_zeros) {
+                    if (prev_y < 0 && y > 0) {
+                        const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
+                        this.zeros.push(zero_x);
+                        this.zeros.push(this.compiled(zero_x));
                     }
-                    else {
-                        this.local_maxima.push(x);
-                        this.local_maxima.push(y);
+                    else if (y === 0) {
+                        this.zeros.push(x);
+                        this.zeros.push(y);
                     }
                 }
-                else if (prev_delta_y > 0 && current_delta_y < 0) //minima
-                 {
-                    const x_min = this.optimize_xmin(x - dx, x + dx, 48);
-                    if (this.compiled(x_min) < y) {
-                        this.local_minima.push(x_min);
-                        this.local_minima.push(this.compiled(x_min));
+                if (calc_minmax) {
+                    if (prev_delta_y < 0 && current_delta_y > 0) // maxima
+                     {
+                        const x_max = this.optimize_xmax(x - dx, x + dx, optimization_count);
+                        if (this.compiled(x_max) > y) {
+                            this.local_maxima.push(x_max);
+                            this.local_maxima.push(this.compiled(x_max));
+                        }
+                        else {
+                            this.local_maxima.push(x);
+                            this.local_maxima.push(y);
+                        }
                     }
-                    else {
-                        this.local_minima.push(x);
-                        this.local_minima.push(y);
+                    else if (prev_delta_y > 0 && current_delta_y < 0) //minima
+                     {
+                        const x_min = this.optimize_xmin(x - dx, x + dx, optimization_count);
+                        if (this.compiled(x_min) < y) {
+                            this.local_minima.push(x_min);
+                            this.local_minima.push(this.compiled(x_min));
+                        }
+                        else {
+                            this.local_minima.push(x);
+                            this.local_minima.push(y);
+                        }
                     }
                 }
             }
@@ -327,10 +332,14 @@ class FollowCursor {
         throw new Error('Method not implemented.');
     }
     transition(delta_time) {
-        if (this.grid.chkbx_render_zeros.checked)
+        if (this.grid.chkbx_render_zeros.checked) {
+            this.grid.repaint = true;
             return new FollowNearestZero(this.grid);
-        else if (this.grid.chkbx_render_min_max.checked)
+        }
+        else if (this.grid.chkbx_render_min_max.checked) {
+            this.grid.repaint = true;
             return new FollowNearestMinMax(this.grid);
+        }
         return this;
     }
 }
@@ -350,12 +359,14 @@ class FollowNearestZero {
     }
     transition(delta_time) {
         if (this.grid.chkbx_render_min_max.checked) {
+            this.grid.repaint = true;
             this.grid.chkbx_render_zeros.checked = false;
             this.grid.chkbx_render_zeros.refresh();
             this.grid.options_gui_manager.refresh();
             return new FollowNearestMinMax(this.grid);
         }
         else if (!this.grid.chkbx_render_zeros.checked) {
+            this.grid.repaint = true;
             this.grid.chkbx_render_zeros.checked = false;
             this.grid.chkbx_render_zeros.refresh();
             this.grid.options_gui_manager.refresh();
@@ -381,12 +392,14 @@ class FollowNearestMinMax {
     }
     transition(delta_time) {
         if (this.grid.chkbx_render_zeros.checked) {
+            this.grid.repaint = true;
             this.grid.chkbx_render_min_max.checked = false;
             this.grid.chkbx_render_min_max.refresh();
             this.grid.options_gui_manager.refresh();
             return new FollowNearestZero(this.grid);
         }
         else if (!this.grid.chkbx_render_min_max.checked) {
+            this.grid.repaint = true;
             this.grid.chkbx_render_min_max.checked = false;
             this.grid.chkbx_render_min_max.refresh();
             this.grid.options_gui_manager.refresh();
@@ -561,7 +574,7 @@ class Game extends SquareAABBCollidable {
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 //build table to be rendered
-                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3);
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3, this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
