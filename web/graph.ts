@@ -216,13 +216,13 @@ class Function {
                 const current_delta_y = y - next_y;
                 if(calc_zeros)
                 {
-                    if(prev_y < 0 && y > 0)
+                    if((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0))
                     {
                         const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                         this.zeros.push(zero_x);
                         this.zeros.push(this.compiled(zero_x));
                     }
-                    else if(y === 0)
+                    else if(prev_y < 0 && y > 0)
                     {
                         this.zeros.push(x);
                         this.zeros.push(y);
@@ -1070,7 +1070,7 @@ class Game extends SquareAABBCollidable {
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         let text:string;
-        const decimal = true;
+        const decimal = Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > Math.pow(2, -20) || Math.abs(world_x) < Math.pow(2, -35);
        
         text = `x: ${decimal ? round_with_precision(world_x, precision + 2) : world_x.toExponential(precision)} y: ${
             decimal ? round_with_precision(world_y, precision + 2) : world_y.toExponential(precision)}`;
