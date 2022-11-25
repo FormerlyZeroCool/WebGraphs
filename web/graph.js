@@ -11,6 +11,12 @@ window.atan = Math.atan;
 window.log = Math.log;
 window.pow = Math.pow;
 window.sqrt = Math.sqrt;
+window.derx = (foo, x, dx) => {
+    return (foo(x + dx) - foo(x)) / dx;
+};
+window.dderx = (foo, x, dx) => {
+    return (derx(foo, x + dx, dx) - derx(foo, x, dx)) / dx;
+};
 class LayerManagerTool {
     constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array, callback_get_non_error_background_color) {
         this.callback_add_layer = callback_add_layer;
@@ -92,6 +98,7 @@ class Function {
         }
         this.local_maxima = [];
         this.local_minima = [];
+        this.zeros = [];
         this.table = [];
         this.x_max = 0;
         this.x_min = 0;
@@ -140,7 +147,10 @@ class Function {
                 this.error_message = error.message;
             }
             let x = x_min;
+            const max = getWidth();
             for (let i = 1; i < this.table.length - 1; i++) {
+                if (this.zeros.length + this.local_maxima.length + this.local_minima.length > max)
+                    break;
                 const prev_y = this.table[i - 1];
                 x = x_min + i * dx;
                 const y = this.table[i];
@@ -148,9 +158,18 @@ class Function {
                 const prev_delta_y = prev_y - y;
                 const current_delta_y = y - next_y;
                 //const min_x = this.calc_x_minmax(prev_y, y, next_y);
+                if (prev_y < 0 && y > 0) {
+                    const zero_x = this.optimize_zero(x - dx, x + dx, 48);
+                    this.zeros.push(zero_x);
+                    this.zeros.push(this.compiled(zero_x));
+                }
+                else if (y === 0) {
+                    this.zeros.push(x);
+                    this.zeros.push(y);
+                }
                 if (prev_delta_y < 0 && current_delta_y > 0) // maxima
                  {
-                    const x_max = this.optimize_xmax(x - dx, x + dx, 32);
+                    const x_max = this.optimize_xmax(x - dx, x + dx, 48);
                     if (this.compiled(x_max) > y) {
                         this.local_maxima.push(x_max);
                         this.local_maxima.push(this.compiled(x_max));
@@ -162,7 +181,7 @@ class Function {
                 }
                 else if (prev_delta_y > 0 && current_delta_y < 0) //minima
                  {
-                    const x_min = this.optimize_xmin(x - dx, x + dx, 32);
+                    const x_min = this.optimize_xmin(x - dx, x + dx, 48);
                     if (this.compiled(x_min) < y) {
                         this.local_minima.push(x_min);
                         this.local_minima.push(this.compiled(x_min));
@@ -182,8 +201,8 @@ class Function {
     optimize_xmax(min_x, max_x, it) {
         while (it > 0) {
             const delta = max_x - min_x;
-            const dx = delta / 5;
-            const mid = (min_x + max_x) / 2;
+            const dx = delta * (1 / 5);
+            const mid = (min_x + max_x) * (1 / 2);
             const ly = this.compiled(min_x + dx);
             const hy = this.compiled(max_x - dx);
             if (ly > hy)
@@ -198,11 +217,27 @@ class Function {
         const y = [];
         while (it > 0) {
             const delta = max_x - min_x;
-            const dx = delta / 5;
-            const mid = (min_x + max_x) / 2;
+            const dx = delta * (1 / 5);
+            const mid = (min_x + max_x) * (1 / 2);
             const ly = this.compiled(min_x + dx);
             const hy = this.compiled(max_x - dx);
             if (ly < hy)
+                max_x = mid;
+            else
+                min_x = mid;
+            it--;
+        }
+        return (min_x + max_x) / 2;
+    }
+    optimize_zero(min_x, max_x, it) {
+        const y = [];
+        while (it > 0) {
+            const delta = max_x - min_x;
+            const dx = delta * (1 / 5);
+            const mid = (min_x + max_x) * (1 / 2);
+            const ly = this.compiled(min_x + dx);
+            const hy = this.compiled(max_x - dx);
+            if (Math.abs(ly) < Math.abs(hy))
                 max_x = mid;
             else
                 min_x = mid;
@@ -217,7 +252,7 @@ class Function {
         if (this.local_maxima.length > 0) {
             let closest_max = 0;
             let dist = Math.abs(x - this.local_maxima[closest_max]);
-            for (let i = 0; i < this.local_maxima.length; i += 2) {
+            for (let i = 2; i < this.local_maxima.length; i += 2) {
                 const xi = this.local_maxima[i];
                 const dist_xi = Math.abs(x - xi);
                 if (dist > dist_xi) {
@@ -235,6 +270,22 @@ class Function {
         if (dist !== null) {
             for (let i = 2; i < this.local_minima.length; i += 2) {
                 const xi = this.local_minima[i];
+                const dist_xi = Math.abs(x - xi);
+                if (dist > dist_xi) {
+                    dist = dist_xi;
+                    closest_min = i;
+                }
+            }
+            return closest_min;
+        }
+        return null;
+    }
+    closest_zero(x) {
+        let closest_min = 0;
+        let dist = this.zeros.length > 0 ? Math.abs(x - this.zeros[closest_min]) : null;
+        if (dist !== null) {
+            for (let i = 2; i < this.zeros.length; i += 2) {
+                const xi = this.zeros[i];
                 const dist_xi = Math.abs(x - xi);
                 if (dist > dist_xi) {
                     dist = dist_xi;
@@ -265,6 +316,7 @@ class FollowCursor {
     }
     draw(ctx, canvas, x, y, width, height) {
         this.grid.render_labels_floating(ctx);
+        this.grid.render_labels_zeros(ctx);
         if (this.grid.draw_point_labels)
             this.grid.render_x_y_label_screen_space(ctx, this.grid.touchListener.touchPos);
     }
@@ -629,6 +681,36 @@ class Game extends SquareAABBCollidable {
             }
         }
     }
+    render_labels_zeros(ctx) {
+        if (this.draw_point_labels) {
+            const touchPos = this.touchListener.touchPos;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] : -this.y_min < 0 ? 0 : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+            let world_y = 0;
+            let world_x = 0;
+            const selected_function = this.functions[this.layer_manager.list.selected()];
+            if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
+                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
+                const closest_max = selected_function.closest_zero(touch_world_x);
+                let x_index = closest_max;
+                if (closest_max !== null) {
+                    world_x = selected_function.zeros[x_index];
+                    world_y = selected_function.zeros[x_index + 1];
+                }
+                if (x_index !== null) {
+                    this.render_x_y_label_world_space(ctx, world_x, world_y);
+                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
+                    ctx.beginPath();
+                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
+                    ctx.moveTo(sx, screen_space_x_axis);
+                    ctx.lineTo(sx, y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
     render_labels_max(ctx) {
         if (this.draw_point_labels) {
             const touchPos = this.touchListener.touchPos;
@@ -718,12 +800,8 @@ class Game extends SquareAABBCollidable {
         ctx.fillRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         let text;
-        if (Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > 0.00001) {
-            text = `x: ${round_with_precision(world_x, precision + 2)} y: ${round_with_precision(world_y, precision + 2)}`;
-        }
-        else {
-            text = `x: ${world_x.toExponential(precision)} y: ${world_y.toExponential(precision)}`;
-        }
+        const decimal = Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > 0.00001;
+        text = `x: ${decimal ? round_with_precision(world_x, precision + 2) : world_x.toExponential(precision)} y: ${decimal ? round_with_precision(world_y, precision + 2) : world_y.toExponential(precision)}`;
         const text_width = ctx.measureText(text).width;
         if (text_width + screen_x + dim > this.width) {
             screen_x -= text_width + dim * 2;
