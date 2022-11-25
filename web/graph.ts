@@ -222,7 +222,7 @@ class Function {
                         this.zeros.push(zero_x);
                         this.zeros.push(this.compiled(zero_x));
                     }
-                    else if(prev_y < 0 && y > 0)
+                    else if(y === 0)
                     {
                         this.zeros.push(x);
                         this.zeros.push(y);
