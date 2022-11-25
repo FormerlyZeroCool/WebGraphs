@@ -991,6 +991,8 @@ class Game extends SquareAABBCollidable {
                     const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
                     ctx.beginPath();
                     const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
                     ctx.moveTo(sx, screen_space_x_axis);
                     ctx.lineTo(sx, y);
                     ctx.stroke();
@@ -1026,6 +1028,8 @@ class Game extends SquareAABBCollidable {
                     const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
                     ctx.beginPath();
                     const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
                     ctx.moveTo(sx, screen_space_x_axis);
                     ctx.lineTo(sx, y);
                     ctx.stroke();
