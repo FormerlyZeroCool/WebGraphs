@@ -12,6 +12,8 @@ export function clamp(num:number, min:number, max:number):number
 }
 export function round_with_precision(value:number, precision:number):number
 {
+    if(Math.abs(value) < Math.pow(2, -35))
+        return 0;
     const mult = Math.pow(10, Math.ceil(precision - Math.log10(Math.abs(value))));
     const rounded = Math.round(value * mult) / mult;
     return rounded;
