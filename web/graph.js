@@ -160,19 +160,25 @@ class Function {
                 const next_y = this.table[i + 1];
                 const prev_delta_y = prev_y - y;
                 const current_delta_y = y - next_y;
+                const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
+                const is_minima = prev_delta_y > 0 && current_delta_y < 0;
                 if (calc_zeros) {
                     if ((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0)) {
                         const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                         this.zeros.push(zero_x);
                         this.zeros.push(this.compiled(zero_x));
                     }
-                    else if (y === 0) {
-                        this.zeros.push(x);
-                        this.zeros.push(y);
-                    }
+                    else if (is_maxima ||
+                        is_minima || y === 0)
+                        if (Math.abs(y) < dx) {
+                            console.log(y);
+                            const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
+                            this.zeros.push(zero_x);
+                            this.zeros.push(this.compiled(zero_x));
+                        }
                 }
                 if (calc_minmax) {
-                    if (prev_delta_y < 0 && current_delta_y > 0) // maxima
+                    if (is_maxima) // maxima
                      {
                         const x_max = this.optimize_xmax(x - dx, x + dx, optimization_count);
                         if (this.compiled(x_max) > y) {
@@ -184,7 +190,7 @@ class Function {
                             this.local_maxima.push(y);
                         }
                     }
-                    else if (prev_delta_y > 0 && current_delta_y < 0) //minima
+                    else if (is_minima) //minima
                      {
                         const x_min = this.optimize_xmin(x - dx, x + dx, optimization_count);
                         if (this.compiled(x_min) < y) {
