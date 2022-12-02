@@ -174,7 +174,6 @@ class Function {
                     else if (is_maxima ||
                         is_minima || y === 0)
                         if (Math.abs(y) < dx) {
-                            console.log(y);
                             const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                             this.zeros.push(zero_x);
                             this.zeros.push(this.compiled(zero_x, this.dx));
@@ -683,20 +682,46 @@ class Game extends SquareAABBCollidable {
                 this.main_buf.ctx.stroke();
             }
         });
-        const function_points = [];
         this.intersections.splice(0, this.intersections.length);
         if (this.chkbx_render_intersections.checked && this.selected_item !== this.last_selected_item) {
             const fun1 = functions[this.selected_item];
             const fun2 = functions[this.last_selected_item];
-            for (let j = 0; j < functions[0].table.length - 1; j++) {
-                if (fun1.table[j] - fun2.table[j] === 0 || sign(fun1.table[j] - fun2.table[j]) !== sign(fun1.table[j + 1] - fun2.table[j + 1])) {
-                    this.intersections.push(fun1.index_to_x(j));
-                    this.intersections.push(fun1.table[j]);
+            if (fun1 && fun2) {
+                for (let j = 0; j < functions[0].table.length - 1; j++) {
+                    if (fun1.table[j + 1] - fun2.table[j + 1] === 0) {
+                        this.intersections.push(fun1.index_to_x(j));
+                        this.intersections.push(fun1.table[j]);
+                    }
+                    else if (sign(fun1.table[j] - fun2.table[j]) !== sign(fun1.table[j + 1] - fun2.table[j + 1])) {
+                        const optimized_runs = getWidth();
+                        const optimization_iterations = Math.floor(132 - 132 * ((this.intersections.length < optimized_runs ? this.intersections.length : optimized_runs) / optimized_runs));
+                        const optimized_x = this.optimize_intersection(fun1, fun2, fun1.index_to_x(j), fun1.index_to_x(j + 1), optimization_iterations + 12);
+                        this.intersections.push(optimized_x);
+                        this.intersections.push(fun1.call(optimized_x));
+                    }
                 }
             }
         }
         this.main_buf.ctx.beginPath();
         this.main_buf.ctx.stroke();
+    }
+    optimize_intersection(fun1, fun2, min_x, max_x, it) {
+        const y = [];
+        while (it > 0) {
+            const delta = max_x - min_x;
+            const dx = delta * (1 / 5);
+            const mid = (min_x + max_x) * (1 / 2);
+            const ly1 = fun1.compiled(min_x + dx, fun1.dx);
+            const hy1 = fun1.compiled(max_x - dx, fun1.dx);
+            const ly2 = fun2.compiled(min_x + dx, fun2.dx);
+            const hy2 = fun2.compiled(max_x - dx, fun2.dx);
+            if (Math.abs(ly1 - ly2) < Math.abs(hy1 - hy2))
+                max_x = mid;
+            else
+                min_x = mid;
+            it--;
+        }
+        return (min_x + max_x) / 2;
     }
     render_axises(canvas, ctx, x, y, width, height) {
         if (this.draw_axises) {
