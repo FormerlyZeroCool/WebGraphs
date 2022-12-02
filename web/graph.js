@@ -1,7 +1,10 @@
 import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
 import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, StateManagedUI } from './gui.js';
-import { srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue } from './utils.js';
+import { sign, srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
+window.sec = (x) => 1 / Math.sin(x);
+window.csc = (x) => 1 / Math.cos(x);
+window.cotan = (x) => 1 / Math.tan(x);
 window.sin = Math.sin;
 window.cos = Math.cos;
 window.tan = Math.tan;
@@ -90,7 +93,7 @@ class Function {
         this.source = source;
         this.error_message = null;
         try {
-            this.compiled = eval(`(x) => ${source}`);
+            this.compiled = eval(`(x, dx) => ${source}`);
         }
         catch (e) {
             console.log(e.message);
@@ -110,7 +113,7 @@ class Function {
             this.source = source;
             this.error_message = null;
             try {
-                this.compiled = eval(`(x) => ${source}`);
+                this.compiled = eval(`(x, dx) => ${source}`);
             }
             catch (e) {
                 console.log(e.message);
@@ -140,7 +143,7 @@ class Function {
                 const iterations = (this.x_max - this.x_min) / this.dx;
                 for (let j = 0; j < iterations; j++) {
                     const x = this.x_min + j * dx;
-                    this.table.push(this.compiled(x));
+                    this.table.push(this.compiled(x, this.dx));
                 }
             }
             catch (error) {
@@ -150,7 +153,7 @@ class Function {
             let x = x_min;
             const max = getWidth() / 2;
             const o_opt_count = 128;
-            let optimization_count = 128;
+            let optimization_count;
             for (let i = 1; i < this.table.length - 1; i++) {
                 const number_calced = Math.min((this.zeros.length + this.local_maxima.length + this.local_minima.length), max);
                 optimization_count = 14 + o_opt_count * (max - number_calced) / max;
@@ -166,7 +169,7 @@ class Function {
                     if ((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0)) {
                         const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                         this.zeros.push(zero_x);
-                        this.zeros.push(this.compiled(zero_x));
+                        this.zeros.push(this.compiled(zero_x, this.dx));
                     }
                     else if (is_maxima ||
                         is_minima || y === 0)
@@ -174,16 +177,16 @@ class Function {
                             console.log(y);
                             const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                             this.zeros.push(zero_x);
-                            this.zeros.push(this.compiled(zero_x));
+                            this.zeros.push(this.compiled(zero_x, this.dx));
                         }
                 }
                 if (calc_minmax) {
                     if (is_maxima) // maxima
                      {
                         const x_max = this.optimize_xmax(x - dx, x + dx, optimization_count);
-                        if (this.compiled(x_max) > y) {
+                        if (this.compiled(x_max, this.dx) > y) {
                             this.local_maxima.push(x_max);
-                            this.local_maxima.push(this.compiled(x_max));
+                            this.local_maxima.push(this.compiled(x_max, this.dx));
                         }
                         else {
                             this.local_maxima.push(x);
@@ -193,9 +196,9 @@ class Function {
                     else if (is_minima) //minima
                      {
                         const x_min = this.optimize_xmin(x - dx, x + dx, optimization_count);
-                        if (this.compiled(x_min) < y) {
+                        if (this.compiled(x_min, this.dx) < y) {
                             this.local_minima.push(x_min);
-                            this.local_minima.push(this.compiled(x_min));
+                            this.local_minima.push(this.compiled(x_min, this.dx));
                         }
                         else {
                             this.local_minima.push(x);
@@ -215,8 +218,8 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta * (1 / 5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = this.compiled(min_x + dx);
-            const hy = this.compiled(max_x - dx);
+            const ly = this.compiled(min_x + dx, this.dx);
+            const hy = this.compiled(max_x - dx, this.dx);
             if (ly > hy)
                 max_x = mid;
             else
@@ -231,8 +234,8 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta * (1 / 5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = this.compiled(min_x + dx);
-            const hy = this.compiled(max_x - dx);
+            const ly = this.compiled(min_x + dx, this.dx);
+            const hy = this.compiled(max_x - dx, this.dx);
             if (ly < hy)
                 max_x = mid;
             else
@@ -247,8 +250,8 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta * (1 / 5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = this.compiled(min_x + dx);
-            const hy = this.compiled(max_x - dx);
+            const ly = this.compiled(min_x + dx, this.dx);
+            const hy = this.compiled(max_x - dx, this.dx);
             if (Math.abs(ly) < Math.abs(hy))
                 max_x = mid;
             else
@@ -311,7 +314,7 @@ class Function {
     call(x) {
         if (this.error_message === null) {
             try {
-                return this.compiled(x);
+                return this.compiled(x, this.dx);
             }
             catch (error) {
                 console.log(error.message);
@@ -322,9 +325,27 @@ class Function {
     }
 }
 ;
-class FollowCursor {
+class GridUIState {
     constructor(grid) {
         this.grid = grid;
+    }
+    draw(ctx, canvas, x, y, width, height) {
+        throw new Error('Method not implemented.');
+    }
+    handleKeyboardEvents(type, event) {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type, event) {
+        throw new Error('Method not implemented.');
+    }
+    transition(delta_time) {
+        throw new Error('Method not implemented.');
+    }
+}
+;
+class FollowCursor extends GridUIState {
+    constructor(grid) {
+        super(grid);
     }
     draw(ctx, canvas, x, y, width, height) {
         this.grid.render_labels_floating(ctx);
@@ -346,13 +367,17 @@ class FollowCursor {
             this.grid.repaint = true;
             return new FollowNearestMinMax(this.grid);
         }
+        else if (this.grid.chkbx_render_intersections.checked) {
+            this.grid.repaint = true;
+            return new FollowNearestIntersection(this.grid);
+        }
         return this;
     }
 }
 ;
-class FollowNearestZero {
+class FollowNearestZero extends GridUIState {
     constructor(grid) {
-        this.grid = grid;
+        super(grid);
     }
     draw(ctx, canvas, x, y, width, height) {
         this.grid.render_labels_zeros(ctx);
@@ -363,28 +388,30 @@ class FollowNearestZero {
     handleTouchEvents(type, event) {
         throw new Error('Method not implemented.');
     }
+    to_state(state) {
+        this.grid.repaint = true;
+        this.grid.chkbx_render_zeros.checked = false;
+        this.grid.chkbx_render_zeros.refresh();
+        this.grid.options_gui_manager.refresh();
+        return new state(this.grid);
+    }
     transition(delta_time) {
         if (this.grid.chkbx_render_min_max.checked) {
-            this.grid.repaint = true;
-            this.grid.chkbx_render_zeros.checked = false;
-            this.grid.chkbx_render_zeros.refresh();
-            this.grid.options_gui_manager.refresh();
-            return new FollowNearestMinMax(this.grid);
+            return this.to_state(FollowNearestMinMax);
+        }
+        else if (this.grid.chkbx_render_intersections.checked) {
+            return this.to_state(FollowNearestIntersection);
         }
         else if (!this.grid.chkbx_render_zeros.checked) {
-            this.grid.repaint = true;
-            this.grid.chkbx_render_zeros.checked = false;
-            this.grid.chkbx_render_zeros.refresh();
-            this.grid.options_gui_manager.refresh();
-            return new FollowCursor(this.grid);
+            return this.to_state(FollowCursor);
         }
         return this;
     }
 }
 ;
-class FollowNearestMinMax {
+class FollowNearestMinMax extends GridUIState {
     constructor(grid) {
-        this.grid = grid;
+        super(grid);
     }
     draw(ctx, canvas, x, y, width, height) {
         this.grid.render_labels_min(ctx);
@@ -396,20 +423,56 @@ class FollowNearestMinMax {
     handleTouchEvents(type, event) {
         throw new Error('Method not implemented.');
     }
+    to_state(state) {
+        this.grid.repaint = true;
+        this.grid.chkbx_render_min_max.checked = false;
+        this.grid.chkbx_render_min_max.refresh();
+        this.grid.options_gui_manager.refresh();
+        return new state(this.grid);
+    }
     transition(delta_time) {
         if (this.grid.chkbx_render_zeros.checked) {
-            this.grid.repaint = true;
-            this.grid.chkbx_render_min_max.checked = false;
-            this.grid.chkbx_render_min_max.refresh();
-            this.grid.options_gui_manager.refresh();
-            return new FollowNearestZero(this.grid);
+            return this.to_state(FollowNearestZero);
+        }
+        else if (this.grid.chkbx_render_intersections.checked) {
+            return this.to_state(FollowNearestIntersection);
         }
         else if (!this.grid.chkbx_render_min_max.checked) {
-            this.grid.repaint = true;
-            this.grid.chkbx_render_min_max.checked = false;
-            this.grid.chkbx_render_min_max.refresh();
-            this.grid.options_gui_manager.refresh();
-            return new FollowCursor(this.grid);
+            return this.to_state(FollowCursor);
+        }
+        return this;
+    }
+}
+;
+class FollowNearestIntersection extends GridUIState {
+    constructor(grid) {
+        super(grid);
+    }
+    draw(ctx, canvas, x, y, width, height) {
+        this.grid.render_labels_intersection(ctx);
+    }
+    handleKeyboardEvents(type, event) {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type, event) {
+        throw new Error('Method not implemented.');
+    }
+    to_state(state) {
+        this.grid.repaint = true;
+        this.grid.chkbx_render_intersections.checked = false;
+        this.grid.chkbx_render_intersections.refresh();
+        this.grid.options_gui_manager.refresh();
+        return new state(this.grid);
+    }
+    transition(delta_time) {
+        if (this.grid.chkbx_render_zeros.checked) {
+            return this.to_state(FollowNearestZero);
+        }
+        else if (this.grid.chkbx_render_min_max.checked) {
+            return this.to_state(FollowNearestMinMax);
+        }
+        else if (!this.grid.chkbx_render_intersections.checked) {
+            return this.to_state(FollowCursor);
         }
         return this;
     }
@@ -418,9 +481,19 @@ class FollowNearestMinMax {
 //ui should switch between 
 //free form following cursor exactly
 //finding nearest minima/maxima to cursor
+class FunctionPoint extends SquareAABBCollidable {
+    constructor(foo, x, y, width, height) {
+        super(x, y, width, height);
+        this.foo = foo;
+    }
+}
+;
 class Game extends SquareAABBCollidable {
     constructor(multi_touchListener, touchListener, x, y, width, height) {
         super(x, y, width, height);
+        this.intersections = [];
+        this.last_selected_item = 0;
+        this.selected_item = 0;
         this.state_manager_grid = new StateManagedUI(new FollowCursor(this));
         this.scaling_multiplier = 1;
         this.ui_alpha = 0;
@@ -456,7 +529,7 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 250 + touch_mod * 4.3], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 300 + touch_mod * 5.5], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
@@ -483,9 +556,13 @@ class Game extends SquareAABBCollidable {
         this.chkbx_render_zeros = new GuiCheckBox((event) => {
         }, 50 + touch_mod, 50 + touch_mod, false);
         this.options_gui_manager.addElement(this.chkbx_render_zeros);
+        const intersections_label = new GuiLabel("Intersections", 100, 18, 50 + touch_mod);
+        this.options_gui_manager.addElement(intersections_label);
+        this.chkbx_render_intersections = new GuiCheckBox((event) => {
+        }, 50 + touch_mod, 50 + touch_mod, false);
+        this.options_gui_manager.addElement(this.chkbx_render_intersections);
         this.options_gui_manager.activate();
-        //this.restart_game();
-        this.try_render_functions();
+        this.repaint = true;
     }
     init(width, height, cell_width, cell_height) {
         this.resize(width, height);
@@ -580,7 +657,7 @@ class Game extends SquareAABBCollidable {
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 //build table to be rendered
-                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 3, this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked);
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
@@ -606,6 +683,18 @@ class Game extends SquareAABBCollidable {
                 this.main_buf.ctx.stroke();
             }
         });
+        const function_points = [];
+        this.intersections.splice(0, this.intersections.length);
+        if (this.chkbx_render_intersections.checked && this.selected_item !== this.last_selected_item) {
+            const fun1 = functions[this.selected_item];
+            const fun2 = functions[this.last_selected_item];
+            for (let j = 0; j < functions[0].table.length - 1; j++) {
+                if (fun1.table[j] - fun2.table[j] === 0 || sign(fun1.table[j] - fun2.table[j]) !== sign(fun1.table[j + 1] - fun2.table[j + 1])) {
+                    this.intersections.push(fun1.index_to_x(j));
+                    this.intersections.push(fun1.table[j]);
+                }
+            }
+        }
         this.main_buf.ctx.beginPath();
         this.main_buf.ctx.stroke();
     }
@@ -701,15 +790,15 @@ class Game extends SquareAABBCollidable {
         }
     }
     draw(canvas, ctx, x, y, width, height) {
+        const font_size = 24;
+        if (+ctx.font.split("px")[0] != font_size) {
+            ctx.font = `${font_size}px Helvetica`;
+        }
         if (this.repaint) {
             this.main_buf.ctx.imageSmoothingEnabled = false;
             this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
             this.try_render_functions();
-            const font_size = 24;
-            if (+ctx.font.split("px")[0] != font_size) {
-                ctx.font = `${font_size}px Helvetica`;
-            }
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
         }
         ctx.drawImage(this.main_buf.image, x, y);
@@ -799,6 +888,52 @@ class Game extends SquareAABBCollidable {
             }
         }
     }
+    closest_intersection(x) {
+        if (this.intersections.length > 0) {
+            let closest_intersection = 0;
+            let dist = Math.abs(x - this.intersections[closest_intersection]);
+            for (let i = 2; i < this.intersections.length; i += 2) {
+                const xi = this.intersections[i];
+                const dist_xi = Math.abs(x - xi);
+                if (dist > dist_xi) {
+                    dist = dist_xi;
+                    closest_intersection = i;
+                }
+            }
+            return closest_intersection;
+        }
+        return null;
+    }
+    render_labels_intersection(ctx) {
+        if (this.draw_point_labels) {
+            const touchPos = this.touchListener.touchPos;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] : -this.y_min < 0 ? 0 : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+            let world_y = 0;
+            let world_x = 0;
+            const selected_function = this.functions[this.layer_manager.list.selected()];
+            if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
+                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
+                const closest_intersection = this.closest_intersection(touch_world_x);
+                let x_index = closest_intersection;
+                if (closest_intersection !== null) {
+                    world_x = this.intersections[x_index];
+                    world_y = this.intersections[x_index + 1];
+                }
+                if (x_index !== null) {
+                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, -1 * +ctx.font.split("px")[0]);
+                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
+                    ctx.beginPath();
+                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
+                    ctx.moveTo(sx, screen_space_x_axis);
+                    ctx.lineTo(sx, y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
     render_labels_min(ctx) {
         if (this.draw_point_labels) {
             const touchPos = this.touchListener.touchPos;
@@ -850,7 +985,7 @@ class Game extends SquareAABBCollidable {
     }
     render_x_y_label_world_space(ctx, world_x, world_y, precision = 1, offset_y = 0) {
         const screen_x = ((world_x - this.x_min) / this.deltaX) * this.width;
-        const screen_y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+        const screen_y = clamp(((-world_y - this.y_min) / this.deltaY) * this.height, 30, this.height);
         this.render_formatted_point(ctx, world_x, world_y, screen_x, screen_y, precision, offset_y);
     }
     render_formatted_point(ctx, world_x, world_y, screen_x, screen_y, precision = 2, offset_y = 0) {
@@ -930,6 +1065,10 @@ class Game extends SquareAABBCollidable {
         }
     }
     update_state(delta_time) {
+        if (this.layer_manager.list.selected() !== this.selected_item) {
+            this.last_selected_item = this.selected_item;
+            this.selected_item = this.layer_manager.list.selected();
+        }
         const ms_to_fade = 250;
         this.state_manager_grid.transition(delta_time);
         if (!this.touchListener.registeredTouch) {
@@ -954,6 +1093,8 @@ async function main() {
     };
     const power_of_2_bounds = 300;
     canvas.addEventListener("wheel", (e) => {
+        if (e.deltaY > 10000)
+            return;
         const normalized_delta = (e.deltaY + 1) / getHeight();
         const multiplier = 100;
         const scaler = game.scale / 100;
@@ -1024,16 +1165,12 @@ async function main() {
         let scaler_y = game.deltaY / (game.height);
         switch (event.code) {
             case ("ArrowUp"):
-                game.y_translation -= scaler_y;
                 break;
             case ("ArrowDown"):
-                game.y_translation += scaler_y;
                 break;
             case ("ArrowLeft"):
-                game.x_translation -= scaler_x;
                 break;
             case ("ArrowRight"):
-                game.x_translation += scaler_x;
                 break;
         }
     });
