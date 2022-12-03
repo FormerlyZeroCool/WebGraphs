@@ -639,6 +639,7 @@ class Game extends SquareAABBCollidable {
         const view = new Int32Array(this.main_buf.imageData.data.buffer);
         this.main_buf.ctx.lineWidth = 2;
         this.main_buf.ctx.imageSmoothingEnabled = false;
+        this.main_buf.ctx.lineJoin = "round";
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 //build table to be rendered
