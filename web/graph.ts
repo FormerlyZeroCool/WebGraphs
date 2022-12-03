@@ -187,10 +187,10 @@ class Function {
             this.x_max = x_max;
             this.x_min = x_min;
             this.dx = dx;
-            this.table.splice(0, this.table.length);
-            this.zeros.splice(0, this.zeros.length);
-            this.local_maxima.splice(0, this.local_maxima.length);
-            this.local_minima.splice(0, this.local_minima.length);
+            this.table.length = 0;
+            this.zeros.length = 0;
+            this.local_maxima.length = 0;
+            this.local_minima.length = 0;
             try {
                 const iterations = (this.x_max - this.x_min) / this.dx;
                 for(let j = 0; j < iterations; j++)
@@ -812,6 +812,8 @@ class Game extends SquareAABBCollidable {
         });
         
         const view = new Int32Array(this.main_buf.imageData!.data.buffer);
+        this.main_buf.ctx.lineWidth = 2;
+        this.main_buf.ctx.imageSmoothingEnabled = false;
         functions.forEach((foo:Function, index:number) => {
             if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
@@ -823,9 +825,9 @@ class Game extends SquareAABBCollidable {
                 
                 this.main_buf.ctx.beginPath();
                 this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
-                this.main_buf.ctx.lineWidth = 2;
                 let minima_iterator:number = 0;
                 let maxima_iterator:number = 0;
+                this.main_buf.ctx.moveTo(this.x_min, this.y_min);
                 for(let i = 0; i < foo.table.length; i++)
                 {
                     const x = this.x_min + foo.dx * i;
@@ -835,7 +837,6 @@ class Game extends SquareAABBCollidable {
                     //render to buffers
                     if(sx !== last_x || sy !== last_y)
                     {
-                        this.main_buf.ctx.moveTo(last_x, last_y)
                         this.main_buf.ctx.lineTo(sx, sy);
                     }
                     const dim = 6;
@@ -845,7 +846,7 @@ class Game extends SquareAABBCollidable {
                 this.main_buf.ctx.stroke();
             }
         });
-        this.intersections.splice(0, this.intersections.length);
+        this.intersections.length = 0;
         if(this.chkbx_render_intersections.checked && this.selected_item !== this.last_selected_item)
         {
             const fun1 = functions[this.selected_item];
@@ -1110,8 +1111,8 @@ class Game extends SquareAABBCollidable {
                     world_y = selected_function.local_maxima[x_index! + 1];
                     world_x = selected_function.optimize_xmax(world_x - selected_function.dx, world_x + selected_function.dx, 128);
                     world_y = selected_function.compiled(world_x, selected_function.dx)!;
-                    selected_function.local_maxima[x_index!] = world_x;
-                    selected_function.local_maxima[x_index! + 1] = world_y;
+                    //selected_function.local_maxima[x_index!] = world_x;
+                    //selected_function.local_maxima[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
@@ -1172,8 +1173,8 @@ class Game extends SquareAABBCollidable {
                     world_y = this.intersections[x_index! + 1];
                     world_x = this.optimize_intersection(this.functions[this.selected_item], this.functions[this.last_selected_item], world_x - selected_function.dx, world_x + selected_function.dx, 128);
                     world_y = selected_function.call(world_x)!;
-                    this.intersections[x_index!] = world_x;
-                    this.intersections[x_index! + 1] = world_y;
+                    //this.intersections[x_index!] = world_x;
+                    //this.intersections[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
@@ -1213,8 +1214,8 @@ class Game extends SquareAABBCollidable {
                     world_y = selected_function.local_minima[x_index! + 1];
                     world_x = selected_function.optimize_xmin(world_x - selected_function.dx, world_x + selected_function.dx, 128);
                     world_y = selected_function.compiled(world_x, selected_function.dx)!;
-                    selected_function.local_minima[x_index!] = world_x;
-                    selected_function.local_minima[x_index! + 1] = world_y;
+                    //selected_function.local_minima[x_index!] = world_x;
+                    //selected_function.local_minima[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
