@@ -223,30 +223,30 @@ class Function {
                 {
                     if((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0))
                     {
-                        const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
-                        this.zeros.push(zero_x);
-                        this.zeros.push(this.compiled(zero_x, this.dx));
+                        //const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
+                        this.zeros.push(x);
+                        this.zeros.push(this.compiled(y, this.dx));
                     }
                     else if(is_maxima ||
                     is_minima || y === 0)
                     if(Math.abs(y) < dx)
                     {
-                        const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
-                        this.zeros.push(zero_x);
-                        this.zeros.push(this.compiled(zero_x, this.dx));
+                        //const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
+                        this.zeros.push(x);
+                        this.zeros.push(y);
                     }
                 }
                 if(calc_minmax)
                 {
                     if(is_maxima)// maxima
                     {
-                        const x_max = this.optimize_xmax(x-dx, x+dx, optimization_count);
-                        if(this.compiled(x_max, this.dx) > y)
+                        //const x_max = this.optimize_xmax(x-dx, x+dx, optimization_count);
+                        //if(this.compiled(x_max, this.dx) > y)
                         {
-                            this.local_maxima.push(x_max);
-                            this.local_maxima.push(this.compiled(x_max, this.dx));
+                            //this.local_maxima.push(x_max);
+                            //this.local_maxima.push(this.compiled(x_max, this.dx));
                         }
-                        else
+                        //else
                         {
                             this.local_maxima.push(x);
                             this.local_maxima.push(y);
@@ -254,13 +254,13 @@ class Function {
                     }
                     else if(is_minima)//minima
                     {
-                        const x_min = this.optimize_xmin(x-dx, x+dx, optimization_count);
-                        if(this.compiled(x_min, this.dx) < y)
+                        //const x_min = this.optimize_xmin(x-dx, x+dx, optimization_count);
+                        //if(this.compiled(x_min, this.dx) < y)
                         {
-                            this.local_minima.push(x_min);
-                            this.local_minima.push(this.compiled(x_min, this.dx));
+                            //this.local_minima.push(x_min);
+                            //this.local_minima.push(this.compiled(x_min, this.dx));
                         }
-                        else
+                        //else
                         {
                             this.local_minima.push(x);
                             this.local_minima.push(y);
@@ -881,11 +881,11 @@ class Game extends SquareAABBCollidable {
                     }
                     else if(sign(fun1.table[j] - fun2.table[j]) !== sign(fun1.table[j + 1] - fun2.table[j + 1]))
                     {
-                        const optimized_runs = getWidth();
-                        const optimization_iterations = Math.floor(132 - 132 * ((this.intersections.length<optimized_runs?this.intersections.length:optimized_runs) / optimized_runs));
-                        const optimized_x = this.optimize_intersection(fun1, fun2, fun1.index_to_x(j), fun1.index_to_x(j+1), optimization_iterations + 12);
-                        this.intersections.push(optimized_x);
-                        this.intersections.push(fun1.call(optimized_x)!);
+                        //const optimized_runs = getWidth();
+                        //const optimization_iterations = Math.floor(132 - 132 * ((this.intersections.length<optimized_runs?this.intersections.length:optimized_runs) / optimized_runs));
+                        //const optimized_x = this.optimize_intersection(fun1, fun2, fun1.index_to_x(j), fun1.index_to_x(j+1), optimization_iterations + 12);
+                        this.intersections.push(fun1.index_to_x(j));
+                        this.intersections.push(fun1.table[j]);
                     }
                 }
             }
@@ -1101,6 +1101,8 @@ class Game extends SquareAABBCollidable {
                 {
                     world_x = selected_function.zeros[x_index!];
                     world_y = selected_function.zeros[x_index! + 1];
+                    world_x = selected_function.optimize_zero(selected_function.zeros[x_index!] - selected_function.dx, selected_function.zeros[x_index!] + selected_function.dx, 128);
+                    world_y = selected_function.call(world_x)!;
                     this.render_x_y_label_world_space(ctx, world_x, world_y, 2, +ctx.font.split("px")[0]);
                 }
             }
@@ -1126,6 +1128,10 @@ class Game extends SquareAABBCollidable {
                 {
                     world_x = selected_function.local_maxima[x_index!];
                     world_y = selected_function.local_maxima[x_index! + 1];
+                    world_x = selected_function.optimize_xmax(world_x - selected_function.dx, world_x + selected_function.dx, 128);
+                    world_y = selected_function.compiled(world_x, selected_function.dx)!;
+                    selected_function.local_maxima[x_index!] = world_x;
+                    selected_function.local_maxima[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
@@ -1174,7 +1180,8 @@ class Game extends SquareAABBCollidable {
             let world_y:number = 0;
             let world_x = 0;
             const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked &&
+                this.functions[this.selected_item] && this.functions[this.last_selected_item])
             {
                 const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
                 const closest_intersection = this.closest_intersection(touch_world_x);
@@ -1183,6 +1190,10 @@ class Game extends SquareAABBCollidable {
                 {
                     world_x = this.intersections[x_index!];
                     world_y = this.intersections[x_index! + 1];
+                    world_x = this.optimize_intersection(this.functions[this.selected_item], this.functions[this.last_selected_item], world_x - selected_function.dx, world_x + selected_function.dx, 128);
+                    world_y = selected_function.call(world_x)!;
+                    this.intersections[x_index!] = world_x;
+                    this.intersections[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
@@ -1220,6 +1231,10 @@ class Game extends SquareAABBCollidable {
                 {
                     world_x = selected_function.local_minima[x_index!];
                     world_y = selected_function.local_minima[x_index! + 1];
+                    world_x = selected_function.optimize_xmin(world_x - selected_function.dx, world_x + selected_function.dx, 128);
+                    world_y = selected_function.compiled(world_x, selected_function.dx)!;
+                    selected_function.local_minima[x_index!] = world_x;
+                    selected_function.local_minima[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
