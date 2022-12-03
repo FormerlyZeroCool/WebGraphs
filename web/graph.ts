@@ -223,15 +223,13 @@ class Function {
                 {
                     if((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0))
                     {
-                        //const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                         this.zeros.push(x);
-                        this.zeros.push(this.compiled(y, this.dx));
+                        this.zeros.push(y);
                     }
                     else if(is_maxima ||
                     is_minima || y === 0)
                     if(Math.abs(y) < dx)
                     {
-                        //const zero_x = this.optimize_zero(x - dx, x + dx, optimization_count);
                         this.zeros.push(x);
                         this.zeros.push(y);
                     }
@@ -240,31 +238,13 @@ class Function {
                 {
                     if(is_maxima)// maxima
                     {
-                        //const x_max = this.optimize_xmax(x-dx, x+dx, optimization_count);
-                        //if(this.compiled(x_max, this.dx) > y)
-                        {
-                            //this.local_maxima.push(x_max);
-                            //this.local_maxima.push(this.compiled(x_max, this.dx));
-                        }
-                        //else
-                        {
-                            this.local_maxima.push(x);
-                            this.local_maxima.push(y);
-                        }
+                        this.local_maxima.push(x);
+                        this.local_maxima.push(y);
                     }
                     else if(is_minima)//minima
                     {
-                        //const x_min = this.optimize_xmin(x-dx, x+dx, optimization_count);
-                        //if(this.compiled(x_min, this.dx) < y)
-                        {
-                            //this.local_minima.push(x_min);
-                            //this.local_minima.push(this.compiled(x_min, this.dx));
-                        }
-                        //else
-                        {
-                            this.local_minima.push(x);
-                            this.local_minima.push(y);
-                        }
+                        this.local_minima.push(x);
+                        this.local_minima.push(y);
                     }
                 }
             }
