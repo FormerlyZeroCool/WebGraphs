@@ -825,23 +825,20 @@ class Game extends SquareAABBCollidable {
                 
                 this.main_buf.ctx.beginPath();
                 this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
-                let minima_iterator:number = 0;
-                let maxima_iterator:number = 0;
-                this.main_buf.ctx.moveTo(this.x_min, this.y_min);
-                for(let i = 0; i < foo.table.length; i++)
+                this.main_buf.ctx.moveTo(foo.index_to_x(0), foo.table[0]);
+                for(let i = 1; i < foo.table.length; i++)
                 {
                     const x = this.x_min + foo.dx * i;
                     const y = -foo.table[i];
                     const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
                     const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
                     //render to buffers
-                    if(sx !== last_x || sy !== last_y)
+                    if(sx > last_x && sy !== last_y)
                     {
                         this.main_buf.ctx.lineTo(sx, sy);
+                        last_x = sx;
+                        last_y = sy;
                     }
-                    const dim = 6;
-                    last_x = sx;
-                    last_y = sy;
                 }
                 this.main_buf.ctx.stroke();
             }
