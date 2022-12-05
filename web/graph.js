@@ -270,69 +270,33 @@ class Function {
     index_to_x(index) {
         return this.x_min + index * this.dx;
     }
-    closest_max(x) {
-        if (this.local_maxima.length > 0) {
-            let closest_max = 0;
-            let dist = Math.abs(x - this.local_maxima[closest_max]);
-            for (let i = 2; i < this.local_maxima.length; i += 2) {
-                const xi = this.local_maxima[i];
+    closest_in_array(x, data) {
+        if (data.length > 0) {
+            let closest_index = 0;
+            let dist = Math.abs(x - data[closest_index]);
+            for (let i = 2; i < data.length; i += 2) {
+                const xi = data[i];
                 const dist_xi = Math.abs(x - xi);
                 if (dist > dist_xi) {
                     dist = dist_xi;
-                    closest_max = i;
+                    closest_index = i;
                 }
             }
-            return closest_max;
+            return closest_index;
         }
         return null;
+    }
+    closest_max(x) {
+        return this.closest_in_array(x, this.local_maxima);
     }
     closest_poi(x) {
-        if (this.points_of_inflection.length > 0) {
-            let closest_poi = 0;
-            let dist = Math.abs(x - this.points_of_inflection[closest_poi]);
-            for (let i = 2; i < this.points_of_inflection.length; i += 2) {
-                const xi = this.points_of_inflection[i];
-                const dist_xi = Math.abs(x - xi);
-                if (dist > dist_xi) {
-                    dist = dist_xi;
-                    closest_poi = i;
-                }
-            }
-            return closest_poi;
-        }
-        return null;
+        return this.closest_in_array(x, this.points_of_inflection);
     }
     closest_min(x) {
-        let closest_min = 0;
-        let dist = this.local_minima.length > 0 ? Math.abs(x - this.local_minima[closest_min]) : null;
-        if (dist !== null) {
-            for (let i = 2; i < this.local_minima.length; i += 2) {
-                const xi = this.local_minima[i];
-                const dist_xi = Math.abs(x - xi);
-                if (dist > dist_xi) {
-                    dist = dist_xi;
-                    closest_min = i;
-                }
-            }
-            return closest_min;
-        }
-        return null;
+        return this.closest_in_array(x, this.local_minima);
     }
     closest_zero(x) {
-        let closest_zero = 0;
-        let dist = this.zeros.length > 0 ? Math.abs(x - this.zeros[closest_zero]) : null;
-        if (dist !== null) {
-            for (let i = 2; i < this.zeros.length; i += 2) {
-                const xi = this.zeros[i];
-                const dist_xi = Math.abs(x - xi);
-                if (dist > dist_xi) {
-                    dist = dist_xi;
-                    closest_zero = i;
-                }
-            }
-            return closest_zero;
-        }
-        return null;
+        return this.closest_in_array(x, this.zeros);
     }
     call(x) {
         if (this.error_message === null) {
@@ -738,7 +702,7 @@ class Game extends SquareAABBCollidable {
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 //build table to be rendered
-                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, true);
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
