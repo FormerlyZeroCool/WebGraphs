@@ -330,8 +330,8 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta * (1/5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = dderx(this.compiled, min_x - dx, this.dx);
-            const hy = dderx(this.compiled, min_x + dx, this.dx);
+            const ly = dderx(this.compiled, min_x - dx, dx);
+            const hy = dderx(this.compiled, min_x + dx, dx);
             if(Math.abs(ly) < Math.abs(hy))
                 max_x = mid;
             else
@@ -621,7 +621,7 @@ class FollowNearestPointOfInflection extends GridUIState {
         }
         else if(this.grid.chkbx_render_intersections.checked)
         {
-            this.to_state(FollowNearestIntersection);
+            return this.to_state(FollowNearestIntersection);
         }
         else if(!this.grid.chkbx_render_inflections.checked)
         {
@@ -893,7 +893,8 @@ class Game extends SquareAABBCollidable {
             if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
                 //build table to be rendered
-                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), 
+                    this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
