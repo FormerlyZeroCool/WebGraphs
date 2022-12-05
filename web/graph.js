@@ -257,8 +257,8 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta * (1 / 5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = dderx(this.compiled, min_x - dx, dx);
-            const hy = dderx(this.compiled, min_x + dx, dx);
+            const ly = dderx(this.compiled, min_x + dx, dx);
+            const hy = dderx(this.compiled, max_x - dx, dx);
             if (Math.abs(ly) < Math.abs(hy))
                 max_x = mid;
             else
