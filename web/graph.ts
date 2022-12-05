@@ -15,12 +15,14 @@ window.atan = Math.atan;
 window.log = Math.log;
 window.pow = Math.pow;
 window.sqrt = Math.sqrt;
-window.derx = (foo:(x:number) => number, x:number, dx:number) => {
-    return (foo(x + dx) - foo(x)) / dx;
-}
-window.dderx = (foo:(x:number) => number, x:number, dx:number) => {
+const derx = (foo:(x:number, dx:number) => number, x:number, dx:number) => {
+    return (foo(x + dx, dx) - foo(x, dx)) / dx;
+};
+window.derx = derx;
+const dderx =  (foo:(x:number, dx:number) => number, x:number, dx:number) => {
     return (derx(foo, x + dx, dx) - derx(foo, x, dx)) / dx;
-}
+};
+window.dderx = dderx;
 class LayerManagerTool {
     list:GuiCheckList;
     layoutManager:SimpleGridLayoutManager;
@@ -128,6 +130,7 @@ class Function {
     local_minima:number[];//x,y pairs
     local_maxima:number[];//x,y pairs
     zeros:number[];//x,y pairs
+    points_of_inflection:number[];
 
     error_message:string | null;
     x_min:number;
@@ -149,6 +152,7 @@ class Function {
         this.local_minima = [];
         this.zeros = [];
         this.table = [];
+        this.points_of_inflection = [];
         this.x_max = 0;
         this.x_min = 0;
         this.dx = 0;
@@ -180,7 +184,7 @@ class Function {
             y3))/dxsq*dxsq);
        
     }
-    calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean):number[]
+    calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):number[]
     {
         if(this.error_message === null)
         {
@@ -191,6 +195,7 @@ class Function {
             this.zeros.length = 0;
             this.local_maxima.length = 0;
             this.local_minima.length = 0;
+            this.points_of_inflection.length = 0;
             try {
                 const iterations = (this.x_max - this.x_min) / this.dx;
                 for(let j = 0; j < iterations; j++)
@@ -204,13 +209,8 @@ class Function {
                 this.error_message = error.message;
             }
             let x = x_min;
-            const max = getWidth() / 2;
-            const o_opt_count = 128;
-            let optimization_count;
             for(let i = 1; i < this.table.length - 1; i++)
             {
-                const number_calced = Math.min((this.zeros.length + this.local_maxima.length + this.local_minima.length), max);
-                optimization_count = 14 + o_opt_count * (max - number_calced) / max;
                 const prev_y = this.table[i - 1];
                 x = x_min + i * dx;
                 const y = this.table[i];
@@ -219,6 +219,17 @@ class Function {
                 const current_delta_y = y - next_y;
                 const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
                 const is_minima = prev_delta_y > 0 && current_delta_y < 0;
+                if(calc_poi && i > 1)
+                {
+                    const prev_prev_y = this.table[i - 2];
+                    const ddy = prev_delta_y - current_delta_y;
+                    const prev_ddy = (prev_prev_y - prev_y) - prev_delta_y;
+                    if(sign(ddy) != sign(prev_ddy))
+                    {
+                        this.points_of_inflection.push(x);
+                        this.points_of_inflection.push(y);
+                    }
+                }
                 if(calc_zeros)
                 {
                     if((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0))
@@ -311,6 +322,25 @@ class Function {
         }
         return (min_x + max_x) / 2;
     }
+    optimize_poi(min_x:number, max_x:number, it:number):number
+    {
+        const y:number[] = [];
+        while(it > 0)
+        {
+            const delta = max_x - min_x;
+            const dx = delta * (1/5);
+            const mid = (min_x + max_x) * (1 / 2);
+            const ly = dderx(this.compiled, min_x - dx, this.dx);
+            const hy = dderx(this.compiled, min_x + dx, this.dx);
+            if(Math.abs(ly) < Math.abs(hy))
+                max_x = mid;
+            else
+                min_x = mid;
+            
+            it--;
+        }
+        return (min_x + max_x) / 2;
+    }
     index_to_x(index:number):number
     {
         return this.x_min + index * this.dx;
@@ -332,6 +362,26 @@ class Function {
                 }
             }
             return closest_max;
+        }
+        return null;
+    }
+    closest_poi(x:number):number | null
+    {
+        if(this.points_of_inflection.length > 0)
+        {
+            let closest_poi = 0;
+            let dist = Math.abs(x - this.points_of_inflection[closest_poi]);
+            for(let i = 2;  i < this.points_of_inflection.length; i+=2)
+            {
+                const xi = this.points_of_inflection[i];
+                const dist_xi = Math.abs(x - xi);
+                if(dist! > dist_xi)
+                {
+                    dist = dist_xi;
+                    closest_poi = i;
+                }
+            }
+            return closest_poi;
         }
         return null;
     }
@@ -440,6 +490,11 @@ class FollowCursor extends GridUIState {
             this.grid.repaint = true;
             return new FollowNearestIntersection(this.grid);
         }
+        else if(this.grid.chkbx_render_inflections.checked)
+        {
+            this.grid.repaint = true;
+            return new FollowNearestPointOfInflection(this.grid);
+        }
         return this;
     }
 
@@ -475,6 +530,10 @@ class FollowNearestZero extends GridUIState {
         else if(this.grid.chkbx_render_intersections.checked)
         {
             return this.to_state(FollowNearestIntersection);
+        }
+        else if(this.grid.chkbx_render_inflections.checked)
+        {
+            return this.to_state(FollowNearestPointOfInflection);
         }
         else if(!this.grid.chkbx_render_zeros.checked)
         {
@@ -516,6 +575,10 @@ class FollowNearestMinMax extends GridUIState {
         {
             return this.to_state(FollowNearestIntersection);
         }
+        else if(this.grid.chkbx_render_inflections.checked)
+        {
+            return this.to_state(FollowNearestPointOfInflection);
+        }
         else if(!this.grid.chkbx_render_min_max.checked)
         {
             return this.to_state(FollowCursor);
@@ -556,7 +619,55 @@ class FollowNearestIntersection extends GridUIState {
         {
             return this.to_state(FollowNearestMinMax);
         }
+        else if(this.grid.chkbx_render_inflections.checked)
+        {
+            return this.to_state(FollowNearestPointOfInflection);
+        }
         else if(!this.grid.chkbx_render_intersections.checked)
+        {
+            return this.to_state(FollowCursor);
+        }
+        return this;
+    }
+
+};
+class FollowNearestPointOfInflection extends GridUIState {
+    grid:Game;
+    constructor(grid:Game)
+    {
+        super(grid);
+    }
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        this.grid.render_labels_poi(ctx);
+    }
+    handleKeyboardEvents(type: string, event: KeyboardEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type: string, event: TouchMoveEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    to_state(state:typeof GridUIState)
+    {
+        this.grid.repaint = true;
+        this.grid.chkbx_render_inflections.checked = false;
+        this.grid.chkbx_render_inflections.refresh();
+        this.grid.options_gui_manager.refresh();
+        return new state(this.grid);
+    }
+    transition(delta_time: number): UIState {
+        if(this.grid.chkbx_render_zeros.checked)
+        {
+            return this.to_state(FollowNearestZero);
+        }
+        else if(this.grid.chkbx_render_min_max.checked)
+        {
+            return this.to_state(FollowNearestMinMax);
+        }
+        else if(this.grid.chkbx_render_intersections.checked)
+        {
+            this.to_state(FollowNearestIntersection);
+        }
+        else if(!this.grid.chkbx_render_inflections.checked)
         {
             return this.to_state(FollowCursor);
         }
@@ -582,6 +693,7 @@ class Game extends SquareAABBCollidable {
     chkbx_render_min_max:GuiCheckBox;
     chkbx_render_zeros:GuiCheckBox;
     chkbx_render_intersections:GuiCheckBox;
+    chkbx_render_inflections:GuiCheckBox;
 
     selected_item:number;
     last_selected_item:number;
@@ -653,7 +765,7 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 300 + touch_mod * 5.5], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 5.5], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
@@ -688,6 +800,12 @@ class Game extends SquareAABBCollidable {
         this.chkbx_render_intersections = new GuiCheckBox((event:any) => {
         }, 50 + touch_mod, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_intersections);
+
+        const inflections_label = new GuiLabel("~Inflections", 100, 18, 50 + touch_mod);
+        this.options_gui_manager.addElement(inflections_label);
+        this.chkbx_render_inflections = new GuiCheckBox((event:any) => {
+        }, 50 + touch_mod, 50 + touch_mod, false)
+        this.options_gui_manager.addElement(this.chkbx_render_inflections);
         this.options_gui_manager.activate();
         this.repaint = true;
     }
@@ -819,7 +937,7 @@ class Game extends SquareAABBCollidable {
             if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
                 //build table to be rendered
-                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked);
+                foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, true);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
@@ -1019,7 +1137,7 @@ class Game extends SquareAABBCollidable {
             
         }
         ctx.drawImage(this.main_buf.image, x, y);
-
+        
         if(!this.multi_touchListener.registeredMultiTouchEvent)
         {
             if(this.ui_alpha !== 1)
@@ -1111,6 +1229,48 @@ class Game extends SquareAABBCollidable {
                     world_y = selected_function.compiled(world_x, selected_function.dx)!;
                     //selected_function.local_maxima[x_index!] = world_x;
                     //selected_function.local_maxima[x_index! + 1] = world_y;
+                }
+                
+                if(x_index !== null)
+                {
+                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, -1 * +ctx.font.split("px")[0]);
+                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
+                    ctx.beginPath();
+                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                    ctx.moveTo(screen_space_y_axis, y);
+                    ctx.lineTo(sx, y);
+                    ctx.moveTo(sx, screen_space_x_axis);
+                    ctx.lineTo(sx, y);
+                    ctx.stroke();
+                }
+            }
+            
+        }
+    }
+    render_labels_poi(ctx:CanvasRenderingContext2D):void
+    {
+        if(this.draw_point_labels)
+        {
+            const touchPos = this.touchListener.touchPos;
+            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
+            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+            let world_y:number = 0;
+            let world_x = 0;
+            const selected_function = this.functions[this.layer_manager.list.selected()];
+            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+            {
+                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
+                const closest_max = selected_function.closest_poi(touch_world_x);
+                let x_index = closest_max;
+
+                if(closest_max !== null)
+                {
+                    world_x = selected_function.points_of_inflection[x_index!];
+                    world_y = selected_function.points_of_inflection[x_index! + 1];
+                    world_x = selected_function.optimize_poi(world_x - selected_function.dx, world_x + selected_function.dx, 256);
+                    world_y = selected_function.compiled(world_x, selected_function.dx)!;
+                    //selected_function.points_of_inflection[x_index!] = world_x;
+                    //selected_function.points_of_inflection[x_index! + 1] = world_y;
                 }
                 
                 if(x_index !== null)
