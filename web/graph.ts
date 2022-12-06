@@ -186,81 +186,92 @@ class Function {
     }
     calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):number[]
     {
-        if(this.error_message === null)
+        if(this.error_message !== null)
+            return this.table;
+        this.x_max = x_max;
+        this.x_min = x_min;
+        this.dx = dx;
+        this.table.length = 0;
+        this.zeros.length = 0;
+        this.local_maxima.length = 0;
+        this.local_minima.length = 0;
+        this.points_of_inflection.length = 0;
+        try {
+            const iterations = (this.x_max - this.x_min) / this.dx;
+            for(let j = 0; j < iterations; j++)
+            {
+                const x = this.x_min + j * dx;
+                this.table.push(this.compiled(x, this.dx));
+            }
+        } catch (error:any)
         {
-            this.x_max = x_max;
-            this.x_min = x_min;
-            this.dx = dx;
-            this.table.length = 0;
-            this.zeros.length = 0;
-            this.local_maxima.length = 0;
-            this.local_minima.length = 0;
-            this.points_of_inflection.length = 0;
-            try {
-                const iterations = (this.x_max - this.x_min) / this.dx;
-                for(let j = 0; j < iterations; j++)
-                {
-                    const x = this.x_min + j * dx;
-                    this.table.push(this.compiled(x, this.dx));
-                }
-            } catch (error:any)
-            {
-                console.log(error.message);
-                this.error_message = error.message;
-            }
-            let x = x_min;
-            for(let i = 1; i < this.table.length - 1; i++)
-            {
-                const prev_y = this.table[i - 1];
-                x = x_min + i * dx;
-                const y = this.table[i];
-                const next_y = this.table[i + 1];
-                const prev_delta_y = prev_y - y;
-                const current_delta_y = y - next_y;
-                const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
-                const is_minima = prev_delta_y > 0 && current_delta_y < 0;
-                if(calc_poi && i > 1)
-                {
-                    const prev_prev_y = this.table[i - 2];
-                    const ddy = prev_delta_y - current_delta_y;
-                    const prev_ddy = (prev_prev_y - prev_y) - prev_delta_y;
-                    if(sign(ddy) != sign(prev_ddy))
-                    {
-                        this.points_of_inflection.push(x);
-                        this.points_of_inflection.push(y);
-                    }
-                }
-                if(calc_zeros)
-                {
-                    if((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0))
-                    {
-                        this.zeros.push(x);
-                        this.zeros.push(y);
-                    }
-                    else if(is_maxima ||
-                    is_minima || y === 0)
-                    if(Math.abs(y) < dx)
-                    {
-                        this.zeros.push(x);
-                        this.zeros.push(y);
-                    }
-                }
-                if(calc_minmax)
-                {
-                    if(is_maxima)// maxima
-                    {
-                        this.local_maxima.push(x);
-                        this.local_maxima.push(y);
-                    }
-                    else if(is_minima)//minima
-                    {
-                        this.local_minima.push(x);
-                        this.local_minima.push(y);
-                    }
-                }
-            }
+            console.log(error.message);
+            this.error_message = error.message;
         }
+        for(let i = 1; i < this.table.length - 1; i++)
+        {
+            const prev_y = this.table[i - 1];
+            const x = this.index_to_x(i);
+            const y = this.table[i];
+            const next_y = this.table[i + 1];
+            const prev_delta_y = prev_y - y;
+            const current_delta_y = y - next_y;
+            const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
+            const is_minima = prev_delta_y > 0 && current_delta_y < 0;
+            this.check_for_point_of_inflection(calc_poi, i, x, y, prev_y, prev_delta_y, current_delta_y);
+            this.check_for_point_zero(calc_zeros, dx, x, y, prev_y, is_minima, is_maxima);
+            this.check_for_point_minmax(calc_minmax, x, y, is_minima, is_maxima);
+        }
+
         return this.table;
+    }    
+    check_for_point_minmax(calc_minmax:boolean, x:number, y:number, is_minima:boolean, is_maxima:boolean):void
+    {
+        if(!calc_minmax)
+            return
+        if(is_maxima)// maxima
+        {
+            this.local_maxima.push(x);
+            this.local_maxima.push(y);
+        }
+        else if(is_minima)//minima
+        {
+            this.local_minima.push(x);
+            this.local_minima.push(y);
+        }
+        
+    }
+    check_for_point_zero(calc_zeros:boolean, dx:number, x:number, y:number, prev_y:number, is_minima:boolean, is_maxima:boolean):void
+    {
+        if(!calc_zeros)
+            return;
+
+        if((prev_y < 0 && y > 0) || (prev_y > 0 && y < 0))
+        {
+            this.zeros.push(x);
+            this.zeros.push(y);
+        }
+        else if((is_maxima || is_minima || y === 0) && 
+            Math.abs(y) < dx)
+        {
+            this.zeros.push(x);
+            this.zeros.push(y);
+        }
+    }
+    check_for_point_of_inflection(calc_poi:boolean, i:number, x:number, y:number, prev_y:number, prev_delta_y:number, current_delta_y:number):void
+    {
+        if(calc_poi && i > 1)
+            return;
+            
+        const prev_prev_y = this.table[i - 2];
+        const ddy = prev_delta_y - current_delta_y;
+        const prev_ddy = (prev_prev_y - prev_y) - prev_delta_y;
+        if(sign(ddy) != sign(prev_ddy))
+        {
+            this.points_of_inflection.push(x);
+            this.points_of_inflection.push(y);
+        }
+        
     }
     dist(a:number, b:number):number
     {

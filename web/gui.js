@@ -2327,12 +2327,7 @@ export class SpriteAnimation {
 }
 ;
 let width = Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth);
-let height = Math.min(
-//document.body.scrollHeight,
-//document.documentElement.scrollHeight,
-//document.body.offsetHeight,
-//document.documentElement.offsetHeight//,
-document.body.clientHeight);
+let height = Math.min(document.body.clientHeight);
 window.addEventListener("resize", () => {
     width = Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.body.clientWidth);
     height = document.body.clientHeight;
