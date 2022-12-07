@@ -198,7 +198,7 @@ class Function {
         }
     }
     check_for_point_of_inflection(calc_poi, i, x, y, prev_y, prev_delta_y, current_delta_y) {
-        if (calc_poi && i > 1)
+        if (!calc_poi && i <= 1)
             return;
         const prev_prev_y = this.table[i - 2];
         const ddy = prev_delta_y - current_delta_y;
@@ -1206,6 +1206,12 @@ class Game extends SquareAABBCollidable {
                 this.ui_alpha = 0;
         }
     }
+    set_scale(new_scale) {
+        //if(!isTouchSupported())
+        {
+        }
+        this.scale = new_scale;
+    }
 }
 ;
 const keyboardHandler = new KeyboardHandler();
@@ -1222,7 +1228,8 @@ async function main() {
         const multiplier = 100;
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
-        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        game.set_scale(new_scale);
         game.repaint = true;
         e.preventDefault();
     });
@@ -1236,7 +1243,8 @@ async function main() {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale += scaler * Math.abs(normalized_delta) * 100;
-        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        game.set_scale(new_scale);
         game.repaint = true;
         event.preventDefault();
     });
@@ -1244,7 +1252,8 @@ async function main() {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale -= scaler * Math.abs(normalized_delta) * 100;
-        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        game.set_scale(new_scale);
         game.repaint = true;
         event.preventDefault();
     });

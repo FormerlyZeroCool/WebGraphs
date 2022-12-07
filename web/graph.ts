@@ -260,7 +260,7 @@ class Function {
     }
     check_for_point_of_inflection(calc_poi:boolean, i:number, x:number, y:number, prev_y:number, prev_delta_y:number, current_delta_y:number):void
     {
-        if(calc_poi && i > 1)
+        if(!calc_poi && i <= 1)
             return;
             
         const prev_prev_y = this.table[i - 2];
@@ -271,7 +271,6 @@ class Function {
             this.points_of_inflection.push(x);
             this.points_of_inflection.push(y);
         }
-        
     }
     dist(a:number, b:number):number
     {
@@ -1514,6 +1513,14 @@ class Game extends SquareAABBCollidable {
         }
 
     }
+    set_scale(new_scale:number):void
+    {
+        //if(!isTouchSupported())
+        {
+
+        }
+        this.scale = new_scale;
+    }
 };
 const keyboardHandler = new KeyboardHandler();
 async function main()
@@ -1532,8 +1539,8 @@ async function main()
         const multiplier = 100;
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
-        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
-
+        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        game.set_scale(new_scale);
         game.repaint = true;
         e.preventDefault();
     });
@@ -1547,8 +1554,8 @@ async function main()
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale += scaler * Math.abs(normalized_delta) * 100;
-        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
-
+        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        game.set_scale(new_scale);
         game.repaint = true;
         event.preventDefault();
     });
@@ -1556,8 +1563,8 @@ async function main()
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         const scaler = game.scale / 10;
         game.scale -= scaler * Math.abs(normalized_delta) * 100;
-        game.scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
-
+        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        game.set_scale(new_scale);
         game.repaint = true;
         event.preventDefault();
     });
@@ -1672,8 +1679,3 @@ async function main()
 
 }
 main();
-
-
-
-
-
