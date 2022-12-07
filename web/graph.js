@@ -573,7 +573,7 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 5.5], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
