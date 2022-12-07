@@ -573,7 +573,7 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6.5], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
@@ -584,7 +584,6 @@ class Game extends SquareAABBCollidable {
             this.draw_axis_labels = event.checkBox.checked;
             this.repaint = true;
         }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
-        chkbx_render_zeros: GuiCheckBox;
         const show_label = new GuiLabel("Show point", 100, 18, 50 + touch_mod);
         this.options_gui_manager.addElement(show_label);
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
