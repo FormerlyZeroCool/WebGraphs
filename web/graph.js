@@ -40,7 +40,7 @@ class LayerManagerTool {
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array, callback_get_non_error_background_color);
         this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${this.runningId++}`); this.callback_onclick_event(0); }, "Add Function", this.layoutManager.width() / 2, 75, 16);
-        this.layoutManager.addElement(new GuiLabel("Functions list:", this.layoutManager.width()));
+        this.layoutManager.addElement(new GuiLabel("Functions list:", this.layoutManager.width(), 20));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
         this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 75, 16));
@@ -137,13 +137,13 @@ class Function {
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
+        this.points_of_inflection.length = 0;
+        if (this.error_message !== null)
+            return this.table;
         this.table.length = 0;
         this.zeros.length = 0;
         this.local_maxima.length = 0;
         this.local_minima.length = 0;
-        this.points_of_inflection.length = 0;
-        if (this.error_message !== null)
-            return this.table;
         try {
             const iterations = (this.x_max - this.x_min) / this.dx;
             for (let j = 0; j < iterations; j++) {
@@ -164,9 +164,9 @@ class Function {
             const current_delta_y = y - next_y;
             const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
             const is_minima = prev_delta_y > 0 && current_delta_y < 0;
-            this.check_for_point_of_inflection(calc_poi, i, x, y, prev_y, prev_delta_y, current_delta_y);
             this.check_for_point_zero(calc_zeros, dx, x, y, prev_y, is_minima, is_maxima);
             this.check_for_point_minmax(calc_minmax, x, y, is_minima, is_maxima);
+            this.check_for_point_of_inflection(calc_poi, i, x, y, prev_y, prev_delta_y, current_delta_y);
         }
         return this.table;
     }
@@ -704,7 +704,7 @@ class Game extends SquareAABBCollidable {
         const view = new Int32Array(this.main_buf.imageData.data.buffer);
         this.main_buf.ctx.lineWidth = 2;
         this.main_buf.ctx.imageSmoothingEnabled = false;
-        this.main_buf.ctx.lineJoin = "round";
+        this.main_buf.ctx.lineJoin = "bevel";
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 //build table to be rendered
@@ -712,9 +712,11 @@ class Game extends SquareAABBCollidable {
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
-                this.main_buf.ctx.beginPath();
-                this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
-                this.main_buf.ctx.moveTo(foo.index_to_x(0), foo.table[0]);
+                if (foo.error_message === null) {
+                    this.main_buf.ctx.beginPath();
+                    this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
+                    this.main_buf.ctx.moveTo(this.world_x_to_screen(foo.index_to_x(0)), this.world_y_to_screen(foo.table[0]));
+                }
                 for (let i = 1; i < foo.table.length; i++) {
                     const x = this.x_min + foo.dx * i;
                     const y = -foo.table[i];

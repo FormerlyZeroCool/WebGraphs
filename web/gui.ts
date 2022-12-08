@@ -1247,7 +1247,6 @@ export class GuiButton implements GuiElement {
     unPressedColor:RGB;
     pressed:boolean;
     focused:boolean;
-    font:FontFace;
     fontName:string
     callback:(() => void) | null;
     constructor(callBack:() => void | null, text:string, width:number = 200, height:number = 50, fontSize:number = 12, pressedColor:RGB = new RGB(150, 150, 200, 255), unPressedColor:RGB = new RGB(255, 255, 255, 195), fontName:string = "button_font")
@@ -1265,23 +1264,6 @@ export class GuiButton implements GuiElement {
         this.focused = true;
         this.callback = callBack;
         this.fontName = fontName;
-        //if(document.fonts.check(`16px ${this.fontName}`, "a"))
-        {
-            this.font = new FontFace(`${this.fontName}`, 'url(/web/fonts/Minecraft.ttf)');
-            this.font.load().then((loaded_face) =>{
-                document.fonts.add(loaded_face);
-                this.drawInternal();
-            }, (error:Error) => {
-                this.font = new FontFace(`${this.fontName}`, 'url(/fonts/Minecraft.ttf)');
-                this.font.load().then((loaded_face:any) => {
-                        document.fonts.add(loaded_face);
-                        this.drawInternal();
-                    }, (error:Error) => {
-                        console.log(error.message);
-                        this.drawInternal();
-                    });
-            });
-        }
     }
     handleKeyBoardEvents(type:string, e:any):void
     {
@@ -1385,6 +1367,7 @@ export class GuiButton implements GuiElement {
     } 
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0):void
     {
+        this.drawInternal();
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 };

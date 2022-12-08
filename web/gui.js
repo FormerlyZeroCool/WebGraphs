@@ -982,23 +982,6 @@ export class GuiButton {
         this.focused = true;
         this.callback = callBack;
         this.fontName = fontName;
-        //if(document.fonts.check(`16px ${this.fontName}`, "a"))
-        {
-            this.font = new FontFace(`${this.fontName}`, 'url(/web/fonts/Minecraft.ttf)');
-            this.font.load().then((loaded_face) => {
-                document.fonts.add(loaded_face);
-                this.drawInternal();
-            }, (error) => {
-                this.font = new FontFace(`${this.fontName}`, 'url(/fonts/Minecraft.ttf)');
-                this.font.load().then((loaded_face) => {
-                    document.fonts.add(loaded_face);
-                    this.drawInternal();
-                }, (error) => {
-                    console.log(error.message);
-                    this.drawInternal();
-                });
-            });
-        }
     }
     handleKeyBoardEvents(type, e) {
         if (this.active()) {
@@ -1088,6 +1071,7 @@ export class GuiButton {
         ctx.strokeRect(0, 0, this.width(), this.height());
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
+        this.drawInternal();
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 }
