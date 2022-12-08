@@ -134,8 +134,6 @@ class Function {
             y3)) / dxsq * dxsq);
     }
     calc_for(x_min, x_max, dx, calc_minmax, calc_zeros, calc_poi) {
-        if (this.error_message !== null)
-            return this.table;
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
@@ -144,6 +142,8 @@ class Function {
         this.local_maxima.length = 0;
         this.local_minima.length = 0;
         this.points_of_inflection.length = 0;
+        if (this.error_message !== null)
+            return this.table;
         try {
             const iterations = (this.x_max - this.x_min) / this.dx;
             for (let j = 0; j < iterations; j++) {
@@ -1069,8 +1069,6 @@ class Game extends SquareAABBCollidable {
                     world_y = selected_function.local_minima[x_index + 1];
                     world_x = selected_function.optimize_xmin(world_x - selected_function.dx, world_x + selected_function.dx, 128);
                     world_y = selected_function.compiled(world_x, selected_function.dx);
-                    //selected_function.local_minima[x_index!] = world_x;
-                    //selected_function.local_minima[x_index! + 1] = world_y;
                 }
                 if (x_index !== null) {
                     this.render_x_y_label_world_space(ctx, world_x, world_y, 2, +ctx.font.split("px")[0]);
@@ -1156,6 +1154,10 @@ class Game extends SquareAABBCollidable {
         x *= x_scale;
         y *= y_scale;
         return Math.floor(x) + Math.floor(y) * this.cell_dim[0];
+    }
+    screen_to_world(coords) {
+        return [Math.floor(coords[0] / this.main_buf.width * this.deltaX + this.x_min),
+            Math.floor(coords[1] / this.main_buf.height * this.deltaY + this.y_min)];
     }
     fill(start, color_p) {
         this.traverse_df(start, (index, color) => color_p, (index, color) => color == this.background_color.color);
