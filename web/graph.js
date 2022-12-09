@@ -893,28 +893,24 @@ class Game extends SquareAABBCollidable {
     }
     render_labels_floating(ctx) {
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
-            this.render_labels_table(ctx, 0, (x) => {
-                return x;
-            }, (lower_bound, upper_bound, iterations) => {
-                const x = (lower_bound + upper_bound) / 2;
-                return [x, selected_function.call(x)];
-            });
-        }
+        this.render_labels_table(ctx, 0, (x) => {
+            return x;
+        }, (lower_bound, upper_bound, iterations) => {
+            const x = (lower_bound + upper_bound) / 2;
+            return [x, selected_function.call(x)];
+        });
     }
     render_labels_zeros(ctx) {
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
-            this.render_labels_table(ctx, 0, (x) => {
-                const index = selected_function.closest_zero(x);
-                if (index !== null)
-                    return selected_function.zeros[index];
-                return -1;
-            }, (lower_bound, upper_bound, iterations) => {
-                const optimized_x = selected_function.optimize_zero(lower_bound, upper_bound, iterations);
-                return [optimized_x, selected_function.call(optimized_x)];
-            });
-        }
+        this.render_labels_table(ctx, 0, (x) => {
+            const index = selected_function.closest_zero(x);
+            if (index !== null)
+                return selected_function.zeros[index];
+            return -1;
+        }, (lower_bound, upper_bound, iterations) => {
+            const optimized_x = selected_function.optimize_zero(lower_bound, upper_bound, iterations);
+            return [optimized_x, selected_function.call(optimized_x)];
+        });
     }
     render_labels_table(ctx, offset_y, closest_in_array, optimization_function) {
         const touchPos = this.touchListener.touchPos;
@@ -948,32 +944,28 @@ class Game extends SquareAABBCollidable {
     render_labels_max(ctx) {
         const touchPos = this.touchListener.touchPos;
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
-            this.render_labels_table(ctx, -0, (x) => {
-                const index = selected_function.closest_max(x);
-                if (index !== null)
-                    return selected_function.local_maxima[index];
-                return -1;
-            }, (lower_bound, upper_bound, iterations) => {
-                const optimized_x = selected_function.optimize_xmax(lower_bound, upper_bound, iterations);
-                return [optimized_x, selected_function.call(optimized_x)];
-            });
-        }
+        this.render_labels_table(ctx, -0, (x) => {
+            const index = selected_function.closest_max(x);
+            if (index !== null)
+                return selected_function.local_maxima[index];
+            return -1;
+        }, (lower_bound, upper_bound, iterations) => {
+            const optimized_x = selected_function.optimize_xmax(lower_bound, upper_bound, iterations);
+            return [optimized_x, selected_function.call(optimized_x)];
+        });
     }
     render_labels_poi(ctx) {
         const touchPos = this.touchListener.touchPos;
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
-            this.render_labels_table(ctx, 0, (x) => {
-                const index = selected_function.closest_poi(x);
-                if (index !== null)
-                    return selected_function.points_of_inflection[index];
-                return -1;
-            }, (lower_bound, upper_bound, iterations) => {
-                const optimized_x = selected_function.optimize_poi(lower_bound, upper_bound, iterations);
-                return [optimized_x, selected_function.call(optimized_x)];
-            });
-        }
+        this.render_labels_table(ctx, 0, (x) => {
+            const index = selected_function.closest_poi(x);
+            if (index !== null)
+                return selected_function.points_of_inflection[index];
+            return -1;
+        }, (lower_bound, upper_bound, iterations) => {
+            const optimized_x = selected_function.optimize_poi(lower_bound, upper_bound, iterations);
+            return [optimized_x, selected_function.call(optimized_x)];
+        });
     }
     closest_intersection(x) {
         if (this.intersections.length > 0) {
@@ -993,32 +985,29 @@ class Game extends SquareAABBCollidable {
     }
     render_labels_intersection(ctx) {
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked &&
-            this.functions[this.last_selected_item]) {
-            this.render_labels_table(ctx, 0, (x) => {
-                const index = this.closest_intersection(x);
-                if (index !== null)
-                    return this.intersections[index];
-                return -1;
-            }, (lower_bound, upper_bound, iterations) => {
-                const optimized_x = this.optimize_intersection(selected_function, this.functions[this.last_selected_item], lower_bound, upper_bound, iterations);
-                return [optimized_x, selected_function.call(optimized_x)];
-            });
-        }
+        if (!this.functions[this.last_selected_item])
+            return;
+        this.render_labels_table(ctx, 0, (x) => {
+            const index = this.closest_intersection(x);
+            if (index !== null)
+                return this.intersections[index];
+            return -1;
+        }, (lower_bound, upper_bound, iterations) => {
+            const optimized_x = this.optimize_intersection(selected_function, this.functions[this.last_selected_item], lower_bound, upper_bound, iterations);
+            return [optimized_x, selected_function.call(optimized_x)];
+        });
     }
     render_labels_min(ctx) {
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked) {
-            this.render_labels_table(ctx, 0, (x) => {
-                const index = selected_function.closest_min(x);
-                if (index !== null)
-                    return selected_function.local_minima[index];
-                return -1;
-            }, (lower_bound, upper_bound, iterations) => {
-                const optimized_x = selected_function.optimize_xmin(lower_bound, upper_bound, iterations);
-                return [optimized_x, selected_function.call(optimized_x)];
-            });
-        }
+        this.render_labels_table(ctx, 0, (x) => {
+            const index = selected_function.closest_min(x);
+            if (index !== null)
+                return selected_function.local_minima[index];
+            return -1;
+        }, (lower_bound, upper_bound, iterations) => {
+            const optimized_x = selected_function.optimize_xmin(lower_bound, upper_bound, iterations);
+            return [optimized_x, selected_function.call(optimized_x)];
+        });
     }
     world_x_to_screen(x) {
         return (x - this.x_min) / this.deltaX * this.main_buf.width;
