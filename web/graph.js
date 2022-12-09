@@ -694,7 +694,7 @@ class Game extends SquareAABBCollidable {
                 this.main_buf = (this.new_sprite());
             }
             if (!this.functions[index]) {
-                const color = new RGB(index * 30 % 256, (index + 1) * 150 % 256, index * 85 % 256, 255);
+                const color = new RGB((index + 4) * 30 % 256, (index + 1) * 150 % 256, index * 85 % 256, 255);
                 const foo = new Function(text);
                 foo.color = color;
                 functions.push(foo);
