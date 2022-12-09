@@ -984,14 +984,16 @@ class Game extends SquareAABBCollidable {
     }
     render_axises(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number):void
     {
+        //setup variables for rendering
+        const font_size = 20;
+        const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
+        let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+        
         if(this.draw_axises)
         {
-            const font_size = 20;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            
+            //clear previous image
             this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
-    
+            //render axises
             this.axises.ctx.beginPath();
             this.axises.ctx.lineWidth = 4;
             this.axises.ctx.strokeStyle = "#FFFFFF";
@@ -1007,87 +1009,95 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
             this.axises.ctx.moveTo(screen_space_y_axis, 0);
             this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            //finish rendering axises
             ctx.stroke();
-            if(this.draw_axis_labels)
-            {
-                const msd_x = Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
-                const delta_x = Math.floor(this.deltaX * msd_x * 10) / (msd_x * 100);
-                let closest_start_x = Math.ceil(this.x_min * msd_x * 100) / (msd_x*100);
-                closest_start_x -= closest_start_x % delta_x;
-                const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.deltaY)));
-                const delta_y = Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
-                let closest_start_y = Math.ceil(this.y_min * msd_y * 10) / (msd_y*10);
-                closest_start_y -= closest_start_y % delta_y;
-    
-                let i = closest_start_x;
-                let last_render_x:number = -1;
-                let last_render_text_width = 0;
-                ctx.font = `${font_size}px Helvetica`;
-                ctx.strokeStyle = "#FFFFFF";
-                ctx.lineWidth = 3;
-                while(i < this.x_max)
-                {
-                    const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
-                    ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                    ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                    {
-                        const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
-                        ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                        ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                    }
-                    if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*15/16)
-                    {
-                        last_render_x = screen_x + 3;
-                        const text = this.format_number(i);
-                        const text_width = ctx.measureText(text).width;
-                        last_render_text_width = text_width;
-
-                        let text_y = screen_space_x_axis;
-                        if(text_y - font_size < 0)
-                        {
-                            text_y += font_size + 10;
-                        }
-                        ctx.strokeText(text, screen_x + 3, text_y - 6);
-                        ctx.fillText(text, screen_x + 3, text_y - 6);
-                    }
-                    
-                    i += delta_x;
-                }
-                i = closest_start_y;
-                let last_render_y = -font_size;
-                const old_screen_space_y_axis = screen_space_y_axis;
-                while(i <= this.y_max)
-                {
-                    const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
-                    screen_space_y_axis = old_screen_space_y_axis;
-                    ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                    ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                    {
-                        const screen_y = (i + delta_y / 2 - this.y_min) / this.deltaY * this.main_buf.height;
-                        screen_space_y_axis = old_screen_space_y_axis;
-                        ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                        ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                    }
-                    if(screen_y > last_render_y + font_size*2)
-                    {
-                        last_render_y = screen_y;
-                        const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 +"";
-                        const text_width = ctx.measureText(text).width;
-                        if(screen_space_y_axis + text_width > this.main_buf.width)
-                        {
-                            screen_space_y_axis -= text_width + 10;
-                        }
-                        ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
-                        ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
-                    }
-                    i += delta_y;
-                }
-            }
-
-            this.axises.ctx.stroke();
-    
-            ctx.drawImage(this.axises.image, x, y, width, height);
         }
+        if(!this.draw_axis_labels)
+        {
+            this.axises.ctx.stroke();
+            ctx.drawImage(this.axises.image, x, y, width, height);
+            return;
+        }  
+        const msd_x = Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
+        const delta_x = Math.floor(this.deltaX * msd_x * 10) / (msd_x * 100);
+        let closest_start_x = Math.ceil(this.x_min * msd_x * 100) / (msd_x*100);
+        closest_start_x -= closest_start_x % delta_x;
+        const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.deltaY)));
+        const delta_y = Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
+        let closest_start_y = Math.ceil(this.y_min * msd_y * 10) / (msd_y*10);
+        closest_start_y -= closest_start_y % delta_y;
+        //calculate a starting x position
+        let i = closest_start_x;
+        let last_render_x:number = -1;
+        let last_render_text_width = 0;
+        ctx.font = `${font_size}px Helvetica`;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = 3;
+        //render points along x axis
+        while(i < this.x_max)
+        {
+            const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
+            ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+            ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+            {
+                const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
+                ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+            }
+            if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*15/16)
+            {
+                last_render_x = screen_x + 3;
+                const text = this.format_number(i);
+                const text_width = ctx.measureText(text).width;
+                last_render_text_width = text_width;
+                let text_y = screen_space_x_axis;
+                if(text_y - font_size < 0)
+                {
+                    text_y += font_size + 10;
+                }
+                ctx.strokeText(text, screen_x + 3, text_y - 6);
+                ctx.fillText(text, screen_x + 3, text_y - 6);
+            }
+            
+            i += delta_x;
+        }
+        //calculate a starting y position
+        i = closest_start_y;
+        let last_render_y = -font_size;
+        const old_screen_space_y_axis = screen_space_y_axis;
+        //render points along y axis
+        while(i <= this.y_max)
+        {
+            const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
+            screen_space_y_axis = old_screen_space_y_axis;
+            ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+            ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+            {
+                const screen_y = (i + delta_y / 2 - this.y_min) / this.deltaY * this.main_buf.height;
+                screen_space_y_axis = old_screen_space_y_axis;
+                ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+            }
+            if(screen_y > last_render_y + font_size*2)
+            {
+                last_render_y = screen_y;
+                const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 +"";
+                const text_width = ctx.measureText(text).width;
+                if(screen_space_y_axis + text_width > this.main_buf.width)
+                {
+                    screen_space_y_axis -= text_width + 10;
+                }
+                ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
+                ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
+            }
+            i += delta_y;
+        }
+            
+
+        this.axises.ctx.stroke();
+
+        ctx.drawImage(this.axises.image, x, y, width, height);
+        
     }
     draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
     {
@@ -1305,12 +1315,21 @@ class Game extends SquareAABBCollidable {
         text = `x: ${decimal ? round_with_precision(world_x, precision + 2) : world_x.toExponential(precision)} y: ${
             decimal ? round_with_precision(world_y, precision + 2) : world_y.toExponential(precision)}`;
        
-        const text_width = ctx.measureText(text).width;            
+        const text_width = ctx.measureText(text).width; 
+        const font_size = +ctx.font.split('px')[0];           
         if(text_width + screen_x + dim > this.width)
         {
             screen_x -= text_width + dim * 2;
             screen_y += 3;
         }
+        if(text_width + screen_x > this.main_buf.width)
+            screen_x = this.main_buf.width - text_width - 10;
+        else if(screen_x < 0)
+            screen_x = 5;
+        if(screen_y - font_size < 0)
+            screen_y = font_size + 10;
+        else if(screen_y > this.main_buf.height)
+            screen_y = this.main_buf.height - font_size;
         ctx.fillText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
         ctx.strokeText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
     }
