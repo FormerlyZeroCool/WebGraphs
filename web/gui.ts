@@ -894,7 +894,7 @@ export class GuiCheckList implements GuiElement {
             if(background_color)
             {
                 const alpha = background_color.alpha();
-                background_color.setAlpha(140);
+                background_color.setAlpha(190);
                 ctx.fillStyle = background_color.htmlRBGA();
                 background_color.setAlpha(alpha);
                 ctx.fillRect(x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), this.width(), (this.height() / this.layoutManager.matrixDim[1]) - 5);
