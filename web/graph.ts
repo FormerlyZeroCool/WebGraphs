@@ -1118,144 +1118,109 @@ class Game extends SquareAABBCollidable {
             if(this.ui_alpha !== 1)
                 ctx.globalAlpha = 1;
         }
-        this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
+        if(this.draw_point_labels)
+            this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
     }
     render_labels_floating(ctx:CanvasRenderingContext2D):void
     {
-        if(this.draw_point_labels)
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
         {
-            const touchPos = this.touchListener.touchPos;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            let world_y:number = 0;
-            const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
-            {
-                try{
-                    const world_x = (touchPos[0] / this.width * this.deltaX) + selected_function.x_min;
-                    world_y = selected_function.compiled(world_x);
-                    this.render_x_y_label_world_space(ctx, world_x, world_y);
-                }
-                catch(error:any){}
-                ctx.beginPath();
-                const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
-                ctx.moveTo(screen_space_y_axis, y);
-                ctx.lineTo(touchPos[0], y);
-                ctx.moveTo(touchPos[0], screen_space_x_axis);
-                ctx.lineTo(touchPos[0], y);
-                ctx.stroke();
-            }
-            
+            this.render_labels_table(ctx, 0, (x:number) => {
+                return x;
+            },
+                (lower_bound:number, upper_bound:number, iterations) => {
+                    const x = (lower_bound + upper_bound) / 2;
+                    return [x, selected_function.call(x)!];
+                });
         }
     }
     render_labels_zeros(ctx:CanvasRenderingContext2D):void
-    {
-        if(this.draw_point_labels)
+    { 
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
         {
-            const touchPos = this.touchListener.touchPos;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            let world_y:number = 0;
-            let world_x = 0;
-            const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+            this.render_labels_table(ctx, 0, (x:number) => {
+                const index = selected_function.closest_zero(x);
+                if(index !== null)
+                    return selected_function.zeros[index];
+                return -1;
+            },
+                (lower_bound:number, upper_bound:number, iterations) => {
+                    const optimized_x = selected_function.optimize_zero(lower_bound, upper_bound, iterations);
+                    return [optimized_x, selected_function.call(optimized_x)!];
+                });
+        }
+    }
+    render_labels_table(ctx:CanvasRenderingContext2D, offset_y:number, closest_in_array:(x:number) => number, optimization_function:(lower_bound:number, upper_bound:number, iterations:number) => number[]):void
+    {
+        const touchPos = this.touchListener.touchPos;
+        const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
+        let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
+        let world_y:number = 0;
+        let world_x = 0;
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
+        {
+            const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
+            
+            const closest:number = closest_in_array(touch_world_x);
+            if(closest !== -1)
             {
-                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
-                const closest_max = selected_function.closest_zero(touch_world_x);
-                let x_index = closest_max;
-                if(closest_max !== null)
-                {
-                    world_x = selected_function.zeros[x_index!];
-                    world_y = selected_function.zeros[x_index! + 1];
-                    world_x = selected_function.optimize_zero(selected_function.zeros[x_index!] - selected_function.dx, selected_function.zeros[x_index!] + selected_function.dx, 128);
-                    world_y = selected_function.call(world_x)!;
-                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, +ctx.font.split("px")[0]);
-                }
+                world_x = closest;
+                const optimized_point = optimization_function(world_x - selected_function.dx, world_x + selected_function.dx, 128);
+                world_x = optimized_point[0];
+                world_y = optimized_point[1];
             }
             
+            if(closest !== -1)
+            {
+                this.render_formatted_point(ctx, world_x, world_y, this.world_x_to_screen(world_x), this.world_y_to_screen(world_y), 2, -1 * +ctx.font.split("px")[0] + offset_y);
+                const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
+                ctx.beginPath();
+                const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
+                ctx.moveTo(screen_space_y_axis, y);
+                ctx.lineTo(sx, y);
+                ctx.moveTo(sx, screen_space_x_axis);
+                ctx.lineTo(sx, y);
+                ctx.stroke();
+            }
         }
     }
     render_labels_max(ctx:CanvasRenderingContext2D):void
     {
-        if(this.draw_point_labels)
+        const touchPos = this.touchListener.touchPos;
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
         {
-            const touchPos = this.touchListener.touchPos;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            let world_y:number = 0;
-            let world_x = 0;
-            const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
-            {
-                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
-                const closest_max = selected_function.closest_max(touch_world_x);
-                let x_index = closest_max;
-                if(closest_max !== null)
-                {
-                    world_x = selected_function.local_maxima[x_index!];
-                    world_y = selected_function.local_maxima[x_index! + 1];
-                    world_x = selected_function.optimize_xmax(world_x - selected_function.dx, world_x + selected_function.dx, 128);
-                    world_y = selected_function.compiled(world_x, selected_function.dx)!;
-                    //selected_function.local_maxima[x_index!] = world_x;
-                    //selected_function.local_maxima[x_index! + 1] = world_y;
-                }
-                
-                if(x_index !== null)
-                {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, -1 * +ctx.font.split("px")[0]);
-                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
-                    ctx.beginPath();
-                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
-                    ctx.moveTo(screen_space_y_axis, y);
-                    ctx.lineTo(sx, y);
-                    ctx.moveTo(sx, screen_space_x_axis);
-                    ctx.lineTo(sx, y);
-                    ctx.stroke();
-                }
-            }
-            
+            this.render_labels_table(ctx, -0, (x:number) => {
+                const index = selected_function.closest_max(x);
+                if(index !== null)
+                    return selected_function.local_maxima[index];
+                return -1;
+            },
+                (lower_bound:number, upper_bound:number, iterations) => {
+                    const optimized_x = selected_function.optimize_xmax(lower_bound, upper_bound, iterations);
+                    return [optimized_x, selected_function.call(optimized_x)!];
+                });
         }
     }
     render_labels_poi(ctx:CanvasRenderingContext2D):void
-    {
-        if(this.draw_point_labels)
+    {  
+        const touchPos = this.touchListener.touchPos;
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
         {
-            const touchPos = this.touchListener.touchPos;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            let world_y:number = 0;
-            let world_x = 0;
-            const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
-            {
-                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
-                const closest_max = selected_function.closest_poi(touch_world_x);
-                let x_index = closest_max;
-
-                if(closest_max !== null)
-                {
-                    world_x = selected_function.points_of_inflection[x_index!];
-                    world_y = selected_function.points_of_inflection[x_index! + 1];
-                    world_x = selected_function.optimize_poi(world_x - selected_function.dx, world_x + selected_function.dx, 256);
-                    world_y = selected_function.compiled(world_x, selected_function.dx)!;
-                    //selected_function.points_of_inflection[x_index!] = world_x;
-                    //selected_function.points_of_inflection[x_index! + 1] = world_y;
-                }
-                
-                if(x_index !== null)
-                {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, -1 * +ctx.font.split("px")[0]);
-                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
-                    ctx.beginPath();
-                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
-                    ctx.moveTo(screen_space_y_axis, y);
-                    ctx.lineTo(sx, y);
-                    ctx.moveTo(sx, screen_space_x_axis);
-                    ctx.lineTo(sx, y);
-                    ctx.stroke();
-                }
-            }
-            
+            this.render_labels_table(ctx, 0, (x:number) => {
+                const index = selected_function.closest_poi(x);
+                if(index !== null)
+                    return selected_function.points_of_inflection[index];
+                return -1;
+            },
+                (lower_bound:number, upper_bound:number, iterations) => {
+                    const optimized_x = selected_function.optimize_poi(lower_bound, upper_bound, iterations);
+                    return [optimized_x, selected_function.call(optimized_x)!];
+                });
         }
     }
     closest_intersection(x:number):number | null
@@ -1280,83 +1245,38 @@ class Game extends SquareAABBCollidable {
     }
     render_labels_intersection(ctx:CanvasRenderingContext2D):void
     {
-        if(this.draw_point_labels)
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked &&
+                this.functions[this.last_selected_item])
         {
-            const touchPos = this.touchListener.touchPos;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            let world_y:number = 0;
-            let world_x = 0;
-            const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked &&
-                this.functions[this.selected_item] && this.functions[this.last_selected_item])
-            {
-                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
-                const closest_intersection = this.closest_intersection(touch_world_x);
-                let x_index = closest_intersection;
-                if(closest_intersection !== null)
-                {
-                    world_x = this.intersections[x_index!];
-                    world_y = this.intersections[x_index! + 1];
-                    world_x = this.optimize_intersection(this.functions[this.selected_item], this.functions[this.last_selected_item], world_x - selected_function.dx, world_x + selected_function.dx, 128);
-                    world_y = selected_function.call(world_x)!;
-                    //this.intersections[x_index!] = world_x;
-                    //this.intersections[x_index! + 1] = world_y;
-                }
-                
-                if(x_index !== null)
-                {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, -1 * +ctx.font.split("px")[0]);
-                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
-                    ctx.beginPath();
-                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
-                    ctx.moveTo(screen_space_y_axis, y);
-                    ctx.lineTo(sx, y);
-                    ctx.moveTo(sx, screen_space_x_axis);
-                    ctx.lineTo(sx, y);
-                    ctx.stroke();
-                }
-            }
-            
+            this.render_labels_table(ctx, 0, (x:number) => {
+                const index = this.closest_intersection(x);
+                if(index !== null)
+                    return this.intersections[index];
+                return -1;
+            },
+                (lower_bound:number, upper_bound:number, iterations) => {
+                    const optimized_x = this.optimize_intersection(selected_function, 
+                            this.functions[this.last_selected_item], lower_bound, upper_bound, iterations);
+                    return [optimized_x, selected_function.call(optimized_x)!];
+                });
         }
     }
     render_labels_min(ctx:CanvasRenderingContext2D):void
     {
-        if(this.draw_point_labels)
+        const selected_function = this.functions[this.layer_manager.list.selected()];
+        if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
         {
-            const touchPos = this.touchListener.touchPos;
-            const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
-            let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
-            let world_y:number = 0;
-            let world_x = 0;
-            const selected_function = this.functions[this.layer_manager.list.selected()];
-            if(selected_function && this.layer_manager.list.selectedItem()?.checkBox.checked)
-            {
-                const touch_world_x = selected_function.x_min + touchPos[0] / this.main_buf.width * this.deltaX;
-                const closest_min = selected_function.closest_min(touch_world_x);
-                let x_index = closest_min;
-                if(closest_min !== null)
-                {
-                    world_x = selected_function.local_minima[x_index!];
-                    world_y = selected_function.local_minima[x_index! + 1];
-                    world_x = selected_function.optimize_xmin(world_x - selected_function.dx, world_x + selected_function.dx, 128);
-                    world_y = selected_function.compiled(world_x, selected_function.dx)!;
-                }
-                
-                if(x_index !== null)
-                {
-                    this.render_x_y_label_world_space(ctx, world_x, world_y, 2, +ctx.font.split("px")[0]);
-                    const sx = (world_x - this.x_min) / this.deltaX * this.main_buf.width;
-                    ctx.beginPath();
-                    const y = ((-world_y - this.y_min) / this.deltaY) * this.height;
-                    ctx.moveTo(screen_space_y_axis, y);
-                    ctx.lineTo(sx, y);
-                    ctx.moveTo(sx, screen_space_x_axis);
-                    ctx.lineTo(sx, y);
-                    ctx.stroke();
-                }
-            }
-            
+            this.render_labels_table(ctx, 0, (x:number) => {
+                const index = selected_function.closest_min(x);
+                if(index !== null)
+                    return selected_function.local_minima[index];
+                return -1;
+            },
+                (lower_bound:number, upper_bound:number, iterations) => {
+                    const optimized_x = selected_function.optimize_xmin(lower_bound, upper_bound, iterations);
+                    return [optimized_x, selected_function.call(optimized_x)!];
+                });
         }
     }
     world_x_to_screen(x:number):number
