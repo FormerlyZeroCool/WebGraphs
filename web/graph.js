@@ -685,6 +685,7 @@ class Game extends SquareAABBCollidable {
         this.calc_bounds();
     }
     try_render_functions() {
+        //figure out bounds for calculation of function tables
         this.calc_bounds();
         let functions = this.functions;
         this.layer_manager.list.list.forEach((li, index) => {
@@ -707,11 +708,12 @@ class Game extends SquareAABBCollidable {
         this.main_buf.ctx.lineJoin = "bevel";
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
-                //build table to be rendered
+                //build table of points, intersections, zeros, min/maxima inflections to be rendered
                 foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table[0] - this.y_min) / this.deltaY) * this.cell_dim[1];
+                //setup state for for loop (if error is non null then the table will be empty)
                 if (foo.error_message === null) {
                     this.main_buf.ctx.beginPath();
                     this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
@@ -720,9 +722,10 @@ class Game extends SquareAABBCollidable {
                 for (let i = 1; i < foo.table.length; i++) {
                     const x = this.x_min + foo.dx * i;
                     const y = -foo.table[i];
+                    //transform worldspace coordinates to screen space for rendering
                     const sy = ((y - this.y_min) / this.deltaY) * this.cell_dim[1];
                     const sx = ((x - this.x_min) / this.deltaX) * this.cell_dim[0];
-                    //render to buffers
+                    //render functions as lines between points in table to buffers
                     if (sx > last_x && sy !== last_y) {
                         this.main_buf.ctx.lineTo(sx, sy);
                         last_x = sx;
@@ -732,7 +735,10 @@ class Game extends SquareAABBCollidable {
                 this.main_buf.ctx.stroke();
             }
         });
+        //clear previous intersections calc just in case we end up with the wrong ones from a previous frame
+        //better to have none than the wrong ones
         this.intersections.length = 0;
+        //calculate points of intersection between two selected functions
         if (this.chkbx_render_intersections.checked && this.selected_item !== this.last_selected_item) {
             const fun1 = functions[this.selected_item];
             const fun2 = functions[this.last_selected_item];
@@ -743,9 +749,6 @@ class Game extends SquareAABBCollidable {
                         this.intersections.push(fun1.table[j]);
                     }
                     else if (sign(fun1.table[j] - fun2.table[j]) !== sign(fun1.table[j + 1] - fun2.table[j + 1])) {
-                        //const optimized_runs = getWidth();
-                        //const optimization_iterations = Math.floor(132 - 132 * ((this.intersections.length<optimized_runs?this.intersections.length:optimized_runs) / optimized_runs));
-                        //const optimized_x = this.optimize_intersection(fun1, fun2, fun1.index_to_x(j), fun1.index_to_x(j+1), optimization_iterations + 12);
                         this.intersections.push(fun1.index_to_x(j));
                         this.intersections.push(fun1.table[j]);
                     }
@@ -1057,6 +1060,7 @@ class Game extends SquareAABBCollidable {
             screen_x -= text_width + dim * 2;
             screen_y += 3;
         }
+        //add bounding to labels to prevent rendering off screen
         if (text_width + screen_x > this.main_buf.width)
             screen_x = this.main_buf.width - text_width - 10;
         else if (screen_x < 0)
@@ -1071,12 +1075,10 @@ class Game extends SquareAABBCollidable {
     format_number(value, precision = 2) {
         const dim = 10;
         let text;
-        if (Math.abs(value) < 1 << 16 && Math.abs(value) > 0.0001) {
+        if (Math.abs(value) < 1 << 16 && Math.abs(value) > 0.0001)
             text = `${round_with_precision(value, precision + 2)}`;
-        }
-        else {
+        else
             text = `${value.toExponential(precision)}`;
-        }
         return text;
     }
     cell_dist(cell1, cell2) {
@@ -1134,28 +1136,27 @@ class Game extends SquareAABBCollidable {
         }
     }
     update_state(delta_time) {
+        //update selected item
         if (this.layer_manager.list.selected() !== this.selected_item) {
             this.last_selected_item = this.selected_item;
             this.selected_item = this.layer_manager.list.selected();
         }
         const ms_to_fade = 250;
+        //call transition function on state machine managing what points we are rendering
         this.state_manager_grid.transition(delta_time);
-        if (!this.touchListener.registeredTouch) {
-            if (!this.multi_touchListener.registeredMultiTouchEvent) {
-                if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
-                    this.ui_alpha += delta_time / ms_to_fade;
-                else
-                    this.ui_alpha -= delta_time / ms_to_fade;
-                this.ui_alpha = clamp(this.ui_alpha, 0, 1);
-            }
-            else
-                this.ui_alpha = 0;
+        if (this.multi_touchListener.registeredMultiTouchEvent) {
+            this.ui_alpha = 0;
+            return;
         }
+        if (this.touchListener.registeredTouch)
+            return;
+        if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
+            this.ui_alpha += delta_time / ms_to_fade;
+        else
+            this.ui_alpha -= delta_time / ms_to_fade;
+        this.ui_alpha = clamp(this.ui_alpha, 0, 1);
     }
     set_scale(new_scale) {
-        //if(!isTouchSupported())
-        {
-        }
         this.scale = new_scale;
     }
 }
