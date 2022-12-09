@@ -887,6 +887,7 @@ class Game extends SquareAABBCollidable {
             if (this.ui_alpha !== 1)
                 ctx.globalAlpha = 1;
         }
+        //this state manager controls what labels get rendered
         if (this.draw_point_labels)
             this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
     }
