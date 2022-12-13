@@ -109,9 +109,9 @@ class ColorPickerTool extends ExtendedTool {
 
         slidersLayout.addElement(new GuiLabel("Hue", 50, 16, slider_height));
         slidersLayout.addElement(this.hueSlider);
-        slidersLayout.addElement(new GuiLabel("Satur", 50, 16, slider_height));
+        slidersLayout.addElement(new GuiLabel("Sat.", 50, 16, slider_height));
         slidersLayout.addElement(this.saturationSlider);
-        slidersLayout.addElement(new GuiLabel("light", 50, 16, slider_height));
+        slidersLayout.addElement(new GuiLabel("Light", 50, 16, slider_height));
         slidersLayout.addElement(this.lightnessSlider);
         this.localLayout.addElement(slidersLayout);
         this.setColorText();
