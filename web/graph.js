@@ -29,16 +29,16 @@ class ColorPickerTool extends ExtendedTool {
         const colorSlideEvent = (event) => {
             const color = new RGB(0, 0, 0, 0);
             color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
-            color.setAlpha(this.alphaSlider.state * 255);
+            color.setAlpha(255);
             this.color().copy(color);
             this._setColorText();
             color_changed(color);
             this.hueSlider.refresh();
             this.saturationSlider.refresh();
             this.lightnessSlider.refresh();
-            this.alphaSlider.refresh();
         };
-        this.hueSlider = new CustomBackgroundSlider(0, [150, 25], colorSlideEvent, (ctx, x, y, width, height) => {
+        const slider_height = 50;
+        this.hueSlider = new CustomBackgroundSlider(0, [150, slider_height], colorSlideEvent, (ctx, x, y, width, height) => {
             const color = new RGB(0, 0, 0, 0);
             if (this.color()) {
                 const hsl = [this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state];
@@ -53,7 +53,7 @@ class ColorPickerTool extends ExtendedTool {
                 }
             }
         });
-        this.saturationSlider = new CustomBackgroundSlider(1, [150, 25], colorSlideEvent, (ctx, x, y, width, height) => {
+        this.saturationSlider = new CustomBackgroundSlider(1, [150, slider_height], colorSlideEvent, (ctx, x, y, width, height) => {
             const color = new RGB(0, 0, 0, 0);
             if (this.color()) {
                 const hsl = [this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state];
@@ -67,7 +67,7 @@ class ColorPickerTool extends ExtendedTool {
                 }
             }
         });
-        this.lightnessSlider = new CustomBackgroundSlider(0, [150, 25], colorSlideEvent, (ctx, x, y, width, height) => {
+        this.lightnessSlider = new CustomBackgroundSlider(0, [150, slider_height], colorSlideEvent, (ctx, x, y, width, height) => {
             const color = new RGB(0, 0, 0, 0);
             if (this.color()) {
                 const hsl = [this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state];
@@ -82,31 +82,20 @@ class ColorPickerTool extends ExtendedTool {
                 }
             }
         });
-        this.alphaSlider = new CustomBackgroundSlider(1, [150, 25], colorSlideEvent, (ctx, x, y, width, height) => {
-            const color = new RGB(0, 0, 0, 0);
-            if (this.color()) {
-                color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
-                const unitStep = width / 255;
-                for (let j = 0; j < width; j += unitStep) {
-                    color.setAlpha(j);
-                    ctx.fillStyle = color.htmlRBGA();
-                    ctx.fillRect(j + x, y, unitStep, height);
-                }
-            }
-        });
         this.localLayout.addElement(new GuiLabel("Color:", 100, 16));
         this.localLayout.addElement(this.chosenColor);
-        const slidersLayout = new SimpleGridLayoutManager([4, 30], [200, 110]);
-        slidersLayout.addElement(new GuiLabel("Hue", 50, 16, 25));
+        const slidersLayout = new SimpleGridLayoutManager([4, 30], [200, slider_height * 3]);
+        slidersLayout.addElement(new GuiLabel("Hue", 50, 16, slider_height));
         slidersLayout.addElement(this.hueSlider);
-        slidersLayout.addElement(new GuiLabel("Sat", 50, 16, 25));
+        slidersLayout.addElement(new GuiLabel("Satur", 50, 16, slider_height));
         slidersLayout.addElement(this.saturationSlider);
-        slidersLayout.addElement(new GuiLabel("light", 50, 16, 25));
+        slidersLayout.addElement(new GuiLabel("light", 50, 16, slider_height));
         slidersLayout.addElement(this.lightnessSlider);
-        slidersLayout.addElement(new GuiLabel("ap", 50, 16, 25));
-        slidersLayout.addElement(this.alphaSlider);
         this.localLayout.addElement(slidersLayout);
         this.setColorText();
+        this.hueSlider.refresh();
+        this.saturationSlider.refresh();
+        this.lightnessSlider.refresh();
     }
     color() {
         return this.chosenColor.color;
@@ -117,7 +106,6 @@ class ColorPickerTool extends ExtendedTool {
         this.hueSlider.setState(hsl[0] / 360);
         this.saturationSlider.setState(hsl[1]);
         this.lightnessSlider.setState(hsl[2]);
-        this.alphaSlider.setState(color.alpha() / 255);
     }
     _setColorText() {
         const color = new RGB(0, 0, 0);
