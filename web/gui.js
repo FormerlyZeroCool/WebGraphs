@@ -355,8 +355,6 @@ export class SimpleGridLayoutManager {
         }
     }
     handleTouchEvents(type, e, from_parent_handler = false) {
-        if (from_parent_handler)
-            console.log(e.touchPos);
         if (this.elementTouched || (from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height()) {
             let record = null;
@@ -371,7 +369,6 @@ export class SimpleGridLayoutManager {
                     e.touchPos[1] >= el.y && e.touchPos[1] < el.y + el.element.height()) {
                     record = el;
                     index = runningNumber;
-                    console.log(record);
                 }
                 runningNumber++;
             });

@@ -25,8 +25,6 @@ const dderx =  (foo:(x:number, dx:number) => number, x:number, dx:number) => {
 window.dderx = dderx;
 
 class ColorPickerTool extends ExtendedTool {
-    tbColor:GuiTextBox;
-    btUpdate:GuiButton;
     chosenColor:GuiColoredSpacer;
     hueSlider:CustomBackgroundSlider;
     saturationSlider:CustomBackgroundSlider;
@@ -38,48 +36,6 @@ class ColorPickerTool extends ExtendedTool {
     {
         super(toolName, pathToImage, optionPanes, [200, 220], [4, 50]);
         this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0,150,150,255));
-        this.tbColor = new GuiTextBox(true, 200, null, 16, 32, GuiTextBox.default, (e) =>
-        {
-            const color:RGB = this.chosenColor.color;
-            const code:number = color.loadString(e.textbox.text);
-            if(code === 2)//overflow
-            {
-                e.textbox.text = (color.htmlRBGA());
-            }
-            else if(code === 1)//parse error
-            {
-                return false;
-            }
-            this.chosenColor.color.copy(color);
-            return true;
-        });
-        this.tbColor.promptText = "Enter RGBA color here (RGB 0-255 A 0-1):";
-        this.btUpdate = new GuiButton(() => { 
-            const color:RGB = this.chosenColor.color;
-            const code:number = color.loadString(this.tbColor.text);
-            if(code === 0)//error don't change
-            {
-                //this.field.layer().palette.setSelectedColor(this.tbColor.text);
-                //this.field.layer().state.color = this.field.layer().palette.selectedPixelColor;
-            }
-            else if(code === 2)//valid color parsed
-            {
-                //this.field.layer().palette.setSelectedColor(color.htmlRBGA());
-                //this.field.layer().state.color = this.field.layer().palette.selectedPixelColor;
-                color_changed(color);
-            }
-            else//invalid color parsed set text from input
-            {
-                //this.tbColor.setText(this.field.layer().palette.selectedPixelColor.htmlRBGA());
-            }
-            this.setColorText();
-            this.hueSlider.refresh();
-            this.saturationSlider.refresh();
-            this.lightnessSlider.refresh();
-            this.alphaSlider.refresh();
-        },
-            "Update", 75, this.tbColor.height(), 16);
-        this.tbColor.submissionButton = this.btUpdate;
         const colorSlideEvent:(event:SlideEvent) => void = (event:SlideEvent) => {
             const color:RGB = new RGB(0, 0, 0, 0);
             color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
@@ -165,8 +121,6 @@ class ColorPickerTool extends ExtendedTool {
         });
         this.localLayout.addElement(new GuiLabel("Color:", 100, 16));
         this.localLayout.addElement(this.chosenColor);
-        this.localLayout.addElement(this.tbColor);
-        this.localLayout.addElement(this.btUpdate);
         const slidersLayout:SimpleGridLayoutManager = new SimpleGridLayoutManager([4, 30], [200, 110]);
 
         slidersLayout.addElement(new GuiLabel("Hue", 50, 16, 25));
@@ -200,7 +154,6 @@ class ColorPickerTool extends ExtendedTool {
             color.copy(this.color());
         
         this.chosenColor.color.copy(color);
-        this.tbColor.setText(color.htmlRBGA());
         return color;
     }
     activateOptionPanel():void { this.layoutManager.activate(); }

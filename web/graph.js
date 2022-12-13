@@ -1,5 +1,5 @@
 import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
-import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, GuiTextBox, CustomBackgroundSlider, StateManagedUI } from './gui.js';
+import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, CustomBackgroundSlider, StateManagedUI } from './gui.js';
 import { sign, srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 window.sec = (x) => 1 / Math.sin(x);
@@ -26,46 +26,6 @@ class ColorPickerTool extends ExtendedTool {
     constructor(color_changed, toolName = "color picker", pathToImage = ["images/colorPickerSprite.png"], optionPanes = []) {
         super(toolName, pathToImage, optionPanes, [200, 220], [4, 50]);
         this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0, 150, 150, 255));
-        this.tbColor = new GuiTextBox(true, 200, null, 16, 32, GuiTextBox.default, (e) => {
-            const color = this.chosenColor.color;
-            const code = color.loadString(e.textbox.text);
-            if (code === 2) //overflow
-             {
-                e.textbox.text = (color.htmlRBGA());
-            }
-            else if (code === 1) //parse error
-             {
-                return false;
-            }
-            this.chosenColor.color.copy(color);
-            return true;
-        });
-        this.tbColor.promptText = "Enter RGBA color here (RGB 0-255 A 0-1):";
-        this.btUpdate = new GuiButton(() => {
-            const color = this.chosenColor.color;
-            const code = color.loadString(this.tbColor.text);
-            if (code === 0) //error don't change
-             {
-                //this.field.layer().palette.setSelectedColor(this.tbColor.text);
-                //this.field.layer().state.color = this.field.layer().palette.selectedPixelColor;
-            }
-            else if (code === 2) //valid color parsed
-             {
-                //this.field.layer().palette.setSelectedColor(color.htmlRBGA());
-                //this.field.layer().state.color = this.field.layer().palette.selectedPixelColor;
-                color_changed(color);
-            }
-            else //invalid color parsed set text from input
-             {
-                //this.tbColor.setText(this.field.layer().palette.selectedPixelColor.htmlRBGA());
-            }
-            this.setColorText();
-            this.hueSlider.refresh();
-            this.saturationSlider.refresh();
-            this.lightnessSlider.refresh();
-            this.alphaSlider.refresh();
-        }, "Update", 75, this.tbColor.height(), 16);
-        this.tbColor.submissionButton = this.btUpdate;
         const colorSlideEvent = (event) => {
             const color = new RGB(0, 0, 0, 0);
             color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
@@ -136,8 +96,6 @@ class ColorPickerTool extends ExtendedTool {
         });
         this.localLayout.addElement(new GuiLabel("Color:", 100, 16));
         this.localLayout.addElement(this.chosenColor);
-        this.localLayout.addElement(this.tbColor);
-        this.localLayout.addElement(this.btUpdate);
         const slidersLayout = new SimpleGridLayoutManager([4, 30], [200, 110]);
         slidersLayout.addElement(new GuiLabel("Hue", 50, 16, 25));
         slidersLayout.addElement(this.hueSlider);
@@ -166,7 +124,6 @@ class ColorPickerTool extends ExtendedTool {
         if (this.color())
             color.copy(this.color());
         this.chosenColor.color.copy(color);
-        this.tbColor.setText(color.htmlRBGA());
         return color;
     }
     activateOptionPanel() { this.layoutManager.activate(); }
