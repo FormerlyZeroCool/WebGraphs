@@ -1,6 +1,6 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox, 
-    StateManagedUIElement, StateManagedUI, UIState} from './gui.js'
+    GuiColoredSpacer, ExtendedTool, GuiTextBox, CustomBackgroundSlider, StateManagedUI, UIState} from './gui.js'
 import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SpatialHashMap2D, SquareAABBCollidable } from './game_utils.js'
 window.sec = (x:number) => 1/Math.sin(x);
@@ -23,6 +23,204 @@ const dderx =  (foo:(x:number, dx:number) => number, x:number, dx:number) => {
     return (derx(foo, x + dx, dx) - derx(foo, x, dx)) / dx;
 };
 window.dderx = dderx;
+
+class ColorPickerTool extends ExtendedTool {
+    tbColor:GuiTextBox;
+    btUpdate:GuiButton;
+    chosenColor:GuiColoredSpacer;
+    hueSlider:CustomBackgroundSlider;
+    saturationSlider:CustomBackgroundSlider;
+    lightnessSlider:CustomBackgroundSlider;
+    alphaSlider:CustomBackgroundSlider;
+    buttonInvertColors:GuiButton;
+
+    constructor(color_changed:(color:RGB) => void, toolName:string = "color picker", pathToImage:string[] = ["images/colorPickerSprite.png"], optionPanes:SimpleGridLayoutManager[] = [])
+    {
+        super(toolName, pathToImage, optionPanes, [200, 220], [4, 50]);
+        this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0,150,150,255));
+        this.tbColor = new GuiTextBox(true, 200, null, 16, 32, GuiTextBox.default, (e) =>
+        {
+            const color:RGB = this.chosenColor.color;
+            const code:number = color.loadString(e.textbox.text);
+            if(code === 2)//overflow
+            {
+                e.textbox.text = (color.htmlRBGA());
+            }
+            else if(code === 1)//parse error
+            {
+                return false;
+            }
+            this.chosenColor.color.copy(color);
+            return true;
+        });
+        this.tbColor.promptText = "Enter RGBA color here (RGB 0-255 A 0-1):";
+        this.btUpdate = new GuiButton(() => { 
+            const color:RGB = this.chosenColor.color;
+            const code:number = color.loadString(this.tbColor.text);
+            if(code === 0)//error don't change
+            {
+                //this.field.layer().palette.setSelectedColor(this.tbColor.text);
+                //this.field.layer().state.color = this.field.layer().palette.selectedPixelColor;
+            }
+            else if(code === 2)//valid color parsed
+            {
+                //this.field.layer().palette.setSelectedColor(color.htmlRBGA());
+                //this.field.layer().state.color = this.field.layer().palette.selectedPixelColor;
+                color_changed(color);
+            }
+            else//invalid color parsed set text from input
+            {
+                //this.tbColor.setText(this.field.layer().palette.selectedPixelColor.htmlRBGA());
+            }
+            this.setColorText();
+            this.hueSlider.refresh();
+            this.saturationSlider.refresh();
+            this.lightnessSlider.refresh();
+            this.alphaSlider.refresh();
+        },
+            "Update", 75, this.tbColor.height(), 16);
+        this.tbColor.submissionButton = this.btUpdate;
+        const colorSlideEvent:(event:SlideEvent) => void = (event:SlideEvent) => {
+            const color:RGB = new RGB(0, 0, 0, 0);
+            color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
+            color.setAlpha(this.alphaSlider.state * 255);
+            this.color().copy(color);
+            this._setColorText();
+            color_changed(color);
+            this.hueSlider.refresh();
+            this.saturationSlider.refresh();
+            this.lightnessSlider.refresh();
+            this.alphaSlider.refresh();
+        }
+        this.hueSlider = new CustomBackgroundSlider(0, [150, 25], colorSlideEvent, 
+            (ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number) => {
+                const color:RGB = new RGB(0, 0, 0, 0);
+                if(this.color())
+                {
+                    const hsl:number[] = [this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state];
+
+                    const unitStep:number = 1 / width;
+                    let i = 0;
+                    for(let j = 0; j < 1; j += unitStep)
+                    {
+                        hsl[0] = j * 360;
+                        color.setByHSL(hsl[0], hsl[1], hsl[2]);
+                        color.setAlpha(this.color().alpha());
+                        ctx.fillStyle = color.htmlRBGA();
+                        ctx.fillRect(j * width + x, y, unitStep * width, height);
+                    }
+                }
+        });
+        this.saturationSlider = new CustomBackgroundSlider(1, [150, 25], colorSlideEvent, 
+            (ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number) => {
+                const color:RGB = new RGB(0, 0, 0, 0);
+                if(this.color())
+                {
+                    const hsl:number[] = [this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state];
+                    
+                    const unitStep:number = 1 / width;
+                    let i = 0;
+                    for(let j = 0; j < 1; j += unitStep)
+                    {
+                        color.setByHSL(hsl[0], j, hsl[2]);
+                        color.setAlpha(this.color().alpha());
+                        ctx.fillStyle = color.htmlRBGA();
+                        ctx.fillRect(j * width + x, y, unitStep * width, height);
+                    }
+                }
+        });
+        this.lightnessSlider = new CustomBackgroundSlider(0, [150, 25], colorSlideEvent, 
+            (ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number) => {
+                const color:RGB = new RGB(0, 0, 0, 0);
+                if(this.color())
+                {
+                    const hsl:number[] = [this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state];
+                    
+                    const unitStep:number = 1 / width;
+                    let i = 0;
+                    for(let j = 0; j < 1; j += unitStep, i++)
+                    {
+                        hsl[2] = j;
+                        color.setByHSL(hsl[0], hsl[1], hsl[2]);
+                        color.setAlpha(this.color().alpha());
+                        ctx.fillStyle = color.htmlRBGA();
+                        ctx.fillRect(i + x, y, unitStep * width, height);
+                    }
+                }
+        });
+        this.alphaSlider = new CustomBackgroundSlider(1, [150, 25], colorSlideEvent,
+            (ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number) => {
+                const color:RGB = new RGB(0, 0, 0, 0);
+                if(this.color())
+                {
+                    color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
+                    const unitStep:number = width / 255;
+                    for(let j = 0; j < width; j += unitStep)
+                    {
+                        color.setAlpha(j);
+                        ctx.fillStyle = color.htmlRBGA();
+                        ctx.fillRect(j + x, y, unitStep, height);
+                    }
+                }
+        });
+        this.localLayout.addElement(new GuiLabel("Color:", 100, 16));
+        this.localLayout.addElement(this.chosenColor);
+        this.localLayout.addElement(this.tbColor);
+        this.localLayout.addElement(this.btUpdate);
+        const slidersLayout:SimpleGridLayoutManager = new SimpleGridLayoutManager([4, 30], [200, 110]);
+
+        slidersLayout.addElement(new GuiLabel("Hue", 50, 16, 25));
+        slidersLayout.addElement(this.hueSlider);
+        slidersLayout.addElement(new GuiLabel("Sat", 50, 16, 25));
+        slidersLayout.addElement(this.saturationSlider);
+        slidersLayout.addElement(new GuiLabel("light", 50, 16, 25));
+        slidersLayout.addElement(this.lightnessSlider);
+        slidersLayout.addElement(new GuiLabel("ap", 50, 16, 25));
+        slidersLayout.addElement(this.alphaSlider);
+        this.localLayout.addElement(slidersLayout);
+        this.setColorText();
+    }
+    color():RGB
+    {
+        return this.chosenColor.color;
+    }
+    setColorText():void
+    {
+        const color:RGB = this._setColorText();
+        const hsl:number[] = color.toHSL();
+        this.hueSlider.setState(hsl[0] / 360);
+        this.saturationSlider.setState(hsl[1]);
+        this.lightnessSlider.setState(hsl[2]);
+        this.alphaSlider.setState(color.alpha() / 255);
+    }
+    _setColorText():RGB
+    {
+        const color:RGB = new RGB(0,0,0);
+        if(this.color())
+            color.copy(this.color());
+        
+        this.chosenColor.color.copy(color);
+        this.tbColor.setText(color.htmlRBGA());
+        return color;
+    }
+    activateOptionPanel():void { this.layoutManager.activate(); }
+    deactivateOptionPanel():void { this.layoutManager.deactivate(); }
+    getOptionPanel():SimpleGridLayoutManager | null {
+        return this.layoutManager;
+    }
+    optionPanelSize():number[]
+    {
+        return [this.layoutManager.width(), this.layoutManager.height()];
+    }
+    drawOptionPanel(ctx:CanvasRenderingContext2D, x:number, y:number):void 
+    {
+        const optionPanel:SimpleGridLayoutManager = this.getOptionPanel()!;
+        optionPanel.x = x;
+        optionPanel.y = y;
+        optionPanel.draw(ctx, x, y);
+    }
+};
+
 class LayerManagerTool {
     list:GuiCheckList;
     layoutManager:SimpleGridLayoutManager;
@@ -123,6 +321,7 @@ class LayerManagerTool {
         optionPanel.draw(ctx, x, y);
     }
 };
+
 class Function {
     source:string;
     color:RGB;
@@ -732,7 +931,12 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6.5], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        const color_controller = new ColorPickerTool((color:RGB) => {
+            this.functions[this.selected_item].color.copy(color);
+            this.repaint = true;
+        });
+        color_controller.getOptionPanel()?.refresh();
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6.5 + color_controller.getOptionPanel()!.height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
@@ -772,6 +976,7 @@ class Game extends SquareAABBCollidable {
         this.chkbx_render_inflections = new GuiCheckBox((event:any) => {
         }, 50 + touch_mod, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_inflections);
+        this.options_gui_manager.addElement(color_controller.localLayout);
         this.options_gui_manager.activate();
         this.repaint = true;
     }

@@ -470,14 +470,17 @@ export class SimpleGridLayoutManager implements GuiElement {
             this.refreshCanvas();
         }
     }
-    handleTouchEvents(type:string, e:any):void
+    handleTouchEvents(type:string, e:any, from_parent_handler:boolean = false):void
     {
-        if(!this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+        if(from_parent_handler)
+        console.log(e.touchPos)
+        if(this.elementTouched || (from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height())
         {
             let record:RowRecord = <any> null;
             let index:number = 0;
-            e.translateEvent(e,  -this.x, -this.y);
+            if(!from_parent_handler)
+                e.translateEvent(e,  -this.x, -this.y);
             let runningNumber:number = 0;
             this.elementsPositions.forEach(el => {
                     el.element.deactivate();
@@ -487,18 +490,26 @@ export class SimpleGridLayoutManager implements GuiElement {
                     {
                         record = el;
                         index = runningNumber;
+                        console.log(record)
                     }
                     runningNumber++;
             });
-            e.translateEvent(e, this.x, this.y);
+            if(!from_parent_handler)
+                e.translateEvent(e, this.x, this.y);
             if(record)
             {
                 e.preventDefault();
-                e.translateEvent(e, -record.x - this.x, -record.y - this.y);
+                //only adjust with x and y is this is root layout manager
+                const dx = record.x + (from_parent_handler?0:this.x);
+                const dy = record.y + (from_parent_handler?0:this.y); 
+                e.translateEvent(e, -dx, -dy);
                 if(type !== "touchmove")
                     record.element.activate();
-                record.element.handleTouchEvents(type, e);
-                e.translateEvent(e, record.x + this.x, record.y + this.y);
+                if(record.element.isLayoutManager())
+                    (<SimpleGridLayoutManager> record.element).handleTouchEvents(type, e, true);
+                else
+                    record.element.handleTouchEvents(type, e);
+                e.translateEvent(e, dx, dy);
                 record.element.refresh();
                 this.elementTouched = record;
                 if(e.repaint)
@@ -508,20 +519,6 @@ export class SimpleGridLayoutManager implements GuiElement {
                 this.lastTouched = index;
             }
             
-        }
-        if(this.elementTouched)
-        {
-            e.preventDefault();
-            if(type !== "touchmove")
-                this.elementTouched.element.activate();
-            e.translateEvent(e, -this.elementTouched.x , -this.elementTouched.y);
-            this.elementTouched.element.handleTouchEvents(type, e);
-            e.translateEvent(e, this.elementTouched.x , this.elementTouched.y);
-            this.elementTouched.element.refresh();
-            if(e.repaint)
-            {
-                this.refreshCanvas();
-            }
         }
         if(type === "touchend")
             this.elementTouched = null;
@@ -1139,6 +1136,41 @@ export class GuiSlider implements GuiElement {
     isLayoutManager():boolean
     {
         return false;
+    }
+};
+export class CustomBackgroundSlider extends GuiSlider {
+    backgroundCanvas:HTMLCanvasElement;
+    backctx:CanvasRenderingContext2D;
+    refreshBackground:(ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number) => void;
+    constructor(state:number, dim:number[], movedCallBack:(e:SlideEvent) => void, 
+        refreshBackgroundCallBack:(ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number) => void)
+    {
+        super(state, dim, movedCallBack);
+        this.refreshBackground = refreshBackgroundCallBack;
+    }
+    refresh(): void {
+        super.refresh();
+        if(!this.backgroundCanvas)
+        {
+            this.backgroundCanvas = document.createElement("canvas");
+            this.backctx = this.canvas.getContext("2d")!;
+        }
+        if(this.backgroundCanvas.width !== this.canvas.width || this.backgroundCanvas.height !== this.canvas.height)
+        {
+            this.backgroundCanvas.width = this.canvas.width;
+            this.backgroundCanvas.height = this.canvas.height;
+            this.backctx = this.backgroundCanvas.getContext("2d")!;
+        }
+
+        const bounds:number[] = this.getBounds();
+        this.backctx.clearRect(0, 0, this.width(), this.height());
+        if(this.refreshBackground)
+            this.refreshBackground(this.backctx, bounds[0], bounds[1], bounds[2], bounds[3]);
+    }
+    draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number, offsetY:number):void
+    {
+        ctx.drawImage(this.backgroundCanvas, x + offsetX, y + offsetY);
+        super.draw(ctx, x, y, offsetX, offsetY);
     }
 };
 export class GuiSpacer implements GuiElement {
