@@ -1005,6 +1005,9 @@ class Game extends SquareAABBCollidable {
             this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
         }
         ctx.drawImage(this.main_buf.image, x, y);
+        //this state manager controls what labels get rendered
+        if (this.draw_point_labels)
+            this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
         if (!this.multi_touchListener.registeredMultiTouchEvent) {
             if (this.ui_alpha !== 1)
                 ctx.globalAlpha = this.ui_alpha;
@@ -1015,9 +1018,6 @@ class Game extends SquareAABBCollidable {
             if (this.ui_alpha !== 1)
                 ctx.globalAlpha = 1;
         }
-        //this state manager controls what labels get rendered
-        if (this.draw_point_labels)
-            this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
     }
     render_labels_floating(ctx) {
         const selected_function = this.functions[this.layer_manager.list.selected()];

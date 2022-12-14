@@ -1276,7 +1276,7 @@ export class GuiButton implements GuiElement {
     focused:boolean;
     fontName:string
     callback:(() => void) | null;
-    constructor(callBack:() => void | null, text:string, width:number = 200, height:number = 50, fontSize:number = 12, pressedColor:RGB = new RGB(150, 150, 200, 255), unPressedColor:RGB = new RGB(255, 255, 255, 195), fontName:string = "button_font")
+    constructor(callBack:() => void | null, text:string, width:number = 200, height:number = 50, fontSize:number = 12, pressedColor:RGB = new RGB(150, 150, 200, 255), unPressedColor:RGB = new RGB(255, 255, 255, 195), fontName:string = "Arial")
     {
         this.text = text;
         this.fontSize = fontSize;
@@ -1370,14 +1370,15 @@ export class GuiButton implements GuiElement {
         ctx.clearRect(0, 0, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
-        ctx.fillStyle = new RGB(0, 0, 0, 75).htmlRBGA();
+        ctx.fillStyle = new RGB(255,255,255, 135).htmlRBGA();
         ctx.fillRect(0, 0, this.width(), this.height());
         
         ctx.fillStyle = "#000000";
         const textWidth:number = ctx.measureText(this.text).width;
         const textHeight:number = this.fontSize;
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#888888";
+        ctx.lineCap = "round";
+        ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, this.width(), this.height());
         if(textWidth < this.width() - 10)
         {
@@ -1390,6 +1391,8 @@ export class GuiButton implements GuiElement {
             ctx.fillText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#FFFFFF";
         ctx.strokeRect(0, 0, this.width(), this.height());
     } 
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0):void

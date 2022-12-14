@@ -1262,6 +1262,9 @@ class Game extends SquareAABBCollidable {
         }
         ctx.drawImage(this.main_buf.image, x, y);
         
+        //this state manager controls what labels get rendered
+        if(this.draw_point_labels)
+            this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
         if(!this.multi_touchListener.registeredMultiTouchEvent)
         {
             if(this.ui_alpha !== 1)
@@ -1273,9 +1276,6 @@ class Game extends SquareAABBCollidable {
             if(this.ui_alpha !== 1)
                 ctx.globalAlpha = 1;
         }
-        //this state manager controls what labels get rendered
-        if(this.draw_point_labels)
-            this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
     }
     render_labels_floating(ctx:CanvasRenderingContext2D):void
     {
