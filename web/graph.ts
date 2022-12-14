@@ -1063,7 +1063,7 @@ class Game extends SquareAABBCollidable {
                     const x = this.x_min + foo.dx * i;
                     const y = -foo.table[i];
                     //transform worldspace coordinates to screen space for rendering
-                    const sy = clamp(((y - this.y_min) / this.deltaY) * this.cell_dim[1], 0, this.main_buf.width);
+                    const sy = clamp(((y - this.y_min) / this.deltaY) * this.cell_dim[1], 0, this.main_buf.height);
                     const sx = clamp(((x - this.x_min) / this.deltaX) * this.cell_dim[0], 0, this.main_buf.width);
                     //render functions as lines between points in table to buffers
                     if(sx > last_x || sy !== last_y)
