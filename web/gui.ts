@@ -1376,7 +1376,7 @@ export class GuiButton implements GuiElement {
         ctx.fillStyle = "#000000";
         const textWidth:number = ctx.measureText(this.text).width;
         const textHeight:number = this.fontSize;
-        ctx.strokeStyle = "#888888";
+        ctx.strokeStyle = "#FFFFFF";
         ctx.lineCap = "round";
         ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, this.width(), this.height());
@@ -1392,7 +1392,7 @@ export class GuiButton implements GuiElement {
         }
         ctx.fillStyle = fs;
         ctx.lineWidth = 4;
-        ctx.strokeStyle = "#FFFFFF";
+        //ctx.strokeStyle = "#FFFFFF";
         ctx.strokeRect(0, 0, this.width(), this.height());
     } 
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0):void
