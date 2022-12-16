@@ -414,15 +414,15 @@ class Function {
     {
         return Math.abs(a-b);
     }
-    optimize_xmax(min_x:number, max_x:number, it:number):number
+    optimize_xmax(min_x:number, max_x:number, it:number, fun:(x:number, dx:number) => number = (x:number, dx:number) => this.compiled(x, dx)):number
     {
         while(it > 0)
         {
             const delta = max_x - min_x;
             const dx = delta * (1/5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = this.compiled(min_x + dx, this.dx);
-            const hy = this.compiled(max_x - dx, this.dx);
+            const ly = fun(min_x + dx, this.dx);
+            const hy = fun(max_x - dx, this.dx);
             if(ly > hy)
                 max_x = mid;
             else
@@ -432,7 +432,7 @@ class Function {
         }
         return (min_x + max_x) / 2;
     }
-    optimize_xmin(min_x:number, max_x:number, it:number):number
+    optimize_xmin(min_x:number, max_x:number, it:number, fun:(x:number, dx:number) => number = (x:number, dx:number) => this.compiled(x, dx)):number
     {
         const y:number[] = [];
         while(it > 0)
@@ -440,8 +440,8 @@ class Function {
             const delta = max_x - min_x;
             const dx = delta * (1/5);
             const mid = (min_x + max_x) * (1 / 2);
-            const ly = this.compiled(min_x + dx, this.dx);
-            const hy = this.compiled(max_x - dx, this.dx);
+            const ly = fun(min_x + dx, this.dx);
+            const hy = fun(max_x - dx, this.dx);
             if(ly < hy)
                 max_x = mid;
             else
@@ -472,7 +472,21 @@ class Function {
     }
     optimize_poi(min_x:number, max_x:number, it:number):number
     {
+        //first check if is minima or is maxima in first der
+        //then optimize respectively with first der instead of second der function values
         const y:number[] = [];
+        const delta = max_x - min_x;
+        const dx = delta * (1/5);
+        const ly = dderx(this.compiled, min_x + dx, dx);
+        const hy = dderx(this.compiled, max_x - dx, dx);
+        if(ly >= 0 && hy < 0)//minima
+        {
+            return this.optimize_xmin(min_x, max_x, it, (x:number, dx:number) => derx(this.compiled, x, dx));
+        }
+        else 
+        {
+            return this.optimize_xmax(min_x, max_x, it, (x:number, dx:number) => derx(this.compiled, x, dx))
+        }
         while(it > 0)
         {
             const delta = max_x - min_x;
@@ -1456,34 +1470,38 @@ class Game extends SquareAABBCollidable {
         ctx.strokeRect(screen_x - dim / 2, screen_y - dim / 2, dim, dim);
         let text:string;
         const decimal = Math.abs(world_x) < 1 << 16 && Math.abs(world_x) > Math.pow(2, -20) || Math.abs(world_x) < Math.pow(2, -35);
-       
-        text = `x: ${decimal ? round_with_precision(world_x, precision + 2) : world_x.toExponential(precision)} y: ${
-            decimal ? round_with_precision(world_y, precision + 2) : world_y.toExponential(precision)}`;
-       
-        const text_width = ctx.measureText(text).width; 
-        const font_size = +ctx.font.split('px')[0];           
-        if(text_width + screen_x + dim > this.width)
+        try {
+            text = `x: ${decimal ? round_with_precision(world_x, precision + 2) : world_x.toExponential(precision)} y: ${
+                decimal ? round_with_precision(world_y, precision + 2) : world_y.toExponential(precision)}`;
+            
+            const text_width = ctx.measureText(text).width; 
+            const font_size = +ctx.font.split('px')[0];           
+            if(text_width + screen_x + dim > this.width)
+            {
+                screen_x -= text_width + dim * 2;
+                screen_y += 3;
+            }
+            //add bounding to labels to prevent rendering off screen
+            if(text_width + screen_x > this.main_buf.width)
+                screen_x = this.main_buf.width - text_width - 10;
+            else if(screen_x < 0)
+                screen_x = 5;
+            if(screen_y - font_size < 0)
+                screen_y = font_size + 10;
+            else if(screen_y > this.main_buf.height)
+                screen_y = this.main_buf.height - font_size;
+            ctx.fillStyle = "#000000";
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.lineWidth = 3;
+            ctx.strokeText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
+            ctx.fillText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
+            ctx.lineWidth = 1;
+            ctx.fillStyle = "#FFFFFF";
+            ctx.strokeStyle = "#000000";
+        } catch(error:any)
         {
-            screen_x -= text_width + dim * 2;
-            screen_y += 3;
+            console.log(error.message);
         }
-        //add bounding to labels to prevent rendering off screen
-        if(text_width + screen_x > this.main_buf.width)
-            screen_x = this.main_buf.width - text_width - 10;
-        else if(screen_x < 0)
-            screen_x = 5;
-        if(screen_y - font_size < 0)
-            screen_y = font_size + 10;
-        else if(screen_y > this.main_buf.height)
-            screen_y = this.main_buf.height - font_size;
-        ctx.fillStyle = "#000000";
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = 3;
-        ctx.strokeText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
-        ctx.fillText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
-        ctx.lineWidth = 1;
-        ctx.fillStyle = "#FFFFFF";
-        ctx.strokeStyle = "#000000";
     }
     format_number(value:number, precision:number = 2):string
     {
