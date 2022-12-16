@@ -1392,7 +1392,7 @@ export class GuiButton implements GuiElement {
         }
         ctx.fillStyle = fs;
         ctx.lineWidth = 4;
-        //ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = "#000000";
         ctx.strokeRect(0, 0, this.width(), this.height());
     } 
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0):void

@@ -1091,7 +1091,7 @@ export class GuiButton {
         }
         ctx.fillStyle = fs;
         ctx.lineWidth = 4;
-        //ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = "#000000";
         ctx.strokeRect(0, 0, this.width(), this.height());
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
