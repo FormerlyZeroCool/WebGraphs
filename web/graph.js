@@ -97,6 +97,17 @@ class ColorPickerTool extends ExtendedTool {
         this.saturationSlider.refresh();
         this.lightnessSlider.refresh();
     }
+    set_color(color) {
+        this.chosenColor.color.copy(color);
+        const hsl = color.toHSL();
+        this.hueSlider.setState(hsl[0] / 360);
+        this.saturationSlider.setState(hsl[1]);
+        this.lightnessSlider.setState(hsl[2]);
+        this.hueSlider.refresh();
+        this.saturationSlider.refresh();
+        this.lightnessSlider.refresh();
+        this.chosenColor.refresh();
+    }
     color() {
         return this.chosenColor.color;
     }
@@ -682,12 +693,12 @@ class Game extends SquareAABBCollidable {
         }));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
-        const color_controller = new ColorPickerTool((color) => {
+        this.color_controller = new ColorPickerTool((color) => {
             this.functions[this.selected_item].color.copy(color);
             this.repaint = true;
         });
-        color_controller.getOptionPanel()?.refresh();
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6.5 + color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.color_controller.getOptionPanel()?.refresh();
+        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
@@ -703,27 +714,27 @@ class Game extends SquareAABBCollidable {
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
             this.draw_point_labels = event.checkBox.checked;
         }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
-        const minmax_label = new GuiLabel("Min Max", 100, 18, 50 + touch_mod);
+        const minmax_label = new GuiLabel("Min Max", 100, 18, 35);
         this.options_gui_manager.addElement(minmax_label);
+        const zeros_label = new GuiLabel("Zeros", 100, 18, 35);
+        this.options_gui_manager.addElement(zeros_label);
         this.chkbx_render_min_max = new GuiCheckBox((event) => {
         }, 50 + touch_mod, 50 + touch_mod, false);
         this.options_gui_manager.addElement(this.chkbx_render_min_max);
-        const zeros_label = new GuiLabel("Zeros", 100, 18, 50 + touch_mod);
-        this.options_gui_manager.addElement(zeros_label);
         this.chkbx_render_zeros = new GuiCheckBox((event) => {
         }, 50 + touch_mod, 50 + touch_mod, false);
         this.options_gui_manager.addElement(this.chkbx_render_zeros);
-        const intersections_label = new GuiLabel("Intersections", 100, 18, 50 + touch_mod);
+        const intersections_label = new GuiLabel("Intersections", 100, 18, 35);
         this.options_gui_manager.addElement(intersections_label);
+        const inflections_label = new GuiLabel("~Inflections", 100, 18, 35);
+        this.options_gui_manager.addElement(inflections_label);
         this.chkbx_render_intersections = new GuiCheckBox((event) => {
         }, 50 + touch_mod, 50 + touch_mod, false);
         this.options_gui_manager.addElement(this.chkbx_render_intersections);
-        const inflections_label = new GuiLabel("~Inflections", 100, 18, 50 + touch_mod);
-        this.options_gui_manager.addElement(inflections_label);
         this.chkbx_render_inflections = new GuiCheckBox((event) => {
         }, 50 + touch_mod, 50 + touch_mod, false);
         this.options_gui_manager.addElement(this.chkbx_render_inflections);
-        this.options_gui_manager.addElement(color_controller.localLayout);
+        this.options_gui_manager.addElement(this.color_controller.localLayout);
         this.options_gui_manager.activate();
         this.repaint = true;
     }
@@ -736,7 +747,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
     }
     new_layer_manager() {
-        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => this.repaint = true, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
+        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => { this.repaint = true; this.change_selected(layer); }, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
             return this.functions[layer] ? this.functions[layer].color : null;
         });
         if (this.layer_manager) {
@@ -1229,8 +1240,8 @@ class Game extends SquareAABBCollidable {
         return Math.floor(x) + Math.floor(y) * this.cell_dim[0];
     }
     screen_to_world(coords) {
-        return [Math.floor(coords[0] / this.main_buf.width * this.deltaX + this.x_min),
-            Math.floor(coords[1] / this.main_buf.height * this.deltaY + this.y_min)];
+        return [(coords[0] / this.width * this.deltaX + this.x_min),
+            (coords[1] / this.height * this.deltaY + this.y_min)];
     }
     fill(start, color_p) {
         this.traverse_df(start, (index, color) => color_p, (index, color) => color == this.background_color.color);
@@ -1276,16 +1287,45 @@ class Game extends SquareAABBCollidable {
         }
         if (this.touchListener.registeredTouch)
             return;
-        if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
-            this.ui_alpha += delta_time / ms_to_fade;
-        else
-            this.ui_alpha -= delta_time / ms_to_fade;
+        if (this.ui_alpha !== 0) {
+            if (this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
+                this.ui_alpha += delta_time / ms_to_fade;
+            else
+                this.ui_alpha -= delta_time / ms_to_fade;
+        }
+        else {
+            if (this.touchListener.touchPos[0] < this.width / 30)
+                this.ui_alpha += delta_time / ms_to_fade;
+        }
         this.ui_alpha = clamp(this.ui_alpha, 0, 1);
     }
     set_scale(new_scale) {
         this.scale = new_scale;
     }
+    x_to_index(x) {
+        return Math.floor((x - this.x_min) / this.deltaX * this.functions[this.selected_item].table.length);
+    }
+    change_selected(new_selection) {
+        if (this.selected_item !== new_selection) {
+            this.last_selected_item = this.selected_item;
+            this.selected_item = new_selection;
+            this.layer_manager.list.layoutManager.lastTouched = this.selected_item;
+            this.color_controller.set_color(this.functions[this.selected_item].color);
+            this.repaint = true;
+        }
+    }
     make_closest_curve_selected(coords) {
+        const index = this.x_to_index(coords[0]);
+        let min_dist = Math.abs(this.functions[0].table[index] - coords[1]);
+        let min_dist_function_index = 0;
+        this.functions.forEach((foo, arr_index) => {
+            const dist = Math.abs(foo.table[index] + coords[1]);
+            if (dist < min_dist) {
+                min_dist = dist;
+                min_dist_function_index = arr_index;
+            }
+        });
+        this.change_selected(min_dist_function_index);
     }
 }
 ;
@@ -1341,6 +1381,8 @@ async function main() {
     touchListener.registerCallBack("touchstart", (event) => game.ui_alpha >= 0.99, (event) => {
         game.guiManager.handleTouchEvents("touchstart", event);
         game.options_gui_manager.handleTouchEvents("touchstart", event);
+    });
+    touchListener.registerCallBack("touchstart", (event) => game.ui_alpha <= 0.99, (event) => {
         game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
     });
     touchListener.registerCallBack("touchend", (event) => game.ui_alpha >= 0.99, (event) => {
