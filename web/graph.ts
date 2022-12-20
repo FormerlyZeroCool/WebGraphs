@@ -33,7 +33,7 @@ class ColorPickerTool extends ExtendedTool {
 
     constructor(color_changed:(color:RGB) => void, toolName:string = "color picker", pathToImage:string[] = ["images/colorPickerSprite.png"], optionPanes:SimpleGridLayoutManager[] = [])
     {
-        super(toolName, pathToImage, optionPanes, [200, 220], [4, 50]);
+        super(toolName, pathToImage, optionPanes, [200, 200], [4, 50]);
         this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0,150,150,255));
         const colorSlideEvent:(event:SlideEvent) => void = (event:SlideEvent) => {
             const color:RGB = new RGB(0, 0, 0, 0);
@@ -887,8 +887,13 @@ class Game extends SquareAABBCollidable {
             this.functions[this.selected_item].color.copy(color);
             this.repaint = true;
         });
+        this.slider_line_width = new GuiSlider(0, [150, 50 + touch_mod], (slide_event:SlideEvent) => {
+            const state = slide_event.value;
+            this.functions[this.selected_item].line_width = 2 + Math.floor(state * 30);
+            this.repaint = true;
+        });
         this.color_controller.getOptionPanel()?.refresh();
-        this.options_gui_manager = new SimpleGridLayoutManager([2, 40], [200, 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel()!.height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([4, 400], [200, this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel()!.height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
@@ -929,6 +934,8 @@ class Game extends SquareAABBCollidable {
         }, 50 + touch_mod, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_inflections);
         this.options_gui_manager.addElement(this.color_controller.localLayout);
+        this.options_gui_manager.addElement(new GuiLabel("Width", this.slider_line_width.height(), 18));
+        this.options_gui_manager.addElement(this.slider_line_width);
         this.options_gui_manager.activate();
         this.repaint = true;
     }
@@ -1635,7 +1642,11 @@ class Game extends SquareAABBCollidable {
             this.layer_manager.list.layoutManager.lastTouched = this.selected_item;
             this.repaint = true;
         }
-        this.color_controller.set_color(this.functions[this.selected_item].color);
+        if(this.functions[this.selected_item])
+        {
+            this.slider_line_width.setState((this.functions[this.selected_item].line_width - 2) / 30);
+            this.color_controller.set_color(this.functions[this.selected_item].color);
+        }
     }
     make_closest_curve_selected(coords:number[]):void
     {
