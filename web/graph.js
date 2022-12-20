@@ -1339,7 +1339,7 @@ async function main() {
     canvas.addEventListener("wheel", (e) => {
         if (e.deltaY > 10000)
             return;
-        const normalized_delta = (clamp(e.deltaY + 1, 0, getHeight())) / getHeight();
+        const normalized_delta = (clamp(e.deltaY + 1, -getHeight(), getHeight())) / getHeight();
         const multiplier = 100;
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
