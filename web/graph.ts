@@ -899,27 +899,27 @@ class Game extends SquareAABBCollidable {
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
             this.draw_axises = event.checkBox.checked;
             this.repaint = true;
-        }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
+        }, 100, 50 + touch_mod, this.draw_axis_labels));
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
             this.draw_axis_labels = event.checkBox.checked
             this.repaint = true;
-        }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
+        }, 100, 50 + touch_mod, this.draw_axis_labels));
         const show_label = new GuiLabel("Show point", 100, 18, 50 + touch_mod);
         this.options_gui_manager.addElement(show_label);
         this.options_gui_manager.addElement(new GuiCheckBox((event:any) => {
             this.draw_point_labels = event.checkBox.checked;
-        }, 50 + touch_mod, 50 + touch_mod, this.draw_axis_labels));
+        }, 100, 50 + touch_mod, this.draw_axis_labels));
 
         const minmax_label = new GuiLabel("Min Max", 100, 18, 35);
         this.options_gui_manager.addElement(minmax_label);
         const zeros_label = new GuiLabel("Zeros", 100, 18, 35);
         this.options_gui_manager.addElement(zeros_label);
         this.chkbx_render_min_max = new GuiCheckBox((event:any) => {
-        }, 50 + touch_mod, 50 + touch_mod, false)
+        }, 100, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_min_max);
 
         this.chkbx_render_zeros = new GuiCheckBox((event:any) => {
-        }, 50 + touch_mod, 50 + touch_mod, false)
+        }, 100, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_zeros);
 
         const intersections_label = new GuiLabel("Intersections", 100, 18, 35);
@@ -927,14 +927,14 @@ class Game extends SquareAABBCollidable {
         const inflections_label = new GuiLabel("~Inflections", 100, 18, 35);
         this.options_gui_manager.addElement(inflections_label);
         this.chkbx_render_intersections = new GuiCheckBox((event:any) => {
-        }, 50 + touch_mod, 50 + touch_mod, false)
+        }, 100, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_intersections);
 
         this.chkbx_render_inflections = new GuiCheckBox((event:any) => {
-        }, 50 + touch_mod, 50 + touch_mod, false)
+        }, 100, 50 + touch_mod, false)
         this.options_gui_manager.addElement(this.chkbx_render_inflections);
         this.options_gui_manager.addElement(this.color_controller.localLayout);
-        this.options_gui_manager.addElement(new GuiLabel("Width", this.slider_line_width.height(), 18));
+        this.options_gui_manager.addElement(new GuiLabel("Width", 50, 18, this.slider_line_width.height()));
         this.options_gui_manager.addElement(this.slider_line_width);
         this.options_gui_manager.activate();
         this.repaint = true;
@@ -1062,7 +1062,7 @@ class Game extends SquareAABBCollidable {
         
         const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         this.main_buf.ctx.imageSmoothingEnabled = false;
-        this.main_buf.ctx.lineJoin = "bevel";
+        this.main_buf.ctx.lineJoin = "round";
         functions.forEach((foo:Function, index:number) => {
             if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
