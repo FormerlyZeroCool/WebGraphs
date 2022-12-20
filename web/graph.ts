@@ -955,7 +955,7 @@ class Game extends SquareAABBCollidable {
         (layer:number, state:boolean) => this.repaint = true,
         (layer:number) => {this.functions.splice(layer, 1); this.repaint = true},
         () => this.functions.length,
-        (layer:number) => {this.repaint = true; this.change_selected(layer); console.log("hell world")},
+        (layer:number) => {this.repaint = true; this.change_selected(layer);},
         (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); return 0},
         (l1:number, l2:number) => {this.swap_layers(l1, l2); this.repaint = true;},
         (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null,
