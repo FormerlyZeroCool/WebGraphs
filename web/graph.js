@@ -202,6 +202,7 @@ class Function {
     constructor(source) {
         this.source = source;
         this.error_message = null;
+        this.line_width = 2;
         try {
             this.compiled = eval(`(x, dx) => ${source}`);
         }
@@ -381,19 +382,6 @@ class Function {
         else {
             return this.optimize_xmax(min_x, max_x, it, (x, dx) => derx(this.compiled, x, dx));
         }
-        while (it > 0) {
-            const delta = max_x - min_x;
-            const dx = delta * (1 / 5);
-            const mid = (min_x + max_x) * (1 / 2);
-            const ly = dderx(this.compiled, min_x + dx, dx);
-            const hy = dderx(this.compiled, max_x - dx, dx);
-            if (Math.abs(ly) < Math.abs(hy))
-                max_x = mid;
-            else
-                min_x = mid;
-            it--;
-        }
-        return (min_x + max_x) / 2;
     }
     index_to_x(index) {
         return this.x_min + index * this.dx;
@@ -830,11 +818,11 @@ class Game extends SquareAABBCollidable {
                 functions[index].compile(text);
         });
         const view = new Int32Array(this.main_buf.imageData.data.buffer);
-        this.main_buf.ctx.lineWidth = 2;
         this.main_buf.ctx.imageSmoothingEnabled = false;
         this.main_buf.ctx.lineJoin = "bevel";
         functions.forEach((foo, index) => {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
+                this.main_buf.ctx.lineWidth = foo.line_width;
                 //build table of points, intersections, zeros, min/maxima inflections to be rendered
                 foo.calc_for(this.x_min, this.x_max, (this.x_max - this.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
@@ -1194,7 +1182,7 @@ class Game extends SquareAABBCollidable {
             else if (screen_x < 0)
                 screen_x = 5;
             if (screen_y - font_size < 0)
-                screen_y = font_size + 10;
+                screen_y = font_size * 2;
             else if (screen_y > this.main_buf.height)
                 screen_y = this.main_buf.height - font_size;
             ctx.fillStyle = "#000000";
@@ -1297,6 +1285,8 @@ class Game extends SquareAABBCollidable {
     set_scale(new_scale) {
         this.scale = new_scale;
     }
+    make_closest_curve_selected(coords) {
+    }
 }
 ;
 const keyboardHandler = new KeyboardHandler();
@@ -1351,6 +1341,7 @@ async function main() {
     touchListener.registerCallBack("touchstart", (event) => game.ui_alpha >= 0.99, (event) => {
         game.guiManager.handleTouchEvents("touchstart", event);
         game.options_gui_manager.handleTouchEvents("touchstart", event);
+        game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
     });
     touchListener.registerCallBack("touchend", (event) => game.ui_alpha >= 0.99, (event) => {
         game.guiManager.handleTouchEvents("touchend", event);
