@@ -948,7 +948,7 @@ class Game extends SquareAABBCollidable {
         (layer:number, state:boolean) => this.repaint = true,
         (layer:number) => {this.functions.splice(layer, 1); this.repaint = true},
         () => this.functions.length,
-        (layer:number) => {this.repaint = true; this.change_selected(layer)},
+        (layer:number) => {this.repaint = true; this.change_selected(layer); console.log("hell world")},
         (layer:number, slider_value:number) => {console.log('layer', layer,'slider val', slider_value); return 0},
         (l1:number, l2:number) => {this.swap_layers(l1, l2); this.repaint = true;},
         (layer:number) => this.functions[layer] ? this.functions[layer].error_message : null,
@@ -1624,7 +1624,7 @@ class Game extends SquareAABBCollidable {
     }
     x_to_index(x:number):number
     {
-        return Math.floor((x - this.x_min) / this.deltaX * this.functions[this.selected_item].table.length);
+        return Math.floor((x - this.x_min) / this.deltaX * this.functions[0].table.length);
     }
     change_selected(new_selection:number):void
     {
@@ -1633,9 +1633,9 @@ class Game extends SquareAABBCollidable {
             this.last_selected_item = this.selected_item;
             this.selected_item = new_selection;
             this.layer_manager.list.layoutManager.lastTouched = this.selected_item;
-            this.color_controller.set_color(this.functions[this.selected_item].color);
             this.repaint = true;
         }
+        this.color_controller.set_color(this.functions[this.selected_item].color);
     }
     make_closest_curve_selected(coords:number[]):void
     {
@@ -1666,7 +1666,7 @@ async function main()
     canvas.addEventListener("wheel", (e) => {
         if(e.deltaY > 10000)
             return;
-        const normalized_delta = (e.deltaY + 1) / getHeight();
+        const normalized_delta = (clamp(e.deltaY + 1, 0, getHeight())) / getHeight();
         const multiplier = 100;
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;

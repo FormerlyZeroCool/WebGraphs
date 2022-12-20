@@ -747,7 +747,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
     }
     new_layer_manager() {
-        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => { this.repaint = true; this.change_selected(layer); }, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
+        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => { this.repaint = true; this.change_selected(layer); console.log("hell world"); }, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
             return this.functions[layer] ? this.functions[layer].color : null;
         });
         if (this.layer_manager) {
@@ -1303,16 +1303,16 @@ class Game extends SquareAABBCollidable {
         this.scale = new_scale;
     }
     x_to_index(x) {
-        return Math.floor((x - this.x_min) / this.deltaX * this.functions[this.selected_item].table.length);
+        return Math.floor((x - this.x_min) / this.deltaX * this.functions[0].table.length);
     }
     change_selected(new_selection) {
         if (this.selected_item !== new_selection) {
             this.last_selected_item = this.selected_item;
             this.selected_item = new_selection;
             this.layer_manager.list.layoutManager.lastTouched = this.selected_item;
-            this.color_controller.set_color(this.functions[this.selected_item].color);
             this.repaint = true;
         }
+        this.color_controller.set_color(this.functions[this.selected_item].color);
     }
     make_closest_curve_selected(coords) {
         const index = this.x_to_index(coords[0]);
@@ -1339,7 +1339,7 @@ async function main() {
     canvas.addEventListener("wheel", (e) => {
         if (e.deltaY > 10000)
             return;
-        const normalized_delta = (e.deltaY + 1) / getHeight();
+        const normalized_delta = (clamp(e.deltaY + 1, 0, getHeight())) / getHeight();
         const multiplier = 100;
         const scaler = game.scale / 100;
         game.scale -= normalized_delta * multiplier * scaler;
