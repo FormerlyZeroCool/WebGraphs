@@ -1469,15 +1469,13 @@ export class GuiTextBox {
                                     if (!e.keysHeld["ShiftRight"] && !e.keysHeld["ShiftLeft"])
                                         letter = letter.toLowerCase();
                                     if (GuiTextBox.textLookup[e.code] || GuiTextBox.numbers[e.code]) {
-                                        this.text = this.text.substring(0, this.cursor) + letter + this.text.substring(this.cursor, this.text.length);
-                                        this.cursor++;
+                                        this.insert_char(letter, e);
                                     }
-                                    else if (GuiTextBox.specialChars[e.code]) {
-                                        //todo
+                                    else if (GuiTextBox.specialChars[e.code] && e.code.substring(0, "Numpad".length) === "Numpad" && e.code["Numpad".length]) {
+                                        this.insert_char(GuiTextBox.specialChars[e.code], e);
                                     }
                                     else if (e.code.substring(0, "Numpad".length) === "Numpad") {
-                                        this.text = this.text.substring(0, this.cursor) + letter + this.text.substring(this.cursor, this.text.length);
-                                        this.cursor++;
+                                        this.insert_char(letter, e);
                                     }
                                 }
                         }
@@ -1736,7 +1734,8 @@ GuiTextBox.horizontalAlignmentFlagsMask = 0b1100;
 GuiTextBox.default = GuiTextBox.center | GuiTextBox.left;
 GuiTextBox.textLookup = {};
 GuiTextBox.numbers = {};
-GuiTextBox.specialChars = {};
+GuiTextBox.specialChars = { NumpadAdd: '+', NumpadMultiply: '*', NumpadDivide: '/', NumpadSubtract: '-',
+    NumpadDecimal: "." };
 GuiTextBox.textBoxRunningNumber = 0;
 ;
 export class GuiLabel extends GuiButton {

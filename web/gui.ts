@@ -1615,7 +1615,8 @@ export class GuiTextBox implements GuiElement {
 
     static textLookup = {};
     static numbers = {};
-    static specialChars = {};
+    static specialChars = {NumpadAdd:'+', NumpadMultiply:'*', NumpadDivide:'/', NumpadSubtract:'-', 
+            NumpadDecimal:"."};
     static textBoxRunningNumber:number = 0;
     textBoxId:number;
     flags:number;
@@ -1869,17 +1870,15 @@ export class GuiTextBox implements GuiElement {
                                 letter = letter.toLowerCase();
                             if((<any> GuiTextBox.textLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
                             {
-                                this.text = this.text.substring(0, this.cursor) + letter + this.text.substring(this.cursor, this.text.length);
-                                this.cursor++;
+                                this.insert_char(letter, e);
                             }
-                            else if((<any> GuiTextBox.specialChars)[e.code])
+                            else if((<any> GuiTextBox.specialChars)[e.code] && e.code.substring(0,"Numpad".length) === "Numpad" && e.code["Numpad".length])
                             {
-                                //todo
+                                this.insert_char((<any> GuiTextBox.specialChars)[e.code], e);
                             }
                             else if(e.code.substring(0,"Numpad".length) === "Numpad")
                             {
-                                this.text = this.text.substring(0, this.cursor) + letter + this.text.substring(this.cursor, this.text.length);
-                                this.cursor++;
+                                this.insert_char(letter, e);
                             }
     
                         }
