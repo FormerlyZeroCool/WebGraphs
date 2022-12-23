@@ -792,6 +792,46 @@ class FollowNearestPointOfInflection extends GridUIState {
     }
 
 };
+
+class ScalingState implements UIState {
+    field:Game;
+    constructor(field:Game)
+    {
+        this.field = field;
+    }
+    draw(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+        throw new Error('Method not implemented.');
+    }
+    
+    handleKeyboardEvents(type: string, event: KeyboardEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    handleTouchEvents(type: string, event: TouchMoveEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    set_scale(x_scale:number, y_scale:number):void
+    {
+        this.field.set_scale(x_scale, y_scale);
+    }
+    transition(delta_time: number): UIState {
+        throw new Error('Method not implemented.');
+    }
+
+};
+class ScalingState_XFrozen extends ScalingState {
+    
+    set_scale(x_scale:number, y_scale:number):void
+    {
+        this.field.set_scale(this.field.x_scale, y_scale);
+    }
+};
+class ScalingState_YFrozen extends ScalingState {
+    
+    set_scale(x_scale:number, y_scale:number):void
+    {
+        this.field.set_scale(x_scale, this.field.y_scale);
+    }
+};
 //ui should switch between 
 //free form following cursor exactly
 //finding nearest minima/maxima to cursor
@@ -833,7 +873,8 @@ class Game extends SquareAABBCollidable {
     graph_start_x:number;
     intersections:number[];//x,y
     cell_dim:number[];
-    scale:number;
+    x_scale:number;
+    y_scale:number;
     y_translation:number;
     x_translation:number;
     x_min :number;
@@ -858,15 +899,16 @@ class Game extends SquareAABBCollidable {
         this.draw_axises = true;
         this.draw_axis_labels = true;
         this.draw_point_labels = true;
-        this.x_min = this.x_translation * this.scale - 1/this.scale;
-        this.x_max = this.x_translation * this.scale + 1/this.scale;
-        this.deltaX = this.x_max - this.x_min;
-        this.y_min = this.y_translation * this.scale - this.deltaX / 2;
-        this.y_max = this.y_translation * this.scale + this.deltaX / 2;
-        this.deltaY = this.y_max - this.y_min;
-        this.scale = 1/10;
+        this.x_scale = 1/10;
+        this.y_scale = 1/10;
         this.x_translation = 0;
         this.y_translation = 0;
+        this.x_min = this.x_translation * this.x_scale - 1/this.x_scale;
+        this.x_max = this.x_translation * this.x_scale + 1/this.x_scale;
+        this.deltaX = this.x_max - this.x_min;
+        this.y_min = this.y_translation * this.y_scale - 1/this.y_scale;
+        this.y_max = this.y_translation * this.y_scale + 1/this.y_scale;
+        this.deltaY = this.y_max - this.y_min;
         this.graph_start_x = 200;
         const whratio = width / (height > 0 ? height : width);
         const rough_dim = getWidth();
@@ -971,11 +1013,11 @@ class Game extends SquareAABBCollidable {
     }
     calc_bounds():void
     {
-        this.x_min = this.x_translation - 1/this.scale;
-        this.x_max = this.x_translation + 1/this.scale;
+        this.x_min = this.x_translation - 1/this.x_scale;
+        this.x_max = this.x_translation + 1/this.x_scale;
         this.deltaX = this.x_max - this.x_min;
-        this.y_min = this.y_translation - this.deltaX / 2;
-        this.y_max = this.y_translation + this.deltaX / 2;
+        this.y_min = this.y_translation - 1/this.y_scale;
+        this.y_max = this.y_translation + 1/this.y_scale;
         this.deltaY = this.y_max - this.y_min;
     }
     add_layer():void
@@ -1619,15 +1661,16 @@ class Game extends SquareAABBCollidable {
         }
         else
         {
-            if(this.touchListener.touchPos[0] < this.width / 30)
+            if(this.touchListener.touchPos[0] < this.width / 10)
                 this.ui_alpha += delta_time / ms_to_fade;
         }
             
         this.ui_alpha = clamp(this.ui_alpha, 0, 1);
     }
-    set_scale(new_scale:number):void
+    set_scale(x_scale:number, y_scale:number):void
     {
-        this.scale = new_scale;
+        this.x_scale = x_scale;
+        this.y_scale = y_scale;
     }
     x_to_index(x:number):number
     {
@@ -1674,15 +1717,18 @@ async function main()
     canvas.onmousemove = (event:MouseEvent) => {
     };
     const power_of_2_bounds = 300;
+    const calc_scale = (scale, normalized_delta) => {
+        const multiplier = 100;
+        const scaler = scale / 100;
+        scale -= normalized_delta * multiplier * scaler;
+        return clamp(scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+    }
     canvas.addEventListener("wheel", (e) => {
         if(e.deltaY > 10000)
             return;
         const normalized_delta = (clamp(e.deltaY + 1, -getHeight(), getHeight())) / getHeight();
-        const multiplier = 100;
-        const scaler = game.scale / 100;
-        game.scale -= normalized_delta * multiplier * scaler;
-        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
-        game.set_scale(new_scale);
+
+        game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
         e.preventDefault();
     });
@@ -1693,20 +1739,18 @@ async function main()
     const touchScreen:boolean = isTouchSupported();
     const multi_touch_listener = new MultiTouchListener(canvas);
     multi_touch_listener.registerCallBack("pinchIn", () => true, (event:any) => {
-        const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
-        const scaler = game.scale / 10;
-        game.scale += scaler * Math.abs(normalized_delta) * 100;
-        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
-        game.set_scale(new_scale);
+        const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
+        
+        
+        game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
         event.preventDefault();
     });
     multi_touch_listener.registerCallBack("pinchOut", () => true, (event:any) => {
-        const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
-        const scaler = game.scale / 10;
-        game.scale -= scaler * Math.abs(normalized_delta) * 100;
-        const new_scale = clamp(game.scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
-        game.set_scale(new_scale);
+        const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
+        
+        
+        game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
         event.preventDefault();
     });

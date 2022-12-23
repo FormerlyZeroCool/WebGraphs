@@ -353,7 +353,7 @@ export class RowRecord {
 };
 export interface UIState {
     //render any ui elements to provided context
-    draw(ctx:CanvasRenderingContext2D, canvas:HTMLCanvasElement, x:number, y:number, width:number, height:number):void;
+    draw(ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number):void;
     //pass keyboard events to any ui elements managed
     handleKeyboardEvents(type:string, event:KeyboardEvent):void;
     //pass touch events to any ui elements managed
