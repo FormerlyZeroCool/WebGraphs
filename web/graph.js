@@ -733,7 +733,10 @@ class Game extends SquareAABBCollidable {
         });
         this.slider_line_width = new GuiSlider(0, [150, 50 + touch_mod], (slide_event) => {
             const state = slide_event.value;
-            this.functions[this.selected_item].line_width = 2 + Math.floor(state * 30);
+            const line_width = 2 + Math.floor(state * 30);
+            if (this.chkbx_sync_curve_width.checked)
+                this.functions.forEach(foo => foo.line_width = line_width);
+            this.functions[this.selected_item].line_width = line_width;
             this.repaint = true;
         });
         this.color_controller.getOptionPanel()?.refresh();
@@ -776,6 +779,10 @@ class Game extends SquareAABBCollidable {
         this.options_gui_manager.addElement(this.color_controller.localLayout);
         this.options_gui_manager.addElement(new GuiLabel("Width", 50, 18, this.slider_line_width.height()));
         this.options_gui_manager.addElement(this.slider_line_width);
+        this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
+        }, 100, 50 + touch_mod, true);
+        this.options_gui_manager.addElement(new GuiLabel("Sync", 50, 18, 50 + touch_mod));
+        this.options_gui_manager.addElement(this.chkbx_sync_curve_width);
         this.options_gui_manager.activate();
         this.repaint = true;
     }
@@ -861,7 +868,10 @@ class Game extends SquareAABBCollidable {
                 this.main_buf = (this.new_sprite());
             }
             if (!this.functions[index]) {
-                const color = new RGB(clamp(0, 255, 45 + (index + 2) * 60 % 256), clamp(0, 255, 45 + index + 1 * 150 % 256), clamp(0, 255, 45 + index * 85 % 256), 255);
+                let offset = (Math.random() * 150 - 75);
+                offset = Math.abs(offset) < 50 ? Math.abs(offset) < 20 ? 5 : 3 * offset : offset;
+                offset = index < Game._colores.length ? 0 : offset;
+                const color = new RGB(clamp(offset + Game._colores[index % Game._colores.length].red(), 0, 255), clamp(offset + Game._colores[index % Game._colores.length].green(), 0, 255), clamp(offset + Game._colores[index % Game._colores.length].blue(), 0, 255), 255);
                 const foo = new Function(text);
                 foo.color = color;
                 functions.push(foo);
@@ -1373,6 +1383,13 @@ class Game extends SquareAABBCollidable {
         this.change_selected(min_dist_function_index);
     }
 }
+Game._colores = [new RGB(231, 76, 60),
+    new RGB(255, 255, 125),
+    new RGB(55, 152, 219),
+    new RGB(168, 223, 220),
+    new RGB(46, 204, 113),
+    new RGB(245, 146, 65),
+    new RGB(51, 204, 0)];
 ;
 const keyboardHandler = new KeyboardHandler();
 async function main() {
