@@ -1421,14 +1421,7 @@ async function main() {
     let render_fps = false;
     let low_fps = true;
     let draw = false;
-    touchListener.registerCallBack("touchstart", (event) => {
-        console.log(event.touchPos);
-        console.log(game.width - fps_text_width, +ctx.font.split('px')[0]);
-        console.log(event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0]);
-        return event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0];
-    }, (event) => {
-        render_fps = !render_fps;
-    });
+    touchListener.registerCallBack("touchstart", (event) => event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0] * 1.2, (event) => render_fps = !render_fps);
     touchListener.registerCallBack("touchstart", (event) => game.ui_alpha >= 0.99, (event) => {
         game.guiManager.handleTouchEvents("touchstart", event);
         game.options_gui_manager.handleTouchEvents("touchstart", event);
