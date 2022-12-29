@@ -1384,7 +1384,7 @@ class Game extends SquareAABBCollidable {
     }
 }
 Game._colores = [new RGB(231, 76, 60),
-    new RGB(255, 255, 125),
+    new RGB(225, 180, 25),
     new RGB(55, 152, 219),
     new RGB(168, 223, 220),
     new RGB(46, 204, 113),

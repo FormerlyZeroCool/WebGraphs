@@ -892,6 +892,8 @@ export class GuiCheckList implements GuiElement {
         let offsetI:number = 0;
         for(let i = 0; i < itemsPositions.length; i++)
         {
+            if(!this.list[i])
+                continue;
             if(this.dragItem && this.dragItemLocation[1] !== -1 && i === Math.floor((this.dragItemLocation[1] / this.height()) * this.layoutManager.matrixDim[1]))
             {
                 offsetI++;
