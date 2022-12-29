@@ -1814,6 +1814,9 @@ async function main()
             break;
             case("ArrowRight"):
             break;
+            case("KeyF"):
+            render_fps = !render_fps;
+            break;
         }
     });
     let maybectx:CanvasRenderingContext2D | null = canvas.getContext("2d");
