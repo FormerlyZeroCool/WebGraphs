@@ -1105,7 +1105,7 @@ class Game extends SquareAABBCollidable {
             const closest = closest_in_array(touch_world_x);
             if (closest !== -1) {
                 world_x = closest;
-                const optimized_point = optimization_function(world_x - selected_function.dx, world_x + selected_function.dx, 128);
+                const optimized_point = optimization_function(world_x - selected_function.dx, world_x + selected_function.dx, 10024);
                 world_x = optimized_point[0];
                 world_y = optimized_point[1];
             }
@@ -1417,8 +1417,18 @@ async function main() {
     let width = getWidth();
     let game = new Game(multi_touch_listener, touchListener, 0, 0, height, width);
     window.game = game;
+    let fps_text_width = 0;
+    let render_fps = false;
     let low_fps = true;
     let draw = false;
+    touchListener.registerCallBack("touchstart", (event) => {
+        console.log(event.touchPos);
+        console.log(game.width - fps_text_width, +ctx.font.split('px')[0]);
+        console.log(event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0]);
+        return event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0];
+    }, (event) => {
+        render_fps = !render_fps;
+    });
     touchListener.registerCallBack("touchstart", (event) => game.ui_alpha >= 0.99, (event) => {
         game.guiManager.handleTouchEvents("touchstart", event);
         game.options_gui_manager.handleTouchEvents("touchstart", event);
@@ -1507,9 +1517,11 @@ async function main() {
         let text = "";
         ctx.fillStyle = "#FFFFFF";
         text = `avg fps: ${Math.floor(1000 * time_queue.length / sum)}, ${low_fps ? "low" : "ins"} fps: ${instantaneous_fps}`;
-        const text_width = ctx.measureText(text).width;
-        ctx.strokeText(text, game.width - text_width - 10, menu_font_size());
-        ctx.fillText(text, game.width - text_width - 10, menu_font_size());
+        fps_text_width = ctx.measureText(text).width;
+        if (render_fps) {
+            ctx.strokeText(text, game.width - fps_text_width - 10, menu_font_size());
+            ctx.fillText(text, game.width - fps_text_width - 10, menu_font_size());
+        }
         requestAnimationFrame(drawLoop);
     };
     drawLoop();
