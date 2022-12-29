@@ -472,7 +472,7 @@ export class SimpleGridLayoutManager implements GuiElement {
     }
     handleTouchEvents(type:string, e:any, from_parent_handler:boolean = false):void
     {
-        if(this.elementTouched || (from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+        if(!this.elementTouched && (from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height())
         {
             let record:RowRecord = <any> null;
@@ -516,6 +516,18 @@ export class SimpleGridLayoutManager implements GuiElement {
                 this.lastTouched = index;
             }
             
+        }
+        else if(this.elementTouched)
+        {
+            const record = this.elementTouched;
+            const dx = record.x + (from_parent_handler?0:this.x);
+            const dy = record.y + (from_parent_handler?0:this.y); 
+            e.translateEvent(e, -dx, -dy);
+            if(record.element.isLayoutManager())
+                (<SimpleGridLayoutManager> record.element).handleTouchEvents(type, e, true);
+            else
+                record.element.handleTouchEvents(type, e);
+            e.translateEvent(e, dx, dy);
         }
         if(type === "touchend")
             this.elementTouched = null;
