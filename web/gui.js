@@ -1290,23 +1290,6 @@ export class GuiTextBox {
                 this.font = customFontFace;
                 this.font.family;
             }
-            else
-                this.font = new FontFace(customFontName, 'url(/web/fonts/Minecraft.ttf)');
-            this.font.load().then((loaded_face) => {
-                this.fontName = fontName;
-                document.fonts.add(loaded_face);
-                this.drawInternalAndClear();
-            }, (error) => {
-                this.font = new FontFace(customFontName, 'url(/fonts/Minecraft.ttf)');
-                this.font.load().then((loaded_face) => {
-                    this.fontName = fontName;
-                    document.fonts.add(loaded_face);
-                    this.refresh();
-                }, (error) => {
-                    console.log(error.message);
-                    this.refresh();
-                });
-            });
         }
     }
     //take scaled pos calc delta from cursor pos

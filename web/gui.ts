@@ -353,7 +353,7 @@ export class RowRecord {
 };
 export interface UIState {
     //render any ui elements to provided context
-    draw(ctx:CanvasRenderingContext2D, x:number, y:number, width:number, height:number):void;
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number):void;
     //pass keyboard events to any ui elements managed
     handleKeyboardEvents(type:string, event:KeyboardEvent):void;
     //pass touch events to any ui elements managed
@@ -369,7 +369,7 @@ export class StateManagedUI {
     {
         this.state = state;
     }
-    draw(ctx:CanvasRenderingContext2D, canvas:HTMLCanvasElement, x:number, y:number, width:number, height:number):void
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number):void
     {
         this.state.draw(ctx, canvas, x, y, width, height);
     }
@@ -1676,23 +1676,6 @@ export class GuiTextBox implements GuiElement {
                 this.font = customFontFace;
                 this.font.family
             }
-            else
-                this.font = new FontFace(customFontName, 'url(/web/fonts/Minecraft.ttf)');
-            this.font.load().then((loaded_face) =>{
-                this.fontName = fontName
-                document.fonts.add(loaded_face);
-                this.drawInternalAndClear();
-            }, (error:Error) => {
-                this.font = new FontFace(customFontName, 'url(/fonts/Minecraft.ttf)');
-                this.font.load().then((loaded_face:any) => {
-                        this.fontName = fontName
-                        document.fonts.add(loaded_face);
-                        this.refresh();
-                    }, (error:Error) => {
-                        console.log(error.message);
-                        this.refresh();
-                    });
-            });
         }
     }
     //take scaled pos calc delta from cursor pos

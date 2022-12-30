@@ -166,6 +166,7 @@ export class SingleTouchListener {
             event.preventDefault();
     }
     touchMoveHandler(event) {
+        event.timeSinceLastTouch = Date.now() - (this.startTouchTime ? this.startTouchTime : 0);
         if (this.registeredTouch !== SingleTouchListener.mouseDown.mouseDown) {
             this.touchEndHandler(event);
         }
@@ -220,6 +221,7 @@ export class SingleTouchListener {
         return true;
     }
     touchEndHandler(event) {
+        event.timeSinceLastTouch = Date.now() - (this.startTouchTime ? this.startTouchTime : 0);
         if (this.registeredTouch) {
             let touchEnd = event.changedTouches.item(0);
             for (let i = 0; i < event.changedTouches["length"]; i++) {

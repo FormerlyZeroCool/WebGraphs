@@ -340,14 +340,14 @@ class Function {
         this.x_min = x_min;
         this.dx = dx;
         this.points_of_inflection.length = 0;
-
-        if(this.error_message !== null)
-            return this.table;
-        
         this.table.length = 0;
         this.zeros.length = 0;
         this.local_maxima.length = 0;
         this.local_minima.length = 0;
+
+        if(this.error_message !== null)
+            return this.table;
+        
         try {
             const iterations = (this.x_max - this.x_min) / this.dx;
             for(let j = 0; j < iterations; j++)
@@ -835,15 +835,167 @@ class ScalingState_YFrozen extends ScalingState {
 //ui should switch between 
 //free form following cursor exactly
 //finding nearest minima/maxima to cursor
-class FunctionPoint extends SquareAABBCollidable {
-    foo:Function;
-    constructor(foo:Function, x:number, y:number, width:number, height:number)
+class UIViewStateNoUI implements GridUIState {
+    grid: Game;
+    burger_height:number;
+    burger_width:number;
+    hamburger_activated:boolean;
+    tapped:boolean;
+    constructor(grid:Game)
     {
-        super(x, y, width, height);
-        this.foo = foo;
+        this.grid = grid;
+        this.burger_height = getHeight() / 20 * (isTouchSupported() ? 2 : 1);
+        this.burger_width = 25 * (isTouchSupported() ? 4 : 1);
+        this.hamburger_activated = false;
+        this.tapped = false;
+    }
+    burger_x():number
+    {
+        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
+    }
+    burger_y():number
+    {
+        return (2 * this.grid.guiManager.y + this.grid.options_gui_manager.height()) / 2  - this.burger_height / 2;
+    }
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        const burger_x = this.burger_x();
+        const burger_y = this.burger_y();
+        const burger_height = this.burger_height;
+        const burger_width = this.burger_width;
+        ctx.fillStyle = "#8F8F8F";
+        ctx.fillRect(burger_x, burger_y, burger_width, burger_height);
+        ctx.fillStyle = "#DFDFDF";
+        for(let i = 0; i < 3; i++)
+            ctx.fillRect(burger_x + burger_width / 10 * (i * 2 + 1), burger_y + burger_height / 4, burger_width / 10, burger_height / 2);
+    }
+    handleKeyboardEvents(type: string, event: KeyboardEvent): void {
+        throw new Error('Method not implemented.');
+    }
+    collision_predicate(type: string, event: TouchMoveEvent):boolean
+    {
+        return event.deltaX > 0;
+    }
+    screen_to_burger_x(a:number):number
+    {
+        return a - (this.grid.guiManager.width() + this.grid.options_gui_manager.width() + this.burger_width / 2);
+    }
+    handleTouchEvents(type: string, event: TouchMoveEvent): void {      
+        this.grid.guiManager.handleTouchEvents(type, event);
+        this.grid.options_gui_manager.handleTouchEvents(type, event);
+        const touchPos = event.touchPos;
+        const hamburger_active = (this.burger_collision(touchPos[0], touchPos[1]) || this.hamburger_activated);
+        console.log(hamburger_active)
+        if(hamburger_active && type === "touchmove" && this.collision_predicate(type, event))
+        {
+            this.grid.set_gui_position(clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+        }
+        switch(type)
+        {
+            case("touchstart"):
+            this.hamburger_activated = hamburger_active;
+            break;
+            case("touchend"):
+            this.hamburger_activated = false;
+            if(Date.now() - event.startTouchTime < 100)
+            {
+                this.tapped = hamburger_active;
+            }  
+            break;
+        }
+    }
+    burger_collision(x:number, y:number):boolean
+    {
+        return x >= this.burger_x() && x < this.burger_x() + this.burger_width &&
+            y >= this.burger_y() && y < this.burger_y() + this.burger_height;
+    }
+    transition(delta_time: number): UIState {
+       // console.log("no ui")
+        if(this.tapped)
+        {
+            const new_state = new UIViewStateTransitioningUI(this.grid);
+            new_state.opening = true;
+            return new_state;
+        }
+        if(-this.grid.guiManager.x + 1 < this.grid.guiManager.width() + this.grid.options_gui_manager.width())
+        {
+            return new UIViewStateTransitioningUI(this.grid);
+        }
+        return this;
+    }
+
+};
+class UIViewStateTransitioningUI extends UIViewStateNoUI
+{
+    opening:boolean;
+    closing:boolean;
+    constructor(grid:Game)
+    {
+        super(grid);
+        this.opening = false;
+        this.closing = false;
+    }
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        super.draw(ctx, canvas, x, y, width, height);
+        if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
+        {
+            this.grid.guiManager.draw(ctx);
+            this.grid.layer_manager.list.pos[0] = this.grid.guiManager.x;
+            this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
+            this.grid.options_gui_manager.draw(ctx);
+        }
+    }
+    collision_predicate(type: string, event: TouchMoveEvent):boolean
+    {
+        return true;
+    }
+    transition(delta_time: number): UIState {
+        //console.log("transitioning ui", this.opening, this.closing)
+        if(this.grid.guiManager.x > 0)
+        {
+            this.grid.set_gui_position(0);
+            return new UIViewStateShowingUI(this.grid);
+        }
+        else if(-this.grid.guiManager.x > this.grid.guiManager.width() + this.grid.options_gui_manager.width())
+        {
+            this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
+            return new UIViewStateNoUI(this.grid);
+        }
+        if(this.tapped)
+            this.opening = true;
+        if(this.opening)
+            this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+        else if(this.closing)
+            this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
+        
+        
+        return this;
+    }
+};
+class UIViewStateShowingUI extends UIViewStateTransitioningUI
+{
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        super.draw(ctx, canvas, x, y, width, height);
+    }
+    collision_predicate(type: string, event: TouchMoveEvent):boolean
+    {
+        return event.deltaX < 0;
+    }
+    transition(delta_time: number): UIState {
+        //console.log("showing ui", this.tapped)
+        if(this.tapped)
+        {
+            const new_state = new UIViewStateTransitioningUI(this.grid);
+            new_state.closing = true;
+            return new_state;
+        }
+        if(this.grid.guiManager.x < 0)
+            return new UIViewStateTransitioningUI(this.grid);
+        
+        return this;
     }
 };
 class Game extends SquareAABBCollidable {
+    ui_state_manager:StateManagedUI;
     state_manager_grid:StateManagedUI;
     repaint:boolean;
     axises:Sprite;
@@ -890,6 +1042,7 @@ class Game extends SquareAABBCollidable {
         this.intersections = [];
         this.last_selected_item = 0;
         this.selected_item = 0;
+        this.ui_state_manager = new StateManagedUI(new UIViewStateShowingUI(this));
         this.state_manager_grid = new StateManagedUI(new FollowCursor(this));
         this.scaling_multiplier = 1;
         this.ui_alpha = 0;
@@ -1020,6 +1173,13 @@ class Game extends SquareAABBCollidable {
         }
         return layer_manager;
     }
+    set_gui_position(x:number = this.guiManager.x, y:number = this.guiManager.y):void
+    {
+        this.guiManager.x = x;
+        this.options_gui_manager.x = x + this.guiManager.width();
+        this.guiManager.y = y;
+        this.options_gui_manager.y = this.guiManager.y;
+    }
     calc_bounds():void
     {
         this.x_min = this.x_translation - 1/this.x_scale;
@@ -1127,7 +1287,7 @@ class Game extends SquareAABBCollidable {
         
         const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         this.main_buf.ctx.imageSmoothingEnabled = false;
-        this.main_buf.ctx.lineJoin = "round";
+        this.main_buf.ctx.lineJoin = "bevel";
         functions.forEach((foo:Function, index:number) => {
             if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
@@ -1348,21 +1508,11 @@ class Game extends SquareAABBCollidable {
             
         }
         ctx.drawImage(this.main_buf.image, x, y);
-        
         //this state manager controls what labels get rendered
         if(this.draw_point_labels)
             this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
-        if(!this.multi_touchListener.registeredMultiTouchEvent)
-        {
-            if(this.ui_alpha !== 1)
-                ctx.globalAlpha = this.ui_alpha;
-            this.guiManager.draw(ctx);
-            this.layer_manager.list.pos[0] = this.guiManager.x;
-            this.layer_manager.list.pos[1] = this.guiManager.y;
-            this.options_gui_manager.draw(ctx);
-            if(this.ui_alpha !== 1)
-                ctx.globalAlpha = 1;
-        }
+        
+        this.ui_state_manager.draw(ctx, canvas, x, y, width, height);
     }
     render_labels_floating(ctx:CanvasRenderingContext2D):void
     {
@@ -1667,6 +1817,7 @@ class Game extends SquareAABBCollidable {
         const ms_to_fade = 250;
         //call transition function on state machine managing what points we are rendering
         this.state_manager_grid.transition(delta_time);
+        this.ui_state_manager.transition(delta_time);
         if(this.multi_touchListener.registeredMultiTouchEvent)
         {
             this.ui_alpha = 0;
@@ -1674,19 +1825,6 @@ class Game extends SquareAABBCollidable {
         }
         if(this.touchListener.registeredTouch)
             return;
-
-        if(this.ui_alpha !== 0)
-        {
-            if(this.touchListener.touchPos[0] < this.options_gui_manager.x + this.options_gui_manager.width())
-                this.ui_alpha += delta_time / ms_to_fade;
-            else
-                this.ui_alpha -= delta_time / ms_to_fade;
-        }
-        else
-        {
-            if(this.touchListener.touchPos[0] < this.width / 10)
-                this.ui_alpha += delta_time / ms_to_fade;
-        }
             
         this.ui_alpha = clamp(this.ui_alpha, 0, 1);
     }
@@ -1789,25 +1927,23 @@ async function main()
         event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0] * 1.2, 
         (event:TouchMoveEvent) => render_fps = !render_fps);
 
-    touchListener.registerCallBack("touchstart", (event:any) => game.ui_alpha >= 0.99, (event:TouchMoveEvent) => {
-        game.guiManager.handleTouchEvents("touchstart", event);
-        game.options_gui_manager.handleTouchEvents("touchstart", event);
+    touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
+        game.ui_state_manager.handleTouchEvents("touchstart", event);
     });
     touchListener.registerCallBack("touchstart", (event:any) => game.ui_alpha <= 0.99, (event:TouchMoveEvent) => {
         game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
     });
-    touchListener.registerCallBack("touchend", (event:any) => game.ui_alpha >= 0.99, (event:TouchMoveEvent) => {
-        game.guiManager.handleTouchEvents("touchend", event);
-        game.options_gui_manager.handleTouchEvents("touchend", event);
+    touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
+        game.ui_state_manager.handleTouchEvents("touchend", event);
     });
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
-            
-        if(game.ui_alpha >= 0.9)
+        game.ui_state_manager.handleTouchEvents("touchmove", event);
+        const state = <UIViewStateNoUI> game.ui_state_manager.state;
+        if(state.hamburger_activated || event.touchPos[0] < state.burger_x() + state.burger_width)
         {
-            game.guiManager.handleTouchEvents("touchmove", event);
-            game.options_gui_manager.handleTouchEvents("touchmove", event);
+            state.handleTouchEvents("touchmove", event);
         }
         else
         {

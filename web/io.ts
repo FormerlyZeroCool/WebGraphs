@@ -86,6 +86,7 @@ export interface TouchMoveEvent {
     avgVelocity:number;
     touchPos:number[];
     startTouchTime:number;
+    timeSinceLastTouch:number;
     eventTime:number;
     moveCount:number;
 
@@ -119,7 +120,6 @@ export class MouseDownTracker {
 }
 export class SingleTouchListener
 {
-    startTouchTime:number;
     startTouchTime:number;
     timeSinceLastTouch:number;
     moveCount:number;
@@ -232,6 +232,7 @@ export class SingleTouchListener
     }
     touchMoveHandler(event:any):boolean
     {
+        event.timeSinceLastTouch = Date.now() - (this.startTouchTime?this.startTouchTime:0);
         if(this.registeredTouch !== SingleTouchListener.mouseDown.mouseDown){
             this.touchEndHandler(event);
         }
@@ -293,6 +294,7 @@ export class SingleTouchListener
     }
     touchEndHandler(event:any):void
     {
+        event.timeSinceLastTouch = Date.now() - (this.startTouchTime?this.startTouchTime:0);
         if(this.registeredTouch)
         {
             let touchEnd = event.changedTouches.item(0);
