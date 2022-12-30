@@ -731,7 +731,7 @@ class Game extends SquareAABBCollidable {
             this.functions[this.selected_item].color.copy(color);
             this.repaint = true;
         });
-        this.slider_line_width = new GuiSlider(0, [150, 50 + touch_mod], (slide_event) => {
+        this.slider_line_width = new GuiSlider(0, [125, 50 + touch_mod], (slide_event) => {
             const state = slide_event.value;
             const line_width = 2 + Math.floor(state * 30);
             if (this.chkbx_sync_curve_width.checked)
@@ -740,7 +740,7 @@ class Game extends SquareAABBCollidable {
             this.repaint = true;
         });
         this.color_controller.getOptionPanel()?.refresh();
-        this.options_gui_manager = new SimpleGridLayoutManager([4, 400], [200, this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        this.options_gui_manager = new SimpleGridLayoutManager([40, 400], [200, this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
         this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
         this.options_gui_manager.addElement(new GuiCheckBox((event) => {
@@ -776,13 +776,13 @@ class Game extends SquareAABBCollidable {
         this.chkbx_render_inflections = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, false);
         this.options_gui_manager.addElement(this.chkbx_render_inflections);
-        this.options_gui_manager.addElement(this.color_controller.localLayout);
-        this.options_gui_manager.addElement(new GuiLabel("Width", 50, 18, this.slider_line_width.height()));
+        this.options_gui_manager.addElement(new GuiLabel("Width", 75, 18, this.slider_line_width.height()));
         this.options_gui_manager.addElement(this.slider_line_width);
         this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, true);
-        this.options_gui_manager.addElement(new GuiLabel("Sync", 50, 18, 50 + touch_mod));
+        this.options_gui_manager.addElement(new GuiLabel("Sync", 75, 18, 50 + touch_mod));
         this.options_gui_manager.addElement(this.chkbx_sync_curve_width);
+        this.options_gui_manager.addElement(this.color_controller.localLayout);
         this.options_gui_manager.activate();
         this.repaint = true;
     }
