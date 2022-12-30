@@ -33,7 +33,7 @@ class ColorPickerTool extends ExtendedTool {
 
     constructor(color_changed:(color:RGB) => void, toolName:string = "color picker", pathToImage:string[] = ["images/colorPickerSprite.png"], optionPanes:SimpleGridLayoutManager[] = [])
     {
-        super(toolName, pathToImage, optionPanes, [200, 200], [4, 50]);
+        super(null, pathToImage, optionPanes, [200, 200], [4, 50]);
         this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0,150,150,255));
         const colorSlideEvent:(event:SlideEvent) => void = (event:SlideEvent) => {
             const color:RGB = new RGB(0, 0, 0, 0);

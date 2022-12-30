@@ -1929,13 +1929,13 @@ export class ToolBarItem {
             for (let i = 0; i < toolName.length; i++)
                 this.toolImages.push(new ImageContainer(toolName[i], toolImagePath[i]));
         }
-        else if (!Array.isArray(toolName) && Array.isArray(toolImagePath)) {
+        else if (toolName && !Array.isArray(toolName) && Array.isArray(toolImagePath)) {
             for (let i = 0; i < toolName.length; i++)
                 this.toolImages.push(new ImageContainer(toolName, toolImagePath[i]));
         }
         else if (Array.isArray(toolName) && Array.isArray(toolImagePath) && toolName.length !== toolImagePath.length)
             throw new Error("Invalid params for toolbar item both lists must be same length");
-        else if (!Array.isArray(toolName) && !Array.isArray(toolImagePath)) {
+        else if (toolName && !Array.isArray(toolName) && !Array.isArray(toolImagePath)) {
             this.toolImages.push(new ImageContainer(toolName, toolImagePath));
         }
         else if (!(toolName instanceof String) && (toolImagePath instanceof String)) {

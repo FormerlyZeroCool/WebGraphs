@@ -24,7 +24,7 @@ const dderx = (foo, x, dx) => {
 window.dderx = dderx;
 class ColorPickerTool extends ExtendedTool {
     constructor(color_changed, toolName = "color picker", pathToImage = ["images/colorPickerSprite.png"], optionPanes = []) {
-        super(toolName, pathToImage, optionPanes, [200, 200], [4, 50]);
+        super(null, pathToImage, optionPanes, [200, 200], [4, 50]);
         this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0, 150, 150, 255));
         const colorSlideEvent = (event) => {
             const color = new RGB(0, 0, 0, 0);

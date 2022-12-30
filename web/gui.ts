@@ -2404,7 +2404,7 @@ export class RGB24BitPalette implements RenderablePalette {
 export class ToolBarItem {
     toolImages:ImageContainer[];
     selected:number;
-    constructor(toolName:string | string[], toolImagePath:string | string[], selected:number = 0)
+    constructor(toolName:null | string | string[], toolImagePath:string | string[], selected:number = 0)
     {
         this.selected = selected;
         this.toolImages = [];
@@ -2413,14 +2413,14 @@ export class ToolBarItem {
             for(let i = 0; i < toolName.length; i++)
                 this.toolImages.push(new ImageContainer(toolName[i], toolImagePath[i]));
         }
-        else if(!Array.isArray(toolName) && Array.isArray(toolImagePath))
+        else if(toolName && !Array.isArray(toolName) && Array.isArray(toolImagePath))
         {
             for(let i = 0; i < toolName.length; i++)
                 this.toolImages.push(new ImageContainer(toolName, toolImagePath[i]));
         }
         else if(Array.isArray(toolName) && Array.isArray(toolImagePath) && toolName.length !== toolImagePath.length)
             throw new Error("Invalid params for toolbar item both lists must be same length");
-        else if(!Array.isArray(toolName) && !Array.isArray(toolImagePath))
+        else if(toolName && !Array.isArray(toolName) && !Array.isArray(toolImagePath))
         {
             this.toolImages.push(new ImageContainer(toolName, toolImagePath));
         }
