@@ -1804,12 +1804,15 @@ async function main()
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
             
-        game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
-        game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
-        if(game.ui_alpha >= 0.99)
+        if(game.ui_alpha >= 0.9)
         {
             game.guiManager.handleTouchEvents("touchmove", event);
             game.options_gui_manager.handleTouchEvents("touchmove", event);
+        }
+        else
+        {
+            game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
+            game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
         }
         game.repaint = true;
     });
