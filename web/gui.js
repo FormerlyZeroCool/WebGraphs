@@ -685,6 +685,7 @@ export class GuiCheckList {
         this.layoutManager.refresh();
     }
     draw(ctx, x, y, offsetX, offsetY) {
+        //goal to switch to this
         //this.layoutManager.draw(ctx, x, y, offsetX, offsetY);
         this.pos[0] = x;
         this.pos[1] = y;
@@ -802,25 +803,22 @@ export class GuiCheckList {
                         this.dragItemLocation[1] += e.deltaY;
                     }
                 }
-                else if (e.moveCount > movesNeeded) {
-                    this.dragItemLocation[0] += e.deltaX;
-                    this.dragItemLocation[1] += e.deltaY;
+                else if (this.dragItem && e.moveCount > movesNeeded) {
+                    this.dragItemLocation[0] += e.deltaX / 2;
+                    this.dragItemLocation[1] += e.deltaY / 2;
                 }
                 break;
         }
         let checkedIndex = -1;
-        if (this.uniqueSelection) {
-            for (let i = 0; i < this.list.length; i++) {
-                if (this.list[i].checkBox.checked) {
-                    checkedIndex = i;
-                }
-            }
-            ;
-            for (let i = 0; i < this.list.length; i++) {
-                if (this.list[i].checkBox.checked && i !== checkedIndex) {
-                    this.list[checkedIndex].checkBox.checked = false;
-                    this.list[checkedIndex].checkBox.refresh();
-                }
+        if (!this.uniqueSelection)
+            return;
+        for (let i = 0; i < this.list.length; i++)
+            if (this.list[i].checkBox.checked)
+                checkedIndex = i;
+        for (let i = 0; i < this.list.length; i++) {
+            if (this.list[i].checkBox.checked && i !== checkedIndex) {
+                this.list[checkedIndex].checkBox.checked = false;
+                this.list[checkedIndex].checkBox.refresh();
             }
         }
     }

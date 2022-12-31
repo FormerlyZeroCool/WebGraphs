@@ -692,18 +692,24 @@ class UIViewStateNoUI {
         return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
     }
     burger_y() {
-        return (2 * this.grid.guiManager.y + this.grid.options_gui_manager.height()) / 2 - this.burger_height / 2;
+        return this.grid.options_gui_manager.y + this.grid.options_gui_manager.height() / 4 - this.burger_height / 2;
     }
     draw(ctx, canvas, x, y, width, height) {
         const burger_x = this.burger_x();
-        const burger_y = this.burger_y();
-        const burger_height = this.burger_height;
+        let burger_y = this.burger_y();
+        let burger_height = this.burger_height;
         const burger_width = this.burger_width;
         ctx.fillStyle = "#8F8F8F";
         ctx.fillRect(burger_x, burger_y, burger_width, burger_height);
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeRect(burger_x, burger_y, burger_width, burger_height);
         ctx.fillStyle = "#DFDFDF";
-        for (let i = 0; i < 3; i++)
+        for (let i = 0; i < 4; i++) {
             ctx.fillRect(burger_x + burger_width / 10 * (i * 2 + 1), burger_y + burger_height / 4, burger_width / 10, burger_height / 2);
+            const old_height = burger_height;
+            burger_height /= 1.2;
+            burger_y += (old_height - burger_height) / 2;
+        }
     }
     handleKeyboardEvents(type, event) {
         throw new Error('Method not implemented.');
@@ -748,7 +754,9 @@ class UIViewStateNoUI {
             return new_state;
         }
         if (-this.grid.guiManager.x + 1 < this.grid.guiManager.width() + this.grid.options_gui_manager.width()) {
-            return new UIViewStateTransitioningUI(this.grid);
+            const new_state = new UIViewStateTransitioningUI(this.grid);
+            new_state.hamburger_activated = this.hamburger_activated;
+            return new_state;
         }
         return this;
     }
@@ -782,11 +790,15 @@ class UIViewStateTransitioningUI extends UIViewStateNoUI {
             this.grid.set_gui_position(clamp(this.grid.guiManager.x - delta_time * 5, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
         if (this.grid.guiManager.x > 0) {
             this.grid.set_gui_position(0);
-            return new UIViewStateShowingUI(this.grid);
+            const new_state = new UIViewStateShowingUI(this.grid);
+            new_state.hamburger_activated = this.hamburger_activated;
+            return new_state;
         }
         else if (-this.grid.guiManager.x + 1 > this.grid.guiManager.width() + this.grid.options_gui_manager.width()) {
             this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
-            return new UIViewStateNoUI(this.grid);
+            const new_state = new UIViewStateNoUI(this.grid);
+            new_state.hamburger_activated = this.hamburger_activated;
+            return new_state;
         }
         return this;
     }
@@ -806,8 +818,11 @@ class UIViewStateShowingUI extends UIViewStateTransitioningUI {
             new_state.closing = true;
             return new_state;
         }
-        if (this.grid.guiManager.x < 0)
-            return new UIViewStateTransitioningUI(this.grid);
+        if (this.grid.guiManager.x < 0) {
+            const new_state = new UIViewStateTransitioningUI(this.grid);
+            new_state.hamburger_activated = this.hamburger_activated;
+            return new_state;
+        }
         return this;
     }
 }

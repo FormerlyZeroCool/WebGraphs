@@ -883,6 +883,7 @@ export class GuiCheckList implements GuiElement {
     }
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number, offsetY:number): void
     {
+        //goal to switch to this
         //this.layoutManager.draw(ctx, x, y, offsetX, offsetY);
         this.pos[0] = x;
         this.pos[1] = y;
@@ -1021,33 +1022,30 @@ export class GuiCheckList implements GuiElement {
                     this.dragItemLocation[1] += e.deltaY;
                 }
             }
-            else if(e.moveCount > movesNeeded)
+            else if(this.dragItem && e.moveCount > movesNeeded)
             {
-                this.dragItemLocation[0] += e.deltaX;
-                this.dragItemLocation[1] += e.deltaY;
+                this.dragItemLocation[0] += e.deltaX / 2;
+                this.dragItemLocation[1] += e.deltaY / 2;
             }
             break;
         }
 
         let checkedIndex:number = -1;
-        if(this.uniqueSelection)
+        if(!this.uniqueSelection)
+            return;
+            
+        for(let i = 0; i < this.list.length; i++)
+            if(this.list[i].checkBox.checked)
+                checkedIndex = i;
+        
+        
+        for(let i = 0; i < this.list.length; i++)
         {
-            for(let i = 0; i < this.list.length; i++) {
-                if(this.list[i].checkBox.checked)
-                {
-                    checkedIndex = i;
-                }
-            };
-            
-            
-            for(let i = 0; i < this.list.length; i++)
+            if(this.list[i].checkBox.checked && i !== checkedIndex)
             {
-                if(this.list[i].checkBox.checked && i !== checkedIndex)
-                {
-                    this.list[checkedIndex].checkBox.checked = false;
-                    this.list[checkedIndex].checkBox.refresh();
-                }     
-            }
+                this.list[checkedIndex].checkBox.checked = false;
+                this.list[checkedIndex].checkBox.refresh();
+            }     
         }
     }
     isLayoutManager():boolean
