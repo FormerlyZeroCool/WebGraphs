@@ -207,8 +207,8 @@ class LayerManagerTool {
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.layersLimit = limit;
-        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, 800 - 130]);
-        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), 800 - 280], 20, false, this.callback_swap_layers,
+        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, 770 - 130]);
+        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), 770 - 280], 20, false, this.callback_swap_layers,
         (event:SlideEvent) => {
             const index:number = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
