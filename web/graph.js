@@ -689,10 +689,10 @@ class UIViewStateNoUI {
         this.tapped = false;
     }
     burger_x() {
-        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
+        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width() + 2;
     }
     burger_y() {
-        return this.grid.options_gui_manager.y + this.grid.options_gui_manager.height() / 4 - this.burger_height / 2;
+        return this.grid.options_gui_manager.y;
     }
     draw(ctx, canvas, x, y, width, height) {
         const burger_x = this.burger_x();
@@ -743,8 +743,8 @@ class UIViewStateNoUI {
         }
     }
     burger_collision(x, y) {
-        return x >= this.burger_x() && x < this.burger_x() + this.burger_width &&
-            y >= this.burger_y() && y < this.burger_y() + this.burger_height;
+        return x >= this.burger_x() && x < this.burger_x() + this.burger_width;
+        //&& y >= this.burger_y() && y < this.burger_y() + this.burger_height;
     }
     transition(delta_time) {
         //console.log("no ui")
@@ -1517,7 +1517,7 @@ class Game extends SquareAABBCollidable {
 Game._colores = [new RGB(231, 76, 60),
     new RGB(225, 180, 25),
     new RGB(55, 152, 219),
-    new RGB(168, 223, 220),
+    new RGB(182, 12, 255),
     new RGB(46, 204, 113),
     new RGB(245, 146, 65),
     new RGB(51, 204, 0)];
