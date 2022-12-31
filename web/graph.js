@@ -762,7 +762,7 @@ class UIViewStateShowUI extends UIViewState {
         super(grid);
     }
     draw(ctx, canvas, x, y, width, height) {
-        ctx.fillStyle = "#4b4b4b";
+        ctx.fillStyle = document.body.style.backgroundColor;
         ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.width(), this.height());
         super.draw(ctx, canvas, x, y, width, height);
         if (!this.grid.multi_touchListener.registeredMultiTouchEvent) {
