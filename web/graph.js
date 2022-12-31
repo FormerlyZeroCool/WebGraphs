@@ -680,7 +680,7 @@ class ScalingState_YFrozen extends ScalingState {
 //ui should switch between 
 //free form following cursor exactly
 //finding nearest minima/maxima to cursor
-class UIViewStateNoUI {
+class UIViewState {
     constructor(grid) {
         this.grid = grid;
         this.burger_height = getHeight() / 20 * (isTouchSupported() ? 1 : 1.5);
@@ -715,7 +715,7 @@ class UIViewStateNoUI {
         throw new Error('Method not implemented.');
     }
     collision_predicate(type, event) {
-        return event.deltaX > 0;
+        throw new Error('Method not implemented.');
     }
     screen_to_burger_x(a) {
         return a - (this.grid.guiManager.width() + this.grid.options_gui_manager.width() + this.burger_width / 2);
@@ -747,6 +747,36 @@ class UIViewStateNoUI {
         //&& y >= this.burger_y() && y < this.burger_y() + this.burger_height;
     }
     transition(delta_time) {
+        throw new Error('Method not implemented.');
+    }
+}
+;
+class UIViewStateShowUI extends UIViewState {
+    constructor(grid) {
+        super(grid);
+    }
+    draw(ctx, canvas, x, y, width, height) {
+        super.draw(ctx, canvas, x, y, width, height);
+        if (!this.grid.multi_touchListener.registeredMultiTouchEvent) {
+            this.grid.guiManager.draw(ctx);
+            this.grid.layer_manager.list.pos[0] = this.grid.guiManager.x;
+            this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
+            this.grid.options_gui_manager.draw(ctx);
+        }
+    }
+    collision_predicate(type, event) {
+        return true;
+    }
+}
+;
+class UIViewStateNoUI extends UIViewState {
+    constructor(grid) {
+        super(grid);
+    }
+    collision_predicate(type, event) {
+        return event.deltaX > 0;
+    }
+    transition(delta_time) {
         //console.log("no ui")
         if (this.tapped) {
             const new_state = new UIViewStateTransitioningUI(this.grid);
@@ -762,23 +792,11 @@ class UIViewStateNoUI {
     }
 }
 ;
-class UIViewStateTransitioningUI extends UIViewStateNoUI {
+class UIViewStateTransitioningUI extends UIViewStateShowUI {
     constructor(grid) {
         super(grid);
         this.opening = false;
         this.closing = false;
-    }
-    draw(ctx, canvas, x, y, width, height) {
-        super.draw(ctx, canvas, x, y, width, height);
-        if (!this.grid.multi_touchListener.registeredMultiTouchEvent) {
-            this.grid.guiManager.draw(ctx);
-            this.grid.layer_manager.list.pos[0] = this.grid.guiManager.x;
-            this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
-            this.grid.options_gui_manager.draw(ctx);
-        }
-    }
-    collision_predicate(type, event) {
-        return true;
     }
     transition(delta_time) {
         //console.log("transitioning ui", this.opening, this.closing)
@@ -804,10 +822,7 @@ class UIViewStateTransitioningUI extends UIViewStateNoUI {
     }
 }
 ;
-class UIViewStateShowingUI extends UIViewStateTransitioningUI {
-    draw(ctx, canvas, x, y, width, height) {
-        super.draw(ctx, canvas, x, y, width, height);
-    }
+class UIViewStateShowingUI extends UIViewStateShowUI {
     collision_predicate(type, event) {
         return event.deltaX < 0;
     }

@@ -837,7 +837,7 @@ class ScalingState_YFrozen extends ScalingState {
 //ui should switch between 
 //free form following cursor exactly
 //finding nearest minima/maxima to cursor
-class UIViewStateNoUI implements GridUIState {
+class UIViewState implements GridUIState {
     grid: Game;
     burger_height:number;
     burger_width:number;
@@ -882,7 +882,7 @@ class UIViewStateNoUI implements GridUIState {
     }
     collision_predicate(type: string, event: TouchMoveEvent):boolean
     {
-        return event.deltaX > 0;
+        throw new Error('Method not implemented.');
     }
     screen_to_burger_x(a:number):number
     {
@@ -921,6 +921,41 @@ class UIViewStateNoUI implements GridUIState {
                 //&& y >= this.burger_y() && y < this.burger_y() + this.burger_height;
     }
     transition(delta_time: number): UIState {
+        throw new Error('Method not implemented.');
+    }
+
+};
+class UIViewStateShowUI extends UIViewState
+{
+    constructor(grid:Game)
+    {
+        super(grid);
+    }
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        super.draw(ctx, canvas, x, y, width, height);
+        if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
+        {
+            this.grid.guiManager.draw(ctx);
+            this.grid.layer_manager.list.pos[0] = this.grid.guiManager.x;
+            this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
+            this.grid.options_gui_manager.draw(ctx);
+        }
+    }
+    collision_predicate(type: string, event: TouchMoveEvent):boolean
+    {
+        return true;
+    }
+};
+class UIViewStateNoUI extends UIViewState {
+    constructor(grid:Game)
+    {
+        super(grid);
+    }
+    collision_predicate(type: string, event: TouchMoveEvent):boolean
+    {
+        return event.deltaX > 0;
+    }
+    transition(delta_time: number): UIState {
         //console.log("no ui")
         if(this.tapped)
         {
@@ -938,7 +973,7 @@ class UIViewStateNoUI implements GridUIState {
     }
 
 };
-class UIViewStateTransitioningUI extends UIViewStateNoUI
+class UIViewStateTransitioningUI extends UIViewStateShowUI
 {
     opening:boolean;
     closing:boolean;
@@ -947,20 +982,6 @@ class UIViewStateTransitioningUI extends UIViewStateNoUI
         super(grid);
         this.opening = false;
         this.closing = false;
-    }
-    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
-        super.draw(ctx, canvas, x, y, width, height);
-        if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
-        {
-            this.grid.guiManager.draw(ctx);
-            this.grid.layer_manager.list.pos[0] = this.grid.guiManager.x;
-            this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
-            this.grid.options_gui_manager.draw(ctx);
-        }
-    }
-    collision_predicate(type: string, event: TouchMoveEvent):boolean
-    {
-        return true;
     }
     transition(delta_time: number): UIState {
         //console.log("transitioning ui", this.opening, this.closing)
@@ -989,11 +1010,8 @@ class UIViewStateTransitioningUI extends UIViewStateNoUI
         return this;
     }
 };
-class UIViewStateShowingUI extends UIViewStateTransitioningUI
+class UIViewStateShowingUI extends UIViewStateShowUI
 {
-    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
-        super.draw(ctx, canvas, x, y, width, height);
-    }
     collision_predicate(type: string, event: TouchMoveEvent):boolean
     {
         return event.deltaX < 0;
