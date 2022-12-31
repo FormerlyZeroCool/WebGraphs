@@ -844,7 +844,7 @@ class UIViewStateNoUI implements GridUIState {
     constructor(grid:Game)
     {
         this.grid = grid;
-        this.burger_height = getHeight() / 20 * (isTouchSupported() ? 2 : 1);
+        this.burger_height = getHeight() / 20 * (isTouchSupported() ? 2 : 1.5);
         this.burger_width = 25 * (isTouchSupported() ? 4 : 1);
         this.hamburger_activated = false;
         this.tapped = false;
@@ -880,11 +880,9 @@ class UIViewStateNoUI implements GridUIState {
         return a - (this.grid.guiManager.width() + this.grid.options_gui_manager.width() + this.burger_width / 2);
     }
     handleTouchEvents(type: string, event: TouchMoveEvent): void {      
-        this.grid.guiManager.handleTouchEvents(type, event);
-        this.grid.options_gui_manager.handleTouchEvents(type, event);
         const touchPos = event.touchPos;
         const hamburger_active = (this.burger_collision(touchPos[0], touchPos[1]) || this.hamburger_activated);
-        console.log(hamburger_active)
+        
         if(hamburger_active && type === "touchmove" && this.collision_predicate(type, event))
         {
             this.grid.set_gui_position(clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
@@ -893,14 +891,20 @@ class UIViewStateNoUI implements GridUIState {
         {
             case("touchstart"):
             this.hamburger_activated = hamburger_active;
+            console.log(hamburger_active)
             break;
             case("touchend"):
-            this.hamburger_activated = false;
-            if(Date.now() - event.startTouchTime < 100)
+            if(Date.now() - event.startTouchTime < 150)
             {
                 this.tapped = hamburger_active;
             }  
+            this.hamburger_activated = false;
             break;
+        }
+        if(!hamburger_active)
+        {
+            this.grid.guiManager.handleTouchEvents(type, event);
+            this.grid.options_gui_manager.handleTouchEvents(type, event);
         }
     }
     burger_collision(x:number, y:number):boolean
@@ -909,7 +913,7 @@ class UIViewStateNoUI implements GridUIState {
             y >= this.burger_y() && y < this.burger_y() + this.burger_height;
     }
     transition(delta_time: number): UIState {
-       // console.log("no ui")
+        //console.log("no ui")
         if(this.tapped)
         {
             const new_state = new UIViewStateTransitioningUI(this.grid);
@@ -950,24 +954,24 @@ class UIViewStateTransitioningUI extends UIViewStateNoUI
     }
     transition(delta_time: number): UIState {
         //console.log("transitioning ui", this.opening, this.closing)
-        if(this.grid.guiManager.x > 0)
-        {
-            this.grid.set_gui_position(0);
-            return new UIViewStateShowingUI(this.grid);
-        }
-        else if(-this.grid.guiManager.x > this.grid.guiManager.width() + this.grid.options_gui_manager.width())
-        {
-            this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
-            return new UIViewStateNoUI(this.grid);
-        }
         if(this.tapped)
             this.opening = true;
         if(this.opening)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
         else if(this.closing)
+            this.grid.set_gui_position(clamp(this.grid.guiManager.x - delta_time * 5, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+        
+        
+        if(this.grid.guiManager.x > 0)
+        {
+            this.grid.set_gui_position(0);
+            return new UIViewStateShowingUI(this.grid);
+        }
+        else if(-this.grid.guiManager.x + 1 > this.grid.guiManager.width() + this.grid.options_gui_manager.width())
+        {
             this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
-        
-        
+            return new UIViewStateNoUI(this.grid);
+        }
         return this;
     }
 };
@@ -1941,9 +1945,9 @@ async function main()
         let scaler_y = game.deltaY / (game.height);
         game.ui_state_manager.handleTouchEvents("touchmove", event);
         const state = <UIViewStateNoUI> game.ui_state_manager.state;
+        state.handleTouchEvents("touchmove", event);
         if(state.hamburger_activated || event.touchPos[0] < state.burger_x() + state.burger_width)
         {
-            state.handleTouchEvents("touchmove", event);
         }
         else
         {
