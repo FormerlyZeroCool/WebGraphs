@@ -178,8 +178,6 @@ class LayerManagerTool {
             if (this.callback_layer_count() < this.list.list.length) {
                 this.callback_add_layer();
             }
-            if (this.callback_layer_count() !== this.list.list.length)
-                console.log("Error field layers out of sync with layers tool");
             this.list.push(text, true, (e) => {
                 const index = this.list.findBasedOnCheckbox(e.checkBox);
                 this.callback_checkbox_event(index, e.checkBox.checked);
@@ -205,6 +203,10 @@ class LayerManagerTool {
         optionPanel.x = x;
         optionPanel.y = y;
         optionPanel.draw(ctx, x, y);
+        if (this.callback_layer_count() !== this.list.list.length) {
+            console.log("Error field layers out of sync with layers tool, attempting fix");
+            this.list.list.length = 0;
+        }
     }
 }
 LayerManagerTool.running_number = 0;
@@ -718,6 +720,10 @@ class UIViewStateNoUI {
         if (hamburger_active && type === "touchmove" && this.collision_predicate(type, event)) {
             this.grid.set_gui_position(clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
         }
+        else if (!this.hamburger_activated) {
+            this.grid.guiManager.handleTouchEvents(type, event);
+            this.grid.options_gui_manager.handleTouchEvents(type, event);
+        }
         switch (type) {
             case ("touchstart"):
                 this.hamburger_activated = hamburger_active;
@@ -728,10 +734,6 @@ class UIViewStateNoUI {
                 }
                 this.hamburger_activated = false;
                 break;
-        }
-        if (!hamburger_active) {
-            this.grid.guiManager.handleTouchEvents(type, event);
-            this.grid.options_gui_manager.handleTouchEvents(type, event);
         }
     }
     burger_collision(x, y) {
@@ -1568,9 +1570,7 @@ async function main() {
         game.ui_state_manager.handleTouchEvents("touchmove", event);
         const state = game.ui_state_manager.state;
         state.handleTouchEvents("touchmove", event);
-        if (state.hamburger_activated || event.touchPos[0] < state.burger_x() + state.burger_width) {
-        }
-        else {
+        if (!state.hamburger_activated && event.touchPos[0] > state.burger_x() + state.burger_width) {
             game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
             game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
         }

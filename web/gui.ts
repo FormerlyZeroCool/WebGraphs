@@ -893,7 +893,10 @@ export class GuiCheckList implements GuiElement {
         for(let i = 0; i < itemsPositions.length; i++)
         {
             if(!this.list[i])
+            {
+                console.log("Error list has invalid members should only contain gyui list items", this.list);
                 continue;
+            }
             if(this.dragItem && this.dragItemLocation[1] !== -1 && i === Math.floor((this.dragItemLocation[1] / this.height()) * this.layoutManager.matrixDim[1]))
             {
                 offsetI++;
@@ -1003,7 +1006,7 @@ export class GuiCheckList implements GuiElement {
             break;
             case("touchmove"):
             const movesNeeded:number = isTouchSupported()?7:2;
-            if(this.selectedItem() && e.touchPos[0] < this.selectedItem()!.sliderX)
+            if(!this.dragItem && this.selectedItem() && e.touchPos[0] < this.selectedItem()!.sliderX)
             {
                 if(e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1)
                 {
