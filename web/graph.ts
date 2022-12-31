@@ -846,8 +846,8 @@ class UIViewStateNoUI implements GridUIState {
     constructor(grid:Game)
     {
         this.grid = grid;
-        this.burger_height = getHeight() / 20 * (isTouchSupported() ? 2 : 1.5);
-        this.burger_width = 25 * (isTouchSupported() ? 4 : 1);
+        this.burger_height = getHeight() / 20 * (isTouchSupported() ? 1 : 1.5);
+        this.burger_width = 25 * (isTouchSupported() ? 3 : 1);
         this.hamburger_activated = false;
         this.tapped = false;
     }
@@ -873,7 +873,7 @@ class UIViewStateNoUI implements GridUIState {
         {
             ctx.fillRect(burger_x + burger_width / 10 * (i * 2 + 1), burger_y + burger_height / 4, burger_width / 10, burger_height / 2);
             const old_height = burger_height;
-            burger_height /= 1.2;
+            burger_height /= 1.25;
             burger_y += (old_height - burger_height) / 2;
         }
     }
