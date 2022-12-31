@@ -689,7 +689,7 @@ class UIViewState {
         this.tapped = false;
     }
     burger_x() {
-        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width() + 2;
+        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
     }
     burger_y() {
         return this.grid.options_gui_manager.y;
@@ -719,6 +719,12 @@ class UIViewState {
     }
     screen_to_burger_x(a) {
         return a - (this.grid.guiManager.width() + this.grid.options_gui_manager.width() + this.burger_width / 2);
+    }
+    width() {
+        return (this.grid.guiManager.width() + this.grid.options_gui_manager.width());
+    }
+    height() {
+        return this.grid.guiManager.height();
     }
     handleTouchEvents(type, event) {
         const touchPos = event.touchPos;
@@ -756,6 +762,8 @@ class UIViewStateShowUI extends UIViewState {
         super(grid);
     }
     draw(ctx, canvas, x, y, width, height) {
+        ctx.fillStyle = "#4b4b4b";
+        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.width(), this.height());
         super.draw(ctx, canvas, x, y, width, height);
         if (!this.grid.multi_touchListener.registeredMultiTouchEvent) {
             this.grid.guiManager.draw(ctx);

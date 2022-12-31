@@ -853,7 +853,7 @@ class UIViewState implements GridUIState {
     }
     burger_x():number
     {
-        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width() + 2;
+        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
     }
     burger_y():number
     {
@@ -887,6 +887,14 @@ class UIViewState implements GridUIState {
     screen_to_burger_x(a:number):number
     {
         return a - (this.grid.guiManager.width() + this.grid.options_gui_manager.width() + this.burger_width / 2);
+    }
+    width():number
+    {
+        return (this.grid.guiManager.width() + this.grid.options_gui_manager.width());
+    }
+    height():number
+    {
+        return this.grid.guiManager.height();
     }
     handleTouchEvents(type: string, event: TouchMoveEvent): void {      
         const touchPos = event.touchPos;
@@ -932,6 +940,8 @@ class UIViewStateShowUI extends UIViewState
         super(grid);
     }
     draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
+        ctx.fillStyle = "#4b4b4b";
+        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.width(), this.height());
         super.draw(ctx, canvas, x, y, width, height);
         if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
         {
