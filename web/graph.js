@@ -721,7 +721,6 @@ class UIViewStateNoUI {
         switch (type) {
             case ("touchstart"):
                 this.hamburger_activated = hamburger_active;
-                console.log(hamburger_active);
                 break;
             case ("touchend"):
                 if (Date.now() - event.startTouchTime < 150) {
