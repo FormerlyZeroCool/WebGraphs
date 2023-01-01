@@ -937,11 +937,11 @@ class Game extends SquareAABBCollidable {
             this.draw_axis_labels = event.checkBox.checked;
             this.repaint = true;
         }, 100, 50 + touch_mod, this.draw_axis_labels));
-        const show_label = new GuiLabel("Show point", 100, 18, 50 + touch_mod);
+        const change_show_label_state = () => { this.draw_point_labels = draw_points.checked; draw_points.refresh(); };
+        const draw_points = new GuiCheckBox(change_show_label_state, 100, 50 + touch_mod, this.draw_axis_labels);
+        const show_label = new GuiButton(() => { draw_points.checked = !draw_points.checked; change_show_label_state(); }, "Show point", 100, 50 + touch_mod, 18);
         this.options_gui_manager.addElement(show_label);
-        this.options_gui_manager.addElement(new GuiCheckBox((event) => {
-            this.draw_point_labels = event.checkBox.checked;
-        }, 100, 50 + touch_mod, this.draw_axis_labels));
+        this.options_gui_manager.addElement(draw_points);
         const minmax_label = new GuiLabel("Min Max", 100, 18, 35);
         this.options_gui_manager.addElement(minmax_label);
         const zeros_label = new GuiLabel("Zeros", 100, 18, 35);
