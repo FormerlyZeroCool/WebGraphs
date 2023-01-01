@@ -103,7 +103,7 @@ class ColorPickerTool extends ExtendedTool {
                     }
                 }
         });
-        this.localLayout.addElement(new GuiLabel("Color:", 100, 16));
+        this.localLayout.addElement(new GuiButton(() => document.body.style.backgroundColor = this.chosenColor.color.htmlRBG(), "Color:", 100, this.chosenColor.height(), 16));
         this.localLayout.addElement(this.chosenColor);
         const slidersLayout:SimpleGridLayoutManager = new SimpleGridLayoutManager([4, 30], [200, slider_height * 3]);
 
