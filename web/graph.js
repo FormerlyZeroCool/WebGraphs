@@ -687,6 +687,8 @@ class UIViewState {
         this.burger_width = 25 * (isTouchSupported() ? 3 : 1);
         this.hamburger_activated = false;
         this.tapped = false;
+        this.velocity_x = 0;
+        this.coefficient_of_friction = 0.02;
     }
     burger_x() {
         return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
@@ -730,7 +732,10 @@ class UIViewState {
         const touchPos = event.touchPos;
         const hamburger_active = (this.burger_collision(touchPos[0], touchPos[1]) || this.hamburger_activated);
         if (hamburger_active && type === "touchmove" && this.collision_predicate(type, event)) {
-            this.grid.set_gui_position(clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+            const new_position = clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
+            const delta = this.grid.guiManager.x - new_position;
+            this.velocity_x = -delta / (Date.now() - this.last_touch_event);
+            this.grid.set_gui_position(new_position);
         }
         else if (!this.hamburger_activated) {
             this.grid.guiManager.handleTouchEvents(type, event);
@@ -739,6 +744,7 @@ class UIViewState {
         switch (type) {
             case ("touchstart"):
                 this.hamburger_activated = hamburger_active;
+                this.velocity_x = 0;
                 break;
             case ("touchend"):
                 if (Date.now() - event.startTouchTime < 150) {
@@ -747,6 +753,7 @@ class UIViewState {
                 this.hamburger_activated = false;
                 break;
         }
+        this.last_touch_event = Date.now();
     }
     burger_collision(x, y) {
         return x >= this.burger_x() && x < this.burger_x() + this.burger_width;
@@ -810,7 +817,11 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI {
         //console.log("transitioning ui", this.opening, this.closing)
         if (this.tapped)
             this.opening = true;
-        if (this.opening)
+        if (this.velocity_x && !this.grid.touchListener.registeredTouch) {
+            this.grid.set_gui_position(clamp(this.grid.guiManager.x + this.velocity_x * delta_time, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+            this.velocity_x *= (1 - this.coefficient_of_friction);
+        }
+        else if (this.opening)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
         else if (this.closing)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x - delta_time * 5, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
@@ -1605,7 +1616,6 @@ async function main() {
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
-        game.ui_state_manager.handleTouchEvents("touchmove", event);
         const state = game.ui_state_manager.state;
         state.handleTouchEvents("touchmove", event);
         if (!state.hamburger_activated && event.touchPos[0] > state.burger_x() + state.burger_width &&
