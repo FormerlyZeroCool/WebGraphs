@@ -920,6 +920,12 @@ class UIViewState implements GridUIState {
         {
             case("touchstart"):
             this.velocity_x = 0;
+            if(touchPos[0] > this.burger_x() + this.burger_width)
+            {
+                const new_state = new UIViewStateTransitioningUI(this.grid);
+                new_state.closing = true;
+                this.grid.ui_state_manager.state = new_state;
+            }
             break;
             case("touchend"):
             if(Date.now() - event.startTouchTime < 250)
