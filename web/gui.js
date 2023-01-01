@@ -345,6 +345,16 @@ export class SimpleGridLayoutManager {
             touchHandler.registerCallBack("touchend", (e) => this.active(), (e) => { this.handleTouchEvents("touchend", e); });
         }
     }
+    max_element_y_bounds() {
+        let highest = 0;
+        this.elementsPositions.forEach(el => {
+            const y_bound = el.y + el.height;
+            if (y_bound) {
+                highest = y_bound;
+            }
+        });
+        return highest;
+    }
     isLayoutManager() {
         return true;
     }

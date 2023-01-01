@@ -459,6 +459,18 @@ export class SimpleGridLayoutManager implements GuiElement {
             (e:any) => {this.handleTouchEvents("touchend", e)});
         }
     }  
+    max_element_y_bounds():number
+    {
+        let highest = 0;
+        this.elementsPositions.forEach(el => {
+            const y_bound = el.y + el.height;
+            if(y_bound)
+            {
+                highest = y_bound;
+            }
+        });
+        return highest;
+    }
     isLayoutManager():boolean {
         return true;
     } 

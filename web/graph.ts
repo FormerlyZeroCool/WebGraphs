@@ -941,7 +941,7 @@ class UIViewStateShowUI extends UIViewState
     }
     draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
         ctx.fillStyle = document.body.style.backgroundColor;
-        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.width(), this.height());
+        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.width(), this.grid.options_gui_manager.max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
         {
@@ -1992,7 +1992,8 @@ async function main()
         game.ui_state_manager.handleTouchEvents("touchmove", event);
         const state = <UIViewStateNoUI> game.ui_state_manager.state;
         state.handleTouchEvents("touchmove", event);
-        if(!state.hamburger_activated && event.touchPos[0] > state.burger_x() + state.burger_width)
+        if(!state.hamburger_activated && event.touchPos[0] > state.burger_x() + state.burger_width &&
+            !game.options_gui_manager.elementTouched&& !game.guiManager.elementTouched)
         {
             game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
             game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
