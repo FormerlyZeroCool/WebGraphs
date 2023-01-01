@@ -922,7 +922,7 @@ class UIViewState implements GridUIState {
             this.velocity_x = 0;
             break;
             case("touchend"):
-            if(Date.now() - event.startTouchTime < 150)
+            if(Date.now() - event.startTouchTime < 250)
             {
                 this.tapped = this.hamburger_activated || (this.burger_collision(touchPos[0], touchPos[1]) && !this.collision_predicate(type, event));
             }  
@@ -1017,7 +1017,12 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI
     transition(delta_time: number): UIState {
         //console.log("transitioning ui", this.opening, this.closing)
         if(this.tapped)
-            this.opening = true;
+        {
+            if(this.velocity_x < 0)
+                this.closing = true;
+            else
+                this.opening = true;
+        }
         if(this.opening)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
         else if(this.closing)
