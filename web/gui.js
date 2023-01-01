@@ -1105,11 +1105,11 @@ export class GuiButton {
         ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, this.width(), this.height());
         if (textWidth < this.width() - 10) {
-            ctx.strokeText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
+            //ctx.strokeText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
             ctx.fillText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
         }
         else {
-            ctx.strokeText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
+            //ctx.strokeText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
             ctx.fillText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
