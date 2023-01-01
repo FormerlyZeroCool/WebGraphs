@@ -854,7 +854,7 @@ class UIViewState implements GridUIState {
         this.hamburger_activated = false;
         this.tapped = false;
         this.velocity_x = 0;
-        this.coefficient_of_friction = 0.02;
+        this.coefficient_of_friction = 0.003;
     }
     burger_x():number
     {
@@ -909,7 +909,8 @@ class UIViewState implements GridUIState {
         {
             const new_position = clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
             const delta = this.grid.guiManager.x - new_position;
-            this.velocity_x = -delta / (Date.now() - this.last_touch_event);
+            const current_vel = -delta / (Date.now() - this.last_touch_event);
+            this.velocity_x = current_vel;
             this.grid.set_gui_position(new_position);
         }
         else if(!this.hamburger_activated)
@@ -1011,6 +1012,8 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI
         {
             this.grid.set_gui_position(clamp(this.grid.guiManager.x + this.velocity_x * delta_time, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
             this.velocity_x *= (1 - this.coefficient_of_friction);
+            if(Math.abs(this.velocity_x) < .01)
+                this.velocity_x = 0;
         }
         else if(this.opening)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
