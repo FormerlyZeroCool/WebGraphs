@@ -688,7 +688,7 @@ class UIViewState {
         this.hamburger_activated = false;
         this.tapped = false;
         this.velocity_x = 0;
-        this.coefficient_of_friction = 0.003;
+        this.coefficient_of_friction = 0.02;
     }
     burger_x() {
         return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
@@ -728,28 +728,26 @@ class UIViewState {
     height() {
         return this.grid.guiManager.height();
     }
+    move(delta_time) {
+        this.grid.set_gui_position(clamp(this.grid.guiManager.x + this.velocity_x * delta_time, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+        this.velocity_x *= (1 - this.coefficient_of_friction);
+        if (Math.abs(this.velocity_x) < .01)
+            this.velocity_x = 0;
+    }
     handleTouchEvents(type, event) {
         const touchPos = event.touchPos;
-        const hamburger_active = (this.burger_collision(touchPos[0], touchPos[1]) || this.hamburger_activated);
-        if (hamburger_active && type === "touchmove" && this.collision_predicate(type, event)) {
-            const new_position = clamp(this.screen_to_burger_x(touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
-            const delta = this.grid.guiManager.x - new_position;
-            const current_vel = -delta / (Date.now() - this.last_touch_event);
-            this.velocity_x = current_vel;
-            this.grid.set_gui_position(new_position);
-        }
-        else if (!this.hamburger_activated) {
+        this.hamburger_activated = (this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated;
+        if (!this.hamburger_activated) {
             this.grid.guiManager.handleTouchEvents(type, event);
             this.grid.options_gui_manager.handleTouchEvents(type, event);
         }
         switch (type) {
             case ("touchstart"):
-                this.hamburger_activated = hamburger_active;
                 this.velocity_x = 0;
                 break;
             case ("touchend"):
                 if (Date.now() - event.startTouchTime < 150) {
-                    this.tapped = hamburger_active;
+                    this.tapped = this.hamburger_activated || (this.burger_collision(touchPos[0], touchPos[1]) && !this.collision_predicate(type, event));
                 }
                 this.hamburger_activated = false;
                 break;
@@ -761,7 +759,14 @@ class UIViewState {
         //&& y >= this.burger_y() && y < this.burger_y() + this.burger_height;
     }
     transition(delta_time) {
-        throw new Error('Method not implemented.');
+        if (this.hamburger_activated) {
+            const new_position = clamp(this.screen_to_burger_x(this.grid.touchListener.touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
+            const delta = -this.grid.guiManager.x + new_position;
+            const current_vel = -delta / (Date.now() - this.last_touch_event);
+            this.velocity_x = delta * 0.02;
+        }
+        this.move(delta_time);
+        return this;
     }
 }
 ;
@@ -783,6 +788,9 @@ class UIViewStateShowUI extends UIViewState {
     collision_predicate(type, event) {
         return true;
     }
+    transition(delta_time) {
+        return super.transition(delta_time);
+    }
 }
 ;
 class UIViewStateNoUI extends UIViewState {
@@ -793,6 +801,7 @@ class UIViewStateNoUI extends UIViewState {
         return event.deltaX > 0;
     }
     transition(delta_time) {
+        super.transition(delta_time);
         //console.log("no ui")
         if (this.tapped) {
             const new_state = new UIViewStateTransitioningUI(this.grid);
@@ -818,16 +827,12 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI {
         //console.log("transitioning ui", this.opening, this.closing)
         if (this.tapped)
             this.opening = true;
-        if (this.velocity_x && !this.grid.touchListener.registeredTouch) {
-            this.grid.set_gui_position(clamp(this.grid.guiManager.x + this.velocity_x * delta_time, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
-            this.velocity_x *= (1 - this.coefficient_of_friction);
-            if (Math.abs(this.velocity_x) < .01)
-                this.velocity_x = 0;
-        }
-        else if (this.opening)
+        if (this.opening)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
         else if (this.closing)
             this.grid.set_gui_position(clamp(this.grid.guiManager.x - delta_time * 5, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+        else
+            super.transition(delta_time);
         if (this.grid.guiManager.x > 0) {
             this.grid.set_gui_position(0);
             const new_state = new UIViewStateShowingUI(this.grid);
@@ -849,6 +854,7 @@ class UIViewStateShowingUI extends UIViewStateShowUI {
         return event.deltaX < 0;
     }
     transition(delta_time) {
+        super.transition(delta_time);
         //console.log("showing ui", this.tapped)
         if (this.tapped) {
             const new_state = new UIViewStateTransitioningUI(this.grid);
