@@ -1403,7 +1403,7 @@ export class GuiButton implements GuiElement {
         ctx.fillStyle = "#000000";
         const textWidth:number = ctx.measureText(this.text).width;
         const textHeight:number = this.fontSize;
-        ctx.strokeStyle = "#FFFFFF";
+        //ctx.strokeStyle = "#FFFFFF";
         ctx.lineCap = "round";
         ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, this.width(), this.height());

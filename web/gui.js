@@ -1100,7 +1100,7 @@ export class GuiButton {
         ctx.fillStyle = "#000000";
         const textWidth = ctx.measureText(this.text).width;
         const textHeight = this.fontSize;
-        ctx.strokeStyle = "#FFFFFF";
+        //ctx.strokeStyle = "#FFFFFF";
         ctx.lineCap = "round";
         ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, this.width(), this.height());
