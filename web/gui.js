@@ -967,8 +967,9 @@ export class GuiSpacer {
 }
 ;
 export class GuiColoredSpacer {
-    constructor(dim, color) {
+    constructor(dim, color, onclicked = null) {
         this.dim = [dim[0], dim[1]];
+        this.onclicked = onclicked;
         this.color = new RGB(0, 0, 0);
         this.color.copy(color);
         this.refresh();
@@ -1005,7 +1006,10 @@ export class GuiColoredSpacer {
         }
     }
     handleKeyBoardEvents(type, e) { }
-    handleTouchEvents(type, e) { }
+    handleTouchEvents(type, e) {
+        if (this.onclicked)
+            this.onclicked(type, e);
+    }
     isLayoutManager() {
         return false;
     }

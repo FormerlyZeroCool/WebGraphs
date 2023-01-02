@@ -25,7 +25,7 @@ window.dderx = dderx;
 class ColorPickerTool extends ExtendedTool {
     constructor(color_changed, toolName = "color picker", pathToImage = ["images/colorPickerSprite.png"], optionPanes = []) {
         super(null, pathToImage, optionPanes, [200, 200], [4, 50]);
-        this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0, 150, 150, 255));
+        this.chosenColor = new GuiColoredSpacer([100, 32], new RGB(0, 150, 150, 255), () => document.body.style.backgroundColor = this.chosenColor.color.htmlRBG());
         const colorSlideEvent = (event) => {
             const color = new RGB(0, 0, 0, 0);
             color.setByHSL(this.hueSlider.state * 360, this.saturationSlider.state, this.lightnessSlider.state);
@@ -82,7 +82,7 @@ class ColorPickerTool extends ExtendedTool {
                 }
             }
         });
-        this.localLayout.addElement(new GuiButton(() => document.body.style.backgroundColor = this.chosenColor.color.htmlRBG(), "Color:", 100, this.chosenColor.height(), 16));
+        this.localLayout.addElement(new GuiButton(() => document.body.style.backgroundColor = "#4B4B4B", "Color:", 100, this.chosenColor.height(), 16));
         this.localLayout.addElement(this.chosenColor);
         const slidersLayout = new SimpleGridLayoutManager([4, 30], [200, slider_height * 3]);
         slidersLayout.addElement(new GuiLabel("Hue", 50, 16, slider_height));

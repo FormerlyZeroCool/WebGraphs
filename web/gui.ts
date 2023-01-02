@@ -1,4 +1,4 @@
-import {SingleTouchListener, isTouchSupported, KeyboardHandler, fetchImage} from './io.js'
+import {SingleTouchListener, isTouchSupported, KeyboardHandler, fetchImage, TouchMoveEvent} from './io.js'
 import { max_32_bit_signed } from './utils.js';
 
 export function blendAlphaCopy(color0:RGB, color:RGB):void
@@ -1233,8 +1233,10 @@ export class GuiSpacer implements GuiElement {
 export class GuiColoredSpacer implements GuiElement {
     dim:number[];
     color:RGB;
-    constructor(dim:number[], color:RGB){
+    onclicked:((type:string, e:TouchMoveEvent) => void) | null;
+    constructor(dim:number[], color:RGB, onclicked:((type:string, e:TouchMoveEvent) => void) | null = null){
         this.dim = [dim[0], dim[1]];
+        this.onclicked = onclicked;
         this.color = new RGB(0,0,0);
         this.color.copy(color);
         this.refresh();
@@ -1284,7 +1286,10 @@ export class GuiColoredSpacer implements GuiElement {
     handleKeyBoardEvents(type:string, e:any):void
     {}
     handleTouchEvents(type:string, e:any):void
-    {}
+    {
+        if(this.onclicked)
+            this.onclicked(type, e);
+    }
     isLayoutManager():boolean
     {
         return false;
