@@ -736,7 +736,7 @@ class UIViewState {
     }
     handleTouchEvents(type, event) {
         const touchPos = event.touchPos;
-        this.hamburger_activated = (this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated;
+        this.hamburger_activated = (!this.grid.options_gui_manager.elementTouched && this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated;
         if (!this.hamburger_activated) {
             this.grid.guiManager.handleTouchEvents(type, event);
             this.grid.options_gui_manager.handleTouchEvents(type, event);
