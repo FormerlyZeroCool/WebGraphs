@@ -896,8 +896,9 @@ class Game extends SquareAABBCollidable {
         this.draw_axises = true;
         this.draw_axis_labels = true;
         this.draw_point_labels = true;
+        const whratio = width / (height > 0 ? height : width);
         this.x_scale = 1 / 10;
-        this.y_scale = 1 / 10;
+        this.y_scale = this.x_scale * 1 / whratio;
         this.x_translation = 0;
         this.y_translation = 0;
         this.x_min = this.x_translation * this.x_scale - 1 / this.x_scale;
@@ -907,7 +908,6 @@ class Game extends SquareAABBCollidable {
         this.y_max = this.y_translation * this.y_scale + 1 / this.y_scale;
         this.deltaY = this.y_max - this.y_min;
         this.graph_start_x = 200;
-        const whratio = width / (height > 0 ? height : width);
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [getWidth(), getHeight() - 50];
@@ -982,6 +982,8 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
     }
     init(width, height, cell_width, cell_height) {
+        const whratio = width / (height > 0 ? height : width);
+        this.y_scale = this.x_scale * whratio;
         this.resize(width, height);
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [cell_width, cell_height];
