@@ -2954,11 +2954,20 @@ window.addEventListener("resize", () => {
       );
     height = document.body.clientHeight;
 });
+let landscape = true;
+setInterval(() => {
+    if (screen.orientation.type === "landscape-primary") {
+        landscape = true;
+      } else if (screen.orientation.type === "portrait-primary") {
+        landscape = false;
+      }
+}, 500);
+
 export function getWidth():number {
-    return width;
+    return !landscape ? Math.min(width, height) : Math.max(width, height);
 }
 export function getHeight():number {
-    return height;
+    return !landscape ? Math.max(width, height) : Math.min(width, height);
 }
 export class RegularPolygon {
     points:number[];

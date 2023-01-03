@@ -2358,11 +2358,20 @@ window.addEventListener("resize", () => {
     width = Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.body.clientWidth);
     height = document.body.clientHeight;
 });
+let landscape = true;
+setInterval(() => {
+    if (screen.orientation.type === "landscape-primary") {
+        landscape = true;
+    }
+    else if (screen.orientation.type === "portrait-primary") {
+        landscape = false;
+    }
+}, 500);
 export function getWidth() {
-    return width;
+    return !landscape ? Math.min(width, height) : Math.max(width, height);
 }
 export function getHeight() {
-    return height;
+    return !landscape ? Math.max(width, height) : Math.min(width, height);
 }
 export class RegularPolygon {
     constructor(radius, sides) {
