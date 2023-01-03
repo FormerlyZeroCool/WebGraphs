@@ -1152,7 +1152,7 @@ class Game extends SquareAABBCollidable {
         this.graph_start_x = 200;
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
-        this.cell_dim = [getWidth(), getHeight() - 50];
+        this.cell_dim = [getWidth(), getHeight() - 10];
         this.init(this.cell_dim[0], this.cell_dim[1], this.cell_dim[0], this.cell_dim[1]);
         this.guiManager = new SimpleGridLayoutManager([1,1000], [this.graph_start_x, getHeight()], 0, 30);
         this.layer_manager = this.new_layer_manager();
@@ -2089,7 +2089,7 @@ async function main()
 
             canvas.width = width;
             canvas.height = height;
-            game.init(width, height - 50, width, height - 50);
+            game.init(width, height, width, height - 10);
         }
         dt = Date.now() - start;
         time_queue.push(dt);
