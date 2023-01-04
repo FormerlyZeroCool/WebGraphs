@@ -1624,7 +1624,7 @@ async function main() {
         game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
         e.preventDefault();
-    });
+    }, { passive: true });
     canvas.width = getWidth();
     canvas.height = getHeight();
     canvas.style.cursor = "pointer";

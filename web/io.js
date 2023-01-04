@@ -107,9 +107,9 @@ export class SingleTouchListener {
         this.mouseOverElement = false;
         if (component) {
             if (isTouchSupported()) {
-                component.addEventListener('touchstart', (event) => { this.touchStartHandler(event); }, false);
-                component.addEventListener('touchmove', (event) => this.touchMoveHandler(event), false);
-                component.addEventListener('touchend', (event) => this.touchEndHandler(event), false);
+                component.addEventListener('touchstart', (event) => { this.touchStartHandler(event); }, { passive: true });
+                component.addEventListener('touchmove', (event) => this.touchMoveHandler(event), { passive: true });
+                component.addEventListener('touchend', (event) => this.touchEndHandler(event), { passive: true });
             }
             if (mouseEmulation && !isTouchSupported()) {
                 if (stopRightClick)
@@ -117,15 +117,15 @@ export class SingleTouchListener {
                         e.preventDefault();
                         return false;
                     });
-                component.addEventListener("mouseover", (event) => { this.mouseOverElement = true; });
-                component.addEventListener("mouseleave", (event) => { this.mouseOverElement = false; });
-                component.addEventListener('mousedown', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.touchStartHandler(event); });
+                component.addEventListener("mouseover", (event) => { this.mouseOverElement = true; }, { passive: true });
+                component.addEventListener("mouseleave", (event) => { this.mouseOverElement = false; }, { passive: true });
+                component.addEventListener('mousedown', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.touchStartHandler(event); }, { passive: true });
                 component.addEventListener('mousemove', (event) => {
                     event.changedTouches = {};
                     event.changedTouches.item = (x) => event;
                     this.touchMoveHandler(event);
-                });
-                component.addEventListener('mouseup', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.touchEndHandler(event); });
+                }, { passive: true });
+                component.addEventListener('mouseup', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.touchEndHandler(event); }, { passive: true });
             }
         }
     }
@@ -298,8 +298,8 @@ export class MultiTouchListener {
         this.listenerTypeMap = new MultiTouchListenerTypes();
         this.registeredMultiTouchEvent = false;
         if (isTouchSupported()) {
-            component.addEventListener('touchmove', event => this.touchMoveHandler(event), false);
-            component.addEventListener('touchend', event => { this.registeredMultiTouchEvent = false; this.lastDistance = 0; event.preventDefault(); }, false);
+            component.addEventListener('touchmove', event => this.touchMoveHandler(event), { passive: true });
+            component.addEventListener('touchend', event => { this.registeredMultiTouchEvent = false; this.lastDistance = 0; event.preventDefault(); }, { passive: true });
         }
     }
     registerCallBack(listenerType, predicate, callBack) {
