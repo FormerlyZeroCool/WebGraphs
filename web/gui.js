@@ -572,6 +572,41 @@ export class SimpleGridLayoutManager {
     }
 }
 ;
+export class VerticalLayoutManager extends SimpleGridLayoutManager {
+    constructor(pixelDim, x = 0, y = 0) {
+        super([1, 1], pixelDim, x, y);
+    }
+    refreshMetaData(xPos, yPos, offsetX, offsetY) {
+        this.elementsPositions.length = 0;
+        let current_y = 0;
+        this.elements.forEach((element) => {
+            const record = new RowRecord(0, current_y, element.width(), element.height(), element);
+            if (element.isLayoutManager()) {
+                element.x = this.x;
+                element.y = current_y + this.y;
+            }
+            this.elementsPositions.push(record);
+            current_y += element.height();
+        });
+    }
+}
+export class HorizontalLayoutManager extends SimpleGridLayoutManager {
+    constructor(pixelDim, x = 0, y = 0) {
+        super([1, 1], pixelDim, x, y);
+    }
+    refreshMetaData(xPos, yPos, offsetX, offsetY) {
+        this.elementsPositions.length = 0;
+        let current_x = 0;
+        this.elements.forEach((element) => {
+            if (element.isLayoutManager()) {
+                element.x = current_x + this.x;
+                element.y = this.y;
+            }
+            this.elementsPositions.push(new RowRecord(current_x, 0, element.width(), element.height(), element));
+            current_x += element.width();
+        });
+    }
+}
 //tbd
 export class ScrollingGridLayoutManager extends SimpleGridLayoutManager {
     constructor(matrixDim, pixelDim, x = 0, y = 0) {
@@ -2323,7 +2358,7 @@ export function horizontal_group(elements, x = 0, y = 0) {
             height = el.height();
         return el.width();
     }));
-    const layout = new SimpleGridLayoutManager([elements.length * 500, 1], [width, height], x, y);
+    const layout = new HorizontalLayoutManager([width, height], x, y);
     elements.forEach(el => layout.addElement(el));
     return layout;
 }
@@ -2334,7 +2369,7 @@ export function vertical_group(elements, x = 0, y = 0) {
             width = el.width();
         return el.height();
     }));
-    const layout = new SimpleGridLayoutManager([1, elements.length * 500], [width, height], x, y);
+    const layout = new VerticalLayoutManager([width, height], x, y);
     elements.forEach(el => layout.addElement(el));
     return layout;
 }

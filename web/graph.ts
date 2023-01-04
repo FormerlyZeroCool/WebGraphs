@@ -639,7 +639,6 @@ class FollowNearestZero extends GridUIState {
         this.grid.repaint = true;
         this.grid.chkbx_render_zeros.checked = false;
         this.grid.chkbx_render_zeros.refresh();
-        this.grid.options_gui_manager.refresh();
         return new state(this.grid);
     }
     transition(delta_time: number): UIState {
@@ -684,7 +683,6 @@ class FollowNearestMinMax extends GridUIState {
         this.grid.repaint = true;
         this.grid.chkbx_render_min_max.checked = false;
         this.grid.chkbx_render_min_max.refresh();
-        this.grid.options_gui_manager.refresh();
         return new state(this.grid);
     }
     transition(delta_time: number): UIState {
@@ -728,7 +726,6 @@ class FollowNearestIntersection extends GridUIState {
         this.grid.repaint = true;
         this.grid.chkbx_render_intersections.checked = false;
         this.grid.chkbx_render_intersections.refresh();
-        this.grid.options_gui_manager.refresh();
         return new state(this.grid);
     }
     transition(delta_time: number): UIState {
@@ -772,7 +769,6 @@ class FollowNearestPointOfInflection extends GridUIState {
         this.grid.repaint = true;
         this.grid.chkbx_render_inflections.checked = false;
         this.grid.chkbx_render_inflections.refresh();
-        this.grid.options_gui_manager.refresh();
         return new state(this.grid);
     }
     transition(delta_time: number): UIState {
@@ -1135,7 +1131,6 @@ class Game extends SquareAABBCollidable {
         this.ui_state_manager = new StateManagedUI(new UIViewStateShowingUI(this));
         this.state_manager_grid = new StateManagedUI(new FollowCursor(this));
         this.scaling_multiplier = 1;
-        this.ui_alpha = 0;
         this.repaint = true;
         this.multi_touchListener = multi_touchListener;
         this.touchListener = touchListener
@@ -1239,8 +1234,8 @@ class Game extends SquareAABBCollidable {
                                 ]),
                                 horizontal_group(
                                 [
-                                    vertical_group([inflections_label, this.chkbx_render_intersections]),
-                                    vertical_group([intersections_label, this.chkbx_render_inflections]),
+                                    vertical_group([inflections_label, this.chkbx_render_inflections]),
+                                    vertical_group([intersections_label, this.chkbx_render_intersections]),
                                 ])
                             ])
                     ]),
