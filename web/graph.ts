@@ -851,8 +851,8 @@ class UIViewState implements GridUIState {
     constructor(grid:Game)
     {
         this.grid = grid;
-        this.burger_height = Math.max(getHeight(), getWidth()) / 20 * (isTouchSupported() ? 1 : 1.5);
-        this.burger_width = 25 * (isTouchSupported() ? 3 : 1);
+        this.burger_height = 120 * (isTouchSupported() ? 1.5 : 0.75);
+        this.burger_width = 27 * (isTouchSupported() ? 3 : 1.5);
         this.hamburger_activated = false;
         this.tapped = false;
         this.velocity_x = 0;
@@ -1262,7 +1262,6 @@ class Game extends SquareAABBCollidable {
                     ])
                 
             ]));
-        console.log(this.options_gui_manager.elements);
         this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
         this.options_gui_manager.activate();
         this.repaint = true;
