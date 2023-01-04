@@ -1182,12 +1182,12 @@ class Game extends SquareAABBCollidable {
             [400, 400], [(isTouchSupported() ? Math.max(getHeight(), getWidth()): getWidth()) - this.guiManager.x - this.guiManager.width() - 100, 
                 this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel()!.height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         
-        const show_axes_label = new GuiLabel("Show axes", 100);
+        const show_axes_label = new GuiLabel("Show Axes", 100, 18, 35);
         const show_axes_checkbox = new GuiCheckBox((event:any) => {
             this.draw_axes = event.checkBox.checked;
             this.repaint = true;
         }, 100, 50 + touch_mod, this.draw_axis_labels);
-        const show_labels_label = new GuiLabel("Show labels", 100);
+        const show_labels_label = new GuiLabel("Show Labels", 100, 18, 35);
         const show_labels_checkbox = new GuiCheckBox((event:any) => {
             this.draw_axis_labels = event.checkBox.checked
             this.repaint = true;
@@ -1416,7 +1416,7 @@ class Game extends SquareAABBCollidable {
         
         const view = new Int32Array(this.main_buf.imageData!.data.buffer);
         this.main_buf.ctx.imageSmoothingEnabled = false;
-        this.main_buf.ctx.lineJoin = "bevel";
+        this.main_buf.ctx.lineJoin = "round";
         functions.forEach((foo:Function, index:number) => {
             if(this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked)
             {
@@ -2021,7 +2021,7 @@ async function main()
         game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
         e.preventDefault();
-    }, { passive:true });
+    }, { passive:false });
     canvas.width = getWidth();
     canvas.height = getHeight();
     canvas.style.cursor = "pointer";
@@ -2059,7 +2059,7 @@ async function main()
     touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
         game.ui_state_manager.handleTouchEvents("touchstart", event);
     });
-    touchListener.registerCallBack("touchstart", (event:any) => game.ui_alpha <= 0.99, (event:TouchMoveEvent) => {
+    touchListener.registerCallBack("touchstart", (event:any) => true, (event:TouchMoveEvent) => {
         game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
     });
     touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
@@ -2075,6 +2075,7 @@ async function main()
         {
             game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
             game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
+
         }
         game.repaint = true;
     });
