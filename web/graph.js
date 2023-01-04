@@ -970,7 +970,7 @@ class Game extends SquareAABBCollidable {
         const show_label = new GuiButton(() => { draw_points.checked = !draw_points.checked; change_show_label_state(); }, "Show point", 100, 50 + touch_mod, 18);
         this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, true);
-        const sync_label = new GuiLabel("Sync", 75, 18, 50 + touch_mod);
+        const sync_label = new GuiLabel("Sync", show_label.width(), 18, 50 + touch_mod);
         const grouping_type = (elements) => !isTouchSupported() ? vertical_group(elements) : horizontal_group(elements);
         this.options_gui_manager.addElement(vertical_group([
             vertical_group([
@@ -991,18 +991,21 @@ class Game extends SquareAABBCollidable {
             ]),
             grouping_type([
                 this.color_controller.localLayout,
-                vertical_group([
+                grouping_type([
                     vertical_group([
                         horizontal_group([show_label, draw_points]),
-                        horizontal_group([
-                            sync_label,
-                            this.chkbx_sync_curve_width,
-                            new GuiSpacer([20, 20])
+                        grouping_type([
+                            horizontal_group([
+                                sync_label,
+                                this.chkbx_sync_curve_width,
+                                new GuiSpacer([1, 20])
+                            ]),
+                            horizontal_group([width_label, this.slider_line_width]),
+                            new GuiSpacer([isTouchSupported() ? 1 : 0, 0])
                         ])
-                    ]),
-                    horizontal_group([width_label, this.slider_line_width])
+                    ])
                 ]),
-                new GuiSpacer([5, 20])
+                new GuiSpacer([isTouchSupported() ? 1 : 0, 0])
             ])
         ]));
         this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());

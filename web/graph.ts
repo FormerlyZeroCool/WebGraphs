@@ -1217,7 +1217,7 @@ class Game extends SquareAABBCollidable {
         
         this.chkbx_sync_curve_width = new GuiCheckBox((event:any) => {
         }, 100, 50 + touch_mod, true);
-        const sync_label = new GuiLabel("Sync", 75, 18, 50 + touch_mod);
+        const sync_label = new GuiLabel("Sync", show_label.width(), 18, 50 + touch_mod);
        
        const grouping_type = (elements:GuiElement[]) => !isTouchSupported() ? vertical_group(elements) : horizontal_group(elements);
         this.options_gui_manager.addElement(
@@ -1232,11 +1232,13 @@ class Game extends SquareAABBCollidable {
                                     vertical_group([show_axises_label, show_axises_checkbox]),
                                     vertical_group([show_labels_label, show_labels_checkbox])
                                 ]),
-                                horizontal_group([
+                                horizontal_group(
+                                [
                                     vertical_group([minmax_label, this.chkbx_render_min_max]), 
                                     vertical_group([zeros_label, this.chkbx_render_zeros])
                                 ]),
-                                horizontal_group([
+                                horizontal_group(
+                                [
                                     vertical_group([inflections_label, this.chkbx_render_intersections]),
                                     vertical_group([intersections_label, this.chkbx_render_inflections]),
                                 ])
@@ -1245,20 +1247,25 @@ class Game extends SquareAABBCollidable {
                     grouping_type(
                     [
                         this.color_controller.localLayout,
-                        vertical_group([
+                        grouping_type(
+                        [
                             vertical_group(
                             [
                                 horizontal_group([show_label, draw_points]),
-                                horizontal_group(
-                                    [
-                                        sync_label,
-                                        this.chkbx_sync_curve_width,
-                                        new GuiSpacer([20,20])
-                                    ])
-                            ]),
-                            horizontal_group([width_label, this.slider_line_width])
+                                grouping_type(
+                                [
+                                    horizontal_group(
+                                        [
+                                            sync_label,
+                                            this.chkbx_sync_curve_width,
+                                            new GuiSpacer([1,20])
+                                        ]),
+                                    horizontal_group([width_label, this.slider_line_width]),
+                                    new GuiSpacer([isTouchSupported()?1:0,0])
+                                ])
+                            ])
                         ]),
-                        new GuiSpacer([5,20])
+                        new GuiSpacer([isTouchSupported()?1:0,0])
                     ])
                 
             ]));
