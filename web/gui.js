@@ -328,10 +328,6 @@ export class SimpleGridLayoutManager {
         this.frameCounter = 0;
         this.elements = [];
         this.elementsPositions = [];
-        this.canvas = document.createElement("canvas");
-        this.canvas.width = pixelDim[0];
-        this.canvas.height = pixelDim[1];
-        this.ctx = this.canvas.getContext("2d");
         this.elementTouched = null;
     }
     createHandlers(keyboardHandler, touchHandler) {
@@ -431,7 +427,6 @@ export class SimpleGridLayoutManager {
     }
     refresh() {
         this.refreshMetaData();
-        this.refreshCanvas();
     }
     deactivate() {
         this.focused = false;
@@ -507,14 +502,12 @@ export class SimpleGridLayoutManager {
     }
     setWidth(val) {
         this.pixelDim[0] = val;
-        this.canvas.width = val;
     }
     height() {
         return this.pixelDim[1];
     }
     setHeight(val) {
         this.pixelDim[1] = val;
-        this.canvas.height = val;
     }
     rowHeight() {
         return this.pixelDim[1] / this.matrixDim[1];
@@ -1071,10 +1064,6 @@ export class GuiButton {
         this.text = text;
         this.fontSize = fontSize;
         this.dimensions = [width, height];
-        this.canvas = document.createElement("canvas");
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.ctx = this.canvas.getContext("2d");
         this.pressedColor = pressedColor;
         this.unPressedColor = unPressedColor;
         this.pressed = false;
@@ -1088,13 +1077,11 @@ export class GuiButton {
                 switch (type) {
                     case ("keydown"):
                         this.pressed = true;
-                        this.drawInternal();
                         break;
                     case ("keyup"):
                         if (this.callback)
                             this.callback();
                         this.pressed = false;
-                        this.drawInternal();
                         this.deactivate();
                         break;
                 }
@@ -1106,13 +1093,11 @@ export class GuiButton {
             switch (type) {
                 case ("touchstart"):
                     this.pressed = true;
-                    this.drawInternal();
                     break;
                 case ("touchend"):
                     if (this.callback)
                         this.callback();
                     this.pressed = false;
-                    this.drawInternal();
                     break;
             }
     }
@@ -1144,9 +1129,8 @@ export class GuiButton {
         ctx.font = this.fontSize + `px ${this.fontName}`;
     }
     refresh() {
-        this.drawInternal();
     }
-    drawInternal(ctx = this.ctx, x, y) {
+    drawInternal(ctx, x, y) {
         ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);

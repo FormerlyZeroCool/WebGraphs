@@ -414,8 +414,6 @@ export class SimpleGridLayoutManager implements GuiElement {
     y:number;
     refreshRate:number;
     frameCounter:number;
-    canvas:HTMLCanvasElement;
-    ctx:CanvasRenderingContext2D;
     matrixDim:number[];
     pixelDim:number[];
     elementsPositions:RowRecord[];
@@ -434,10 +432,6 @@ export class SimpleGridLayoutManager implements GuiElement {
         this.frameCounter = 0;
         this.elements = [];
         this.elementsPositions = [];
-        this.canvas = document.createElement("canvas")!;
-        this.canvas.width = pixelDim[0];
-        this.canvas.height = pixelDim[1];
-        this.ctx = this.canvas.getContext("2d")!;
         this.elementTouched = null;
     } 
     createHandlers(keyboardHandler:KeyboardHandler, touchHandler:SingleTouchListener):void
@@ -558,7 +552,6 @@ export class SimpleGridLayoutManager implements GuiElement {
     }
     refresh():void {
         this.refreshMetaData();
-        this.refreshCanvas();
     }
     deactivate():void
     {
@@ -646,14 +639,12 @@ export class SimpleGridLayoutManager implements GuiElement {
     }
     setWidth(val:number): void {
         this.pixelDim[0] = val;
-        this.canvas.width = val;
     }
     height(): number {
         return this.pixelDim[1];
     }
     setHeight(val:number): void {
         this.pixelDim[1] = val;
-        this.canvas.height = val;
     }
     rowHeight():number
     {
@@ -1359,8 +1350,6 @@ export class GuiColoredSpacer implements GuiElement {
 export class GuiButton implements GuiElement {
 
     text:string;
-    canvas:HTMLCanvasElement;
-    ctx:CanvasRenderingContext2D;
     dimensions:number[];//[width, height]
     fontSize:number;
     pressedColor:RGB;
@@ -1374,10 +1363,6 @@ export class GuiButton implements GuiElement {
         this.text = text;
         this.fontSize = fontSize;
         this.dimensions = [width, height];
-        this.canvas = document.createElement("canvas")!;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.ctx = this.canvas.getContext("2d")!;
         this.pressedColor = pressedColor;
         this.unPressedColor = unPressedColor;
         this.pressed = false;
@@ -1393,13 +1378,11 @@ export class GuiButton implements GuiElement {
                 {
                     case("keydown"):
                         this.pressed = true;
-                        this.drawInternal();
                     break;
                     case("keyup"):
                     if(this.callback)
                         this.callback();
                         this.pressed = false;
-                        this.drawInternal();
                         this.deactivate();
                     break;
                 }
@@ -1413,13 +1396,11 @@ export class GuiButton implements GuiElement {
             {
                 case("touchstart"):
                     this.pressed = true;
-                    this.drawInternal();
                 break;
                 case("touchend"):
                 if(this.callback)
                     this.callback();
                     this.pressed = false;
-                    this.drawInternal();
                 break;
             }
             
@@ -1456,9 +1437,8 @@ export class GuiButton implements GuiElement {
         ctx.font = this.fontSize + `px ${this.fontName}`;
     }
     refresh(): void {
-        this.drawInternal();
     }
-    drawInternal(ctx:CanvasRenderingContext2D = this.ctx, x:number, y:number):void
+    drawInternal(ctx:CanvasRenderingContext2D, x:number, y:number):void
     {
         ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;

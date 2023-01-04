@@ -1092,7 +1092,7 @@ class Game extends SquareAABBCollidable {
     touchListener:SingleTouchListener;
     multi_touchListener:MultiTouchListener;
     repaint:boolean;
-    axises:Sprite;
+    axes:Sprite;
     chkbx_render_min_max:GuiCheckBox;
     chkbx_render_zeros:GuiCheckBox;
     chkbx_render_intersections:GuiCheckBox;
@@ -1105,7 +1105,7 @@ class Game extends SquareAABBCollidable {
     last_selected_item:number;
 
     draw_point_labels:boolean;
-    draw_axises:boolean;
+    draw_axes:boolean;
     draw_axis_labels:boolean;
     functions:Function[];
     scaling_multiplier:number;
@@ -1135,7 +1135,7 @@ class Game extends SquareAABBCollidable {
         this.multi_touchListener = multi_touchListener;
         this.touchListener = touchListener
         this.functions = [];
-        this.draw_axises = true;
+        this.draw_axes = true;
         this.draw_axis_labels = true;
         this.draw_point_labels = true;
         const whratio = width / (height > 0 ? height : width);
@@ -1156,7 +1156,7 @@ class Game extends SquareAABBCollidable {
         this.init(this.cell_dim[0], this.cell_dim[1], this.cell_dim[0], this.cell_dim[1]);
         this.guiManager = new SimpleGridLayoutManager([1,1000], [this.graph_start_x, getHeight()], 2, 2);
         this.layer_manager = this.new_layer_manager();
-        this.axises = this.new_sprite();
+        this.axes = this.new_sprite();
         this.main_buf = this.new_sprite();
         this.guiManager.addElement(vertical_group([this.layer_manager.layoutManager, new GuiSlider(0, [this.guiManager.width(), 50], (e:SlideEvent) => {
             this.scaling_multiplier = e.value * 4 + 1;
@@ -1182,9 +1182,9 @@ class Game extends SquareAABBCollidable {
             [400, 400], [(isTouchSupported() ? Math.max(getHeight(), getWidth()): getWidth()) - this.guiManager.x - this.guiManager.width() - 100, 
                 this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel()!.height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         
-        const show_axises_label = new GuiLabel("Show axises", 100);
-        const show_axises_checkbox = new GuiCheckBox((event:any) => {
-            this.draw_axises = event.checkBox.checked;
+        const show_axes_label = new GuiLabel("Show axes", 100);
+        const show_axes_checkbox = new GuiCheckBox((event:any) => {
+            this.draw_axes = event.checkBox.checked;
             this.repaint = true;
         }, 100, 50 + touch_mod, this.draw_axis_labels);
         const show_labels_label = new GuiLabel("Show labels", 100);
@@ -1224,7 +1224,7 @@ class Game extends SquareAABBCollidable {
                             [
                                 horizontal_group(
                                 [
-                                    vertical_group([show_axises_label, show_axises_checkbox]),
+                                    vertical_group([show_axes_label, show_axes_checkbox]),
                                     vertical_group([show_labels_label, show_labels_checkbox])
                                 ]),
                                 horizontal_group(
@@ -1277,7 +1277,7 @@ class Game extends SquareAABBCollidable {
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [cell_width, cell_height];
         this.main_buf = this.new_sprite();
-        this.axises = this.new_sprite();
+        this.axes = this.new_sprite();
         this.repaint = true;
     }
     new_layer_manager():LayerManagerTool
@@ -1503,40 +1503,40 @@ class Game extends SquareAABBCollidable {
         }
         return (min_x + max_x) / 2;
     }
-    render_axises(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number):void
+    render_axes(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number):void
     {
         //setup variables for rendering
         const font_size = 20;
         const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] :  -this.y_min < 0 ? 0 : this.main_buf.height;
         let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
         
-        if(this.draw_axises)
+        if(this.draw_axes)
         {
             //clear previous image
-            this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
-            //render axises
-            this.axises.ctx.beginPath();
-            /*this.axises.ctx.lineWidth = 4;
-            this.axises.ctx.strokeStyle = "#FFFFFF";
-            this.axises.ctx.moveTo(0, screen_space_x_axis);
-            this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
-            this.axises.ctx.moveTo(screen_space_y_axis, 0);
-            this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
-            this.axises.ctx.stroke();*/
-            this.axises.ctx.beginPath();
-            this.axises.ctx.lineWidth = 3;
-            this.axises.ctx.strokeStyle = "#000000";
-            this.axises.ctx.moveTo(0, screen_space_x_axis);
-            this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
-            this.axises.ctx.moveTo(screen_space_y_axis, 0);
-            this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
-            //finish rendering axises
+            this.axes.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
+            //render axes
+            this.axes.ctx.beginPath();
+            /*this.axes.ctx.lineWidth = 4;
+            this.axes.ctx.strokeStyle = "#FFFFFF";
+            this.axes.ctx.moveTo(0, screen_space_x_axis);
+            this.axes.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
+            this.axes.ctx.moveTo(screen_space_y_axis, 0);
+            this.axes.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            this.axes.ctx.stroke();*/
+            this.axes.ctx.beginPath();
+            this.axes.ctx.lineWidth = 3;
+            this.axes.ctx.strokeStyle = "#000000";
+            this.axes.ctx.moveTo(0, screen_space_x_axis);
+            this.axes.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
+            this.axes.ctx.moveTo(screen_space_y_axis, 0);
+            this.axes.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
+            //finish rendering axes
             ctx.stroke();
         }
         if(!this.draw_axis_labels)
         {
-            this.axises.ctx.stroke();
-            ctx.drawImage(this.axises.image, x, y, width, height);
+            this.axes.ctx.stroke();
+            ctx.drawImage(this.axes.image, x, y, width, height);
             return;
         }  
         const msd_x = Math.pow(10, Math.floor(-Math.log10(this.deltaX)));
@@ -1615,9 +1615,9 @@ class Game extends SquareAABBCollidable {
         }
             
 
-        this.axises.ctx.stroke();
+        this.axes.ctx.stroke();
 
-        ctx.drawImage(this.axises.image, x, y, width, height);
+        ctx.drawImage(this.axes.image, x, y, width, height);
         
     }
     draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
@@ -1633,7 +1633,7 @@ class Game extends SquareAABBCollidable {
             this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
             this.try_render_functions();
-            this.render_axises(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
+            this.render_axes(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             
         }
         ctx.drawImage(this.main_buf.image, x, y);
