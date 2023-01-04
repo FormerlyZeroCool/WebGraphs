@@ -1,5 +1,5 @@
 import {SingleTouchListener, isTouchSupported, KeyboardHandler, fetchImage, TouchMoveEvent} from './io.js'
-import { max_32_bit_signed } from './utils.js';
+import { logToServer, max_32_bit_signed } from './utils.js';
 
 export function blendAlphaCopy(color0:RGB, color:RGB):void
 {
@@ -470,6 +470,18 @@ export class SimpleGridLayoutManager implements GuiElement {
             }
         });
         return highest;
+    } 
+    max_element_x_bounds():number
+    {
+        let rightmost = 0;
+        this.elementsPositions.forEach(el => {
+            const x_bound = el.x + el.width;
+            if(x_bound > rightmost)
+            {
+                rightmost = x_bound;
+            }
+        });
+        return rightmost;
     }
     isLayoutManager():boolean {
         return true;
@@ -691,6 +703,14 @@ export class SimpleGridLayoutManager implements GuiElement {
         this.elements.splice(this.elements.indexOf(element), 1);
         this.refreshMetaData();
         this.refreshCanvas();
+    }
+    v_groupify_previous(elements:number):void
+    {
+        this.addElement(v_group(this.elements.splice(this.elements.length - elements, elements)));
+    }
+    h_groupify_previous(elements:number):void
+    {
+        this.addElement(h_group(this.elements.splice(this.elements.length - elements, elements)));
     }
     elementPosition(element:GuiElement):number[]
     {
@@ -2859,6 +2879,41 @@ export class Sprite {
         }
     }
 };
+function sum(elements:number[]):number
+{
+    let sum = 0;
+    for(let i = 0; i < elements.length; i++)
+    {
+        sum += elements[i];
+    } 
+    return sum;
+}
+export function h_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
+{
+    let height = 0;
+    const width = sum(elements.map(el => {
+        if(el.height() > height) 
+            height = el.height(); 
+        
+        return el.width();
+    }));
+    const layout = new SimpleGridLayoutManager([elements.length * 500, 1], [width, height], x, y);
+    elements.forEach(el => layout.addElement(el));
+    return layout;
+}
+export function v_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
+{
+    let width = 0;
+    const height = sum(elements.map(el => {
+        if(el.width() > width) 
+            width = el.width(); 
+        
+        return el.height();
+    }));
+    const layout = new SimpleGridLayoutManager([1, elements.length * 500], [width, height], x, y);
+    elements.forEach(el => layout.addElement(el));
+    return layout;
+}
 export class SpriteAnimation {
     sprites:Sprite[];
     x:number;
@@ -2956,13 +3011,15 @@ window.addEventListener("resize", () => {
 });
 let landscape = true;
 setInterval(() => {
-    if (screen.orientation.type === "landscape-primary") {
-        landscape = true;
-      } else if (screen.orientation.type === "portrait-primary") {
-        landscape = false;
-      }
-}, 500);
-
+    const mediaQuery = window.matchMedia("(orientation: portrait)");
+    landscape = !(mediaQuery.matches);
+}, 100);
+export function is_landscape():boolean {
+    return landscape;
+}
+export function is_portrait():boolean {
+    return !landscape;
+}
 export function getWidth():number {
     return !landscape ? Math.min(width, height) : Math.max(width, height);
 }

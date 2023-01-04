@@ -355,6 +355,16 @@ export class SimpleGridLayoutManager {
         });
         return highest;
     }
+    max_element_x_bounds() {
+        let rightmost = 0;
+        this.elementsPositions.forEach(el => {
+            const x_bound = el.x + el.width;
+            if (x_bound > rightmost) {
+                rightmost = x_bound;
+            }
+        });
+        return rightmost;
+    }
     isLayoutManager() {
         return true;
     }
@@ -543,6 +553,12 @@ export class SimpleGridLayoutManager {
         this.elements.splice(this.elements.indexOf(element), 1);
         this.refreshMetaData();
         this.refreshCanvas();
+    }
+    v_groupify_previous(elements) {
+        this.addElement(v_group(this.elements.splice(this.elements.length - elements, elements)));
+    }
+    h_groupify_previous(elements) {
+        this.addElement(h_group(this.elements.splice(this.elements.length - elements, elements)));
     }
     elementPosition(element) {
         const elPos = this.elementsPositions.find((el) => el.element === element);
@@ -2293,6 +2309,35 @@ export class Sprite {
     }
 }
 ;
+function sum(elements) {
+    let sum = 0;
+    for (let i = 0; i < elements.length; i++) {
+        sum += elements[i];
+    }
+    return sum;
+}
+export function h_group(elements, x = 0, y = 0) {
+    let height = 0;
+    const width = sum(elements.map(el => {
+        if (el.height() > height)
+            height = el.height();
+        return el.width();
+    }));
+    const layout = new SimpleGridLayoutManager([elements.length * 500, 1], [width, height], x, y);
+    elements.forEach(el => layout.addElement(el));
+    return layout;
+}
+export function v_group(elements, x = 0, y = 0) {
+    let width = 0;
+    const height = sum(elements.map(el => {
+        if (el.width() > width)
+            width = el.width();
+        return el.height();
+    }));
+    const layout = new SimpleGridLayoutManager([1, elements.length * 500], [width, height], x, y);
+    elements.forEach(el => layout.addElement(el));
+    return layout;
+}
 export class SpriteAnimation {
     constructor(x, y, width, height) {
         this.sprites = [];
@@ -2360,13 +2405,15 @@ window.addEventListener("resize", () => {
 });
 let landscape = true;
 setInterval(() => {
-    if (screen.orientation.type === "landscape-primary") {
-        landscape = true;
-    }
-    else if (screen.orientation.type === "portrait-primary") {
-        landscape = false;
-    }
-}, 500);
+    const mediaQuery = window.matchMedia("(orientation: portrait)");
+    landscape = !(mediaQuery.matches);
+}, 100);
+export function is_landscape() {
+    return landscape;
+}
+export function is_portrait() {
+    return !landscape;
+}
 export function getWidth() {
     return !landscape ? Math.min(width, height) : Math.max(width, height);
 }

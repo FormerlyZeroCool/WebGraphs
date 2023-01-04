@@ -1,5 +1,5 @@
 import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
-import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, CustomBackgroundSlider, StateManagedUI } from './gui.js';
+import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, v_group, h_group, CustomBackgroundSlider, StateManagedUI, GuiSpacer, is_landscape } from './gui.js';
 import { sign, srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 window.sec = (x) => 1 / Math.sin(x);
@@ -142,7 +142,7 @@ class ColorPickerTool extends ExtendedTool {
 }
 ;
 class LayerManagerTool {
-    constructor(limit = 16, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array, callback_get_non_error_background_color) {
+    constructor(limit = 5, callback_add_layer, callback_checkbox_event, callback_delete_layer, callback_layer_count, callback_onclick_event, callback_slide_event, callback_swap_layers, callback_get_error_parallel_array, callback_get_non_error_background_color) {
         this.callback_add_layer = callback_add_layer;
         this.callback_checkbox_event = callback_checkbox_event;
         this.callback_delete_layer = callback_delete_layer;
@@ -153,8 +153,8 @@ class LayerManagerTool {
         this.callback_get_error_parallel_array = callback_get_error_parallel_array;
         this.callback_get_non_error_background_color = callback_get_non_error_background_color;
         this.layersLimit = limit;
-        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, 770 - 130]);
-        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), 770 - 280], 20, false, this.callback_swap_layers, (event) => {
+        this.layoutManager = new SimpleGridLayoutManager([100, 24], [200, 530 - 130]);
+        this.list = new GuiCheckList([1, this.layersLimit], [this.layoutManager.width(), 530 - 280], 20, false, this.callback_swap_layers, (event) => {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array, callback_get_non_error_background_color);
@@ -211,6 +211,9 @@ class LayerManagerTool {
 }
 LayerManagerTool.running_number = 0;
 ;
+window.addEventListener('load', function () {
+    window.scrollTo(0, 1);
+});
 class Function {
     constructor(source) {
         this.source = source;
@@ -683,7 +686,7 @@ class ScalingState_YFrozen extends ScalingState {
 class UIViewState {
     constructor(grid) {
         this.grid = grid;
-        this.burger_height = getHeight() / 20 * (isTouchSupported() ? 1 : 1.5);
+        this.burger_height = Math.max(getHeight(), getWidth()) / 20 * (isTouchSupported() ? 1 : 1.5);
         this.burger_width = 25 * (isTouchSupported() ? 3 : 1);
         this.hamburger_activated = false;
         this.tapped = false;
@@ -744,7 +747,9 @@ class UIViewState {
         switch (type) {
             case ("touchstart"):
                 this.velocity_x = 0;
-                if (touchPos[0] > this.burger_x() + this.burger_width) {
+                if (touchPos[0] > this.burger_x() + this.burger_width ||
+                    (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() &&
+                        touchPos[1] > this.grid.options_gui_manager.y + this.grid.options_gui_manager.max_element_y_bounds())) {
                     const new_state = new UIViewStateTransitioningUI(this.grid);
                     new_state.closing = true;
                     this.grid.ui_state_manager.state = new_state;
@@ -781,7 +786,8 @@ class UIViewStateShowUI extends UIViewState {
     }
     draw(ctx, canvas, x, y, width, height) {
         ctx.fillStyle = document.body.style.backgroundColor;
-        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.width(), Math.max(this.grid.guiManager.max_element_y_bounds(), this.grid.options_gui_manager.max_element_y_bounds()));
+        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.grid.guiManager.width(), this.grid.guiManager.max_element_y_bounds());
+        ctx.fillRect(this.grid.options_gui_manager.x, this.grid.options_gui_manager.y, this.grid.options_gui_manager.width(), this.grid.options_gui_manager.max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if (!this.grid.multi_touchListener.registeredMultiTouchEvent) {
             this.grid.guiManager.draw(ctx);
@@ -912,14 +918,13 @@ class Game extends SquareAABBCollidable {
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [getWidth(), getHeight() - 10];
         this.init(this.cell_dim[0], this.cell_dim[1], this.cell_dim[0], this.cell_dim[1]);
-        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 30);
+        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
         this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
-        this.guiManager.addElement(this.layer_manager.layoutManager);
-        this.guiManager.addElement(new GuiSlider(0, [this.guiManager.width(), 50], (e) => {
-            this.scaling_multiplier = e.value * 4 + 1;
-        }));
+        this.guiManager.addElement(v_group([this.layer_manager.layoutManager, new GuiSlider(0, [this.guiManager.width(), 50], (e) => {
+                this.scaling_multiplier = e.value * 4 + 1;
+            })]));
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
         this.color_controller = new ColorPickerTool((color) => {
@@ -934,50 +939,117 @@ class Game extends SquareAABBCollidable {
             this.functions[this.selected_item].line_width = line_width;
             this.repaint = true;
         });
+        const width_label = new GuiLabel("Width", 75, 18, this.slider_line_width.height());
         this.color_controller.getOptionPanel()?.refresh();
-        this.options_gui_manager = new SimpleGridLayoutManager([40, 400], [200, this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
-        this.options_gui_manager.addElement(new GuiLabel("Show axises", 100));
-        this.options_gui_manager.addElement(new GuiLabel("Show labels", 100));
-        this.options_gui_manager.addElement(new GuiCheckBox((event) => {
+        this.options_gui_manager = new SimpleGridLayoutManager([400, 400], [(isTouchSupported() ? is_landscape() ? getHeight() : getWidth() : getWidth()) - this.guiManager.x - this.guiManager.width() - 100,
+            this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
+        const show_axises_label = new GuiLabel("Show axises", 100);
+        const show_axises_checkbox = new GuiCheckBox((event) => {
             this.draw_axises = event.checkBox.checked;
             this.repaint = true;
-        }, 100, 50 + touch_mod, this.draw_axis_labels));
-        this.options_gui_manager.addElement(new GuiCheckBox((event) => {
+        }, 100, 50 + touch_mod, this.draw_axis_labels);
+        const show_labels_label = new GuiLabel("Show labels", 100);
+        const show_labels_checkbox = new GuiCheckBox((event) => {
             this.draw_axis_labels = event.checkBox.checked;
             this.repaint = true;
-        }, 100, 50 + touch_mod, this.draw_axis_labels));
+        }, 100, 50 + touch_mod, this.draw_axis_labels);
+        const minmax_label = new GuiLabel("Min Max", 100, 18, 35);
+        this.chkbx_render_min_max = new GuiCheckBox((event) => {
+        }, 100, 50 + touch_mod, false);
+        const zeros_label = new GuiLabel("Zeros", 100, 18, 35);
+        this.chkbx_render_zeros = new GuiCheckBox((event) => {
+        }, 100, 50 + touch_mod, false);
+        const inflections_label = new GuiLabel("~Inflections", 100, 18, 35);
+        this.chkbx_render_intersections = new GuiCheckBox((event) => {
+        }, 100, 50 + touch_mod, false);
+        const intersections_label = new GuiLabel("Intersections", 100, 18, 35);
+        this.chkbx_render_inflections = new GuiCheckBox((event) => {
+        }, 100, 50 + touch_mod, false);
         const change_show_label_state = () => { this.draw_point_labels = draw_points.checked; draw_points.refresh(); };
         const draw_points = new GuiCheckBox(change_show_label_state, 100, 50 + touch_mod, this.draw_axis_labels);
         const show_label = new GuiButton(() => { draw_points.checked = !draw_points.checked; change_show_label_state(); }, "Show point", 100, 50 + touch_mod, 18);
-        this.options_gui_manager.addElement(show_label);
-        this.options_gui_manager.addElement(draw_points);
-        const minmax_label = new GuiLabel("Min Max", 100, 18, 35);
-        this.options_gui_manager.addElement(minmax_label);
-        const zeros_label = new GuiLabel("Zeros", 100, 18, 35);
-        this.options_gui_manager.addElement(zeros_label);
-        this.chkbx_render_min_max = new GuiCheckBox((event) => {
-        }, 100, 50 + touch_mod, false);
-        this.options_gui_manager.addElement(this.chkbx_render_min_max);
-        this.chkbx_render_zeros = new GuiCheckBox((event) => {
-        }, 100, 50 + touch_mod, false);
-        this.options_gui_manager.addElement(this.chkbx_render_zeros);
-        const intersections_label = new GuiLabel("Intersections", 100, 18, 35);
-        this.options_gui_manager.addElement(intersections_label);
-        const inflections_label = new GuiLabel("~Inflections", 100, 18, 35);
-        this.options_gui_manager.addElement(inflections_label);
-        this.chkbx_render_intersections = new GuiCheckBox((event) => {
-        }, 100, 50 + touch_mod, false);
-        this.options_gui_manager.addElement(this.chkbx_render_intersections);
-        this.chkbx_render_inflections = new GuiCheckBox((event) => {
-        }, 100, 50 + touch_mod, false);
-        this.options_gui_manager.addElement(this.chkbx_render_inflections);
-        this.options_gui_manager.addElement(new GuiLabel("Width", 75, 18, this.slider_line_width.height()));
-        this.options_gui_manager.addElement(this.slider_line_width);
         this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, true);
-        this.options_gui_manager.addElement(new GuiLabel("Sync", 75, 18, 50 + touch_mod));
-        this.options_gui_manager.addElement(this.chkbx_sync_curve_width);
-        this.options_gui_manager.addElement(this.color_controller.localLayout);
+        const sync_label = new GuiLabel("Sync", 75, 18, 50 + touch_mod);
+        /*this.options_gui_manager.addElement(
+        v_group(
+        [
+            v_group(
+                [
+                    h_group(
+                        [
+                            h_group(
+                            [
+                                v_group([show_axises_label, show_axises_checkbox]),
+                                v_group([show_labels_label, show_labels_checkbox])
+                            ]),
+                            h_group([
+                                v_group([minmax_label, this.chkbx_render_min_max]),
+                                v_group([zeros_label, this.chkbx_render_zeros])
+                            ]),
+                            h_group([
+                                v_group([inflections_label, this.chkbx_render_intersections]),
+                                v_group([intersections_label, this.chkbx_render_inflections]),
+                            ])
+                        ])
+                ]),
+                h_group(
+                [
+                    this.color_controller.localLayout,
+                    v_group([
+                        v_group(
+                        [
+                            h_group([show_label, draw_points]),
+                            h_group(
+                                [
+                                    sync_label,
+                                    this.chkbx_sync_curve_width,
+                                    new GuiSpacer([20,20])
+                                ])
+                        ]),
+                        h_group([width_label, this.slider_line_width])
+                    ]),
+                    new GuiSpacer([5,20])
+                ])
+            
+        ]));
+        */
+        const grouping_type = (elements) => !isTouchSupported() ? v_group(elements) : h_group(elements);
+        this.options_gui_manager.addElement(v_group([
+            v_group([
+                grouping_type([
+                    h_group([
+                        v_group([show_axises_label, show_axises_checkbox]),
+                        v_group([show_labels_label, show_labels_checkbox])
+                    ]),
+                    h_group([
+                        v_group([minmax_label, this.chkbx_render_min_max]),
+                        v_group([zeros_label, this.chkbx_render_zeros])
+                    ]),
+                    h_group([
+                        v_group([inflections_label, this.chkbx_render_intersections]),
+                        v_group([intersections_label, this.chkbx_render_inflections]),
+                    ])
+                ])
+            ]),
+            grouping_type([
+                this.color_controller.localLayout,
+                v_group([
+                    v_group([
+                        h_group([show_label, draw_points]),
+                        h_group([
+                            sync_label,
+                            this.chkbx_sync_curve_width,
+                            new GuiSpacer([20, 20])
+                        ])
+                    ]),
+                    h_group([width_label, this.slider_line_width])
+                ]),
+                new GuiSpacer([5, 20])
+            ])
+        ]));
+        console.log(this.options_gui_manager.elements);
+        this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
         this.options_gui_manager.activate();
         this.repaint = true;
     }
@@ -992,7 +1064,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
     }
     new_layer_manager() {
-        const layer_manager = new LayerManagerTool(10, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => { this.repaint = true; this.change_selected(layer); }, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
+        const layer_manager = new LayerManagerTool(5, () => { this.add_layer(); }, (layer, state) => this.repaint = true, (layer) => { this.functions.splice(layer, 1); this.repaint = true; }, () => this.functions.length, (layer) => { this.repaint = true; this.change_selected(layer); }, (layer, slider_value) => { console.log('layer', layer, 'slider val', slider_value); return 0; }, (l1, l2) => { this.swap_layers(l1, l2); this.repaint = true; }, (layer) => this.functions[layer] ? this.functions[layer].error_message : null, (layer) => {
             return this.functions[layer] ? this.functions[layer].color : null;
         });
         if (this.layer_manager) {
@@ -1060,6 +1132,8 @@ class Game extends SquareAABBCollidable {
         this.width = width;
         this.height = height;
         this.calc_bounds();
+        if (this.options_gui_manager)
+            this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
     }
     try_render_functions() {
         //figure out bounds for calculation of function tables
@@ -1166,13 +1240,13 @@ class Game extends SquareAABBCollidable {
             this.axises.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
             //render axises
             this.axises.ctx.beginPath();
-            this.axises.ctx.lineWidth = 4;
+            /*this.axises.ctx.lineWidth = 4;
             this.axises.ctx.strokeStyle = "#FFFFFF";
             this.axises.ctx.moveTo(0, screen_space_x_axis);
             this.axises.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
             this.axises.ctx.moveTo(screen_space_y_axis, 0);
             this.axises.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
-            this.axises.ctx.stroke();
+            this.axises.ctx.stroke();*/
             this.axises.ctx.beginPath();
             this.axises.ctx.lineWidth = 3;
             this.axises.ctx.strokeStyle = "#000000";
@@ -1210,7 +1284,7 @@ class Game extends SquareAABBCollidable {
             ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
             {
                 const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
-                ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                //ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
             }
             if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x * 15 / 16) {
@@ -1240,7 +1314,7 @@ class Game extends SquareAABBCollidable {
             {
                 const screen_y = (i + delta_y / 2 - this.y_min) / this.deltaY * this.main_buf.height;
                 screen_space_y_axis = old_screen_space_y_axis;
-                ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                //ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
             }
             if (screen_y > last_render_y + font_size * 2) {
