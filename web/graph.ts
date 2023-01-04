@@ -1218,7 +1218,6 @@ class Game extends SquareAABBCollidable {
         this.chkbx_sync_curve_width = new GuiCheckBox((event:any) => {
         }, 100, 50 + touch_mod, true);
         const sync_label = new GuiLabel("Sync", 75, 18, 50 + touch_mod);
-        /*this.options_gui_manager.addElement(
         v_group(
         [
             v_group(

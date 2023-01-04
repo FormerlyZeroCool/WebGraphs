@@ -971,49 +971,41 @@ class Game extends SquareAABBCollidable {
         this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, true);
         const sync_label = new GuiLabel("Sync", 75, 18, 50 + touch_mod);
-        /*this.options_gui_manager.addElement(
-        v_group(
-        [
-            v_group(
-                [
-                    h_group(
-                        [
-                            h_group(
-                            [
-                                v_group([show_axises_label, show_axises_checkbox]),
-                                v_group([show_labels_label, show_labels_checkbox])
-                            ]),
-                            h_group([
-                                v_group([minmax_label, this.chkbx_render_min_max]),
-                                v_group([zeros_label, this.chkbx_render_zeros])
-                            ]),
-                            h_group([
-                                v_group([inflections_label, this.chkbx_render_intersections]),
-                                v_group([intersections_label, this.chkbx_render_inflections]),
-                            ])
-                        ])
-                ]),
-                h_group(
-                [
-                    this.color_controller.localLayout,
-                    v_group([
-                        v_group(
-                        [
-                            h_group([show_label, draw_points]),
-                            h_group(
-                                [
-                                    sync_label,
-                                    this.chkbx_sync_curve_width,
-                                    new GuiSpacer([20,20])
-                                ])
-                        ]),
-                        h_group([width_label, this.slider_line_width])
+        v_group([
+            v_group([
+                h_group([
+                    h_group([
+                        v_group([show_axises_label, show_axises_checkbox]),
+                        v_group([show_labels_label, show_labels_checkbox])
                     ]),
-                    new GuiSpacer([5,20])
+                    h_group([
+                        v_group([minmax_label, this.chkbx_render_min_max]),
+                        v_group([zeros_label, this.chkbx_render_zeros])
+                    ]),
+                    h_group([
+                        v_group([inflections_label, this.chkbx_render_intersections]),
+                        v_group([intersections_label, this.chkbx_render_inflections]),
+                    ])
                 ])
-            
-        ]));
-        */
+            ]),
+            h_group([
+                this.color_controller.localLayout,
+                v_group([
+                    v_group([
+                        h_group([show_label, draw_points]),
+                        h_group([
+                            sync_label,
+                            this.chkbx_sync_curve_width,
+                            new GuiSpacer([20, 20])
+                        ])
+                    ]),
+                    h_group([width_label, this.slider_line_width])
+                ]),
+                new GuiSpacer([5, 20])
+            ])
+        ]);
+        ;
+            * /;
         const grouping_type = (elements) => !isTouchSupported() ? v_group(elements) : h_group(elements);
         this.options_gui_manager.addElement(v_group([
             v_group([
