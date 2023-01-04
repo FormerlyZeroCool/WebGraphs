@@ -1,5 +1,5 @@
 import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
-import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, v_group, h_group, CustomBackgroundSlider, StateManagedUI, GuiSpacer, is_landscape } from './gui.js';
+import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, vertical_group, horizontal_group, CustomBackgroundSlider, StateManagedUI, GuiSpacer } from './gui.js';
 import { sign, srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 window.sec = (x) => 1 / Math.sin(x);
@@ -922,7 +922,7 @@ class Game extends SquareAABBCollidable {
         this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();
-        this.guiManager.addElement(v_group([this.layer_manager.layoutManager, new GuiSlider(0, [this.guiManager.width(), 50], (e) => {
+        this.guiManager.addElement(vertical_group([this.layer_manager.layoutManager, new GuiSlider(0, [this.guiManager.width(), 50], (e) => {
                 this.scaling_multiplier = e.value * 4 + 1;
             })]));
         this.guiManager.activate();
@@ -941,7 +941,7 @@ class Game extends SquareAABBCollidable {
         });
         const width_label = new GuiLabel("Width", 75, 18, this.slider_line_width.height());
         this.color_controller.getOptionPanel()?.refresh();
-        this.options_gui_manager = new SimpleGridLayoutManager([400, 400], [(isTouchSupported() ? is_landscape() ? getHeight() : getWidth() : getWidth()) - this.guiManager.x - this.guiManager.width() - 100,
+        this.options_gui_manager = new SimpleGridLayoutManager([400, 400], [(isTouchSupported() ? Math.max(getHeight(), getWidth()) : getWidth()) - this.guiManager.x - this.guiManager.width() - 100,
             this.slider_line_width.height() + 350 + touch_mod * 6.5 + this.color_controller.getOptionPanel().height()], this.guiManager.x + this.guiManager.width(), this.guiManager.y);
         const show_axises_label = new GuiLabel("Show axises", 100);
         const show_axises_checkbox = new GuiCheckBox((event) => {
@@ -971,36 +971,36 @@ class Game extends SquareAABBCollidable {
         this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, true);
         const sync_label = new GuiLabel("Sync", 75, 18, 50 + touch_mod);
-        const grouping_type = (elements) => !isTouchSupported() ? v_group(elements) : h_group(elements);
-        this.options_gui_manager.addElement(v_group([
-            v_group([
+        const grouping_type = (elements) => !isTouchSupported() ? vertical_group(elements) : horizontal_group(elements);
+        this.options_gui_manager.addElement(vertical_group([
+            vertical_group([
                 grouping_type([
-                    h_group([
-                        v_group([show_axises_label, show_axises_checkbox]),
-                        v_group([show_labels_label, show_labels_checkbox])
+                    horizontal_group([
+                        vertical_group([show_axises_label, show_axises_checkbox]),
+                        vertical_group([show_labels_label, show_labels_checkbox])
                     ]),
-                    h_group([
-                        v_group([minmax_label, this.chkbx_render_min_max]),
-                        v_group([zeros_label, this.chkbx_render_zeros])
+                    horizontal_group([
+                        vertical_group([minmax_label, this.chkbx_render_min_max]),
+                        vertical_group([zeros_label, this.chkbx_render_zeros])
                     ]),
-                    h_group([
-                        v_group([inflections_label, this.chkbx_render_intersections]),
-                        v_group([intersections_label, this.chkbx_render_inflections]),
+                    horizontal_group([
+                        vertical_group([inflections_label, this.chkbx_render_intersections]),
+                        vertical_group([intersections_label, this.chkbx_render_inflections]),
                     ])
                 ])
             ]),
             grouping_type([
                 this.color_controller.localLayout,
-                v_group([
-                    v_group([
-                        h_group([show_label, draw_points]),
-                        h_group([
+                vertical_group([
+                    vertical_group([
+                        horizontal_group([show_label, draw_points]),
+                        horizontal_group([
                             sync_label,
                             this.chkbx_sync_curve_width,
                             new GuiSpacer([20, 20])
                         ])
                     ]),
-                    h_group([width_label, this.slider_line_width])
+                    horizontal_group([width_label, this.slider_line_width])
                 ]),
                 new GuiSpacer([5, 20])
             ])

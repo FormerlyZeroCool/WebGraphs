@@ -554,11 +554,11 @@ export class SimpleGridLayoutManager {
         this.refreshMetaData();
         this.refreshCanvas();
     }
-    v_groupify_previous(elements) {
-        this.addElement(v_group(this.elements.splice(this.elements.length - elements, elements)));
+    vertical_groupify_previous(elements) {
+        this.addElement(vertical_group(this.elements.splice(this.elements.length - elements, elements)));
     }
-    h_groupify_previous(elements) {
-        this.addElement(h_group(this.elements.splice(this.elements.length - elements, elements)));
+    horizontal_groupify_previous(elements) {
+        this.addElement(horizontal_group(this.elements.splice(this.elements.length - elements, elements)));
     }
     elementPosition(element) {
         const elPos = this.elementsPositions.find((el) => el.element === element);
@@ -2316,7 +2316,7 @@ function sum(elements) {
     }
     return sum;
 }
-export function h_group(elements, x = 0, y = 0) {
+export function horizontal_group(elements, x = 0, y = 0) {
     let height = 0;
     const width = sum(elements.map(el => {
         if (el.height() > height)
@@ -2327,7 +2327,7 @@ export function h_group(elements, x = 0, y = 0) {
     elements.forEach(el => layout.addElement(el));
     return layout;
 }
-export function v_group(elements, x = 0, y = 0) {
+export function vertical_group(elements, x = 0, y = 0) {
     let width = 0;
     const height = sum(elements.map(el => {
         if (el.width() > width)

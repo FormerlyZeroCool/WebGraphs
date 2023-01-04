@@ -704,13 +704,13 @@ export class SimpleGridLayoutManager implements GuiElement {
         this.refreshMetaData();
         this.refreshCanvas();
     }
-    v_groupify_previous(elements:number):void
+    vertical_groupify_previous(elements:number):void
     {
-        this.addElement(v_group(this.elements.splice(this.elements.length - elements, elements)));
+        this.addElement(vertical_group(this.elements.splice(this.elements.length - elements, elements)));
     }
-    h_groupify_previous(elements:number):void
+    horizontal_groupify_previous(elements:number):void
     {
-        this.addElement(h_group(this.elements.splice(this.elements.length - elements, elements)));
+        this.addElement(horizontal_group(this.elements.splice(this.elements.length - elements, elements)));
     }
     elementPosition(element:GuiElement):number[]
     {
@@ -2888,7 +2888,7 @@ function sum(elements:number[]):number
     } 
     return sum;
 }
-export function h_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
+export function horizontal_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
 {
     let height = 0;
     const width = sum(elements.map(el => {
@@ -2901,7 +2901,7 @@ export function h_group(elements:GuiElement[], x:number = 0, y:number = 0):Simpl
     elements.forEach(el => layout.addElement(el));
     return layout;
 }
-export function v_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
+export function vertical_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
 {
     let width = 0;
     const height = sum(elements.map(el => {
