@@ -913,7 +913,7 @@ class Game extends SquareAABBCollidable {
         this.background_color = new RGB(0, 0, 0, 0);
         this.cell_dim = [getWidth(), getHeight() - 10];
         this.init(this.cell_dim[0], this.cell_dim[1], this.cell_dim[0], this.cell_dim[1]);
-        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 0, 0);
+        this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 2, 2);
         this.layer_manager = this.new_layer_manager();
         this.axises = this.new_sprite();
         this.main_buf = this.new_sprite();

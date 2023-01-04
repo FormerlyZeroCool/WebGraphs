@@ -497,8 +497,7 @@ export class SimpleGridLayoutManager {
         }
     }
     refreshCanvas(ctx = this.ctx, x = 0, y = 0) {
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.elementsPositions.forEach(el => el.element.draw(ctx, el.x, el.y, x, y));
+        //ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
     active() {
         return this.focused;
@@ -567,8 +566,9 @@ export class SimpleGridLayoutManager {
         return [elPos.x, elPos.y];
     }
     draw(ctx, xPos = this.x, yPos = this.y, offsetX = 0, offsetY = 0) {
-        this.refreshCanvas();
-        ctx.drawImage(this.canvas, xPos + offsetX, yPos + offsetY);
+        //this.refreshCanvas();
+        this.elementsPositions.forEach(el => el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0));
+        //ctx.drawImage(this.canvas, xPos + offsetX, yPos + offsetY);
     }
 }
 ;
@@ -1146,35 +1146,35 @@ export class GuiButton {
     refresh() {
         this.drawInternal();
     }
-    drawInternal(ctx = this.ctx) {
-        ctx.clearRect(0, 0, this.width(), this.height());
+    drawInternal(ctx = this.ctx, x, y) {
+        ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
         ctx.fillStyle = new RGB(255, 255, 255, 135).htmlRBGA();
-        ctx.fillRect(0, 0, this.width(), this.height());
+        ctx.fillRect(x, y, this.width(), this.height());
         ctx.fillStyle = "#000000";
         const textWidth = ctx.measureText(this.text).width;
         const textHeight = this.fontSize;
         //ctx.strokeStyle = "#FFFFFF";
         ctx.lineCap = "round";
         ctx.lineWidth = 2;
-        ctx.strokeRect(0, 0, this.width(), this.height());
+        ctx.strokeRect(x, y, this.width(), this.height());
         if (textWidth < this.width() - 10) {
-            //ctx.strokeText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
-            ctx.fillText(this.text, this.width() / 2 - textWidth / 2, this.height() / 2 + textHeight / 2, this.width());
+            //ctx.strokeText(this.text, x + this.width() / 2 - textWidth / 2, y + y + this.height() / 2 + textHeight / 2, this.width());
+            ctx.fillText(this.text, x + this.width() / 2 - textWidth / 2, y + this.height() / 2 + textHeight / 2, this.width());
         }
         else {
-            //ctx.strokeText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
-            ctx.fillText(this.text, 10, this.height() / 2 + textHeight / 2, this.width() - 20);
+            //ctx.strokeText(this.text, 10, y + this.height() / 2 + textHeight / 2, this.width() - 20);
+            ctx.fillText(this.text, x + 10, y + this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2;
         ctx.strokeStyle = "#000000";
-        ctx.strokeRect(0, 0, this.width(), this.height());
+        ctx.strokeRect(x, y, this.width(), this.height());
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
-        this.drawInternal();
-        ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
+        this.drawInternal(ctx, x, y);
+        //ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 }
 ;
