@@ -1131,7 +1131,7 @@ export class GuiButton {
     refresh() {
     }
     drawInternal(ctx, x, y) {
-        ctx.clearRect(x, y, this.width(), this.height());
+        //ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
         ctx.fillStyle = new RGB(255, 255, 255, 135).htmlRBGA();
@@ -1763,7 +1763,6 @@ export class GuiTextBox {
         }
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
-        ctx.clearRect(x + offsetX, y + offsetY, this.width(), this.height());
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 }

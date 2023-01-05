@@ -1440,7 +1440,7 @@ export class GuiButton implements GuiElement {
     }
     drawInternal(ctx:CanvasRenderingContext2D, x:number, y:number):void
     {
-        ctx.clearRect(x, y, this.width(), this.height());
+        //ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
         ctx.fillStyle = new RGB(255,255,255, 135).htmlRBGA();
@@ -2229,7 +2229,6 @@ export class GuiTextBox implements GuiElement {
     }
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0)
     {
-        ctx.clearRect(x + offsetX, y + offsetY, this.width(), this.height());
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 };
