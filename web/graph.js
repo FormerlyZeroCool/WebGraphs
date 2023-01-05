@@ -893,6 +893,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
         this.multi_touchListener = multi_touchListener;
         this.touchListener = touchListener;
+        this.touchPos = [touchListener.touchPos[0], touchListener.touchPos[1]];
         this.functions = [];
         this.draw_axes = true;
         this.draw_axis_labels = true;
@@ -1166,6 +1167,10 @@ class Game extends SquareAABBCollidable {
         this.main_buf.ctx.beginPath();
         this.main_buf.ctx.stroke();
     }
+    update_touch_pos() {
+        this.touchPos[0] = this.touchListener.touchPos[0];
+        this.touchPos[1] = this.touchListener.touchPos[1];
+    }
     optimize_intersection(fun1, fun2, min_x, max_x, it) {
         const y = [];
         while (it > 0) {
@@ -1326,7 +1331,7 @@ class Game extends SquareAABBCollidable {
         });
     }
     render_labels_table(ctx, offset_y, closest_in_array, optimization_function) {
-        const touchPos = this.touchListener.touchPos;
+        const touchPos = this.touchPos;
         const screen_space_x_axis = -this.y_min >= 0 && -this.y_max <= 0 ? (0 - this.y_min) / this.deltaY * this.cell_dim[1] : -this.y_min < 0 ? 0 : this.main_buf.height;
         let screen_space_y_axis = -this.x_min >= 0 && -this.x_max <= 0 ? (0 - this.x_min) / this.deltaX * this.cell_dim[0] : -this.x_min < 0 ? 0 : this.main_buf.width;
         let world_y = 0;
@@ -1546,6 +1551,8 @@ class Game extends SquareAABBCollidable {
         }
     }
     update_state(delta_time) {
+        if (this.graph_accepting_ui())
+            this.update_touch_pos();
         //update selected item
         if (this.layer_manager.list.selected() !== this.selected_item) {
             this.last_selected_item = this.selected_item;
@@ -1555,13 +1562,6 @@ class Game extends SquareAABBCollidable {
         //call transition function on state machine managing what points we are rendering
         this.state_manager_grid.transition(delta_time);
         this.ui_state_manager.transition(delta_time);
-        if (this.multi_touchListener.registeredMultiTouchEvent) {
-            this.ui_alpha = 0;
-            return;
-        }
-        if (this.touchListener.registeredTouch)
-            return;
-        this.ui_alpha = clamp(this.ui_alpha, 0, 1);
     }
     set_scale(x_scale, y_scale) {
         this.x_scale = x_scale;
@@ -1594,6 +1594,12 @@ class Game extends SquareAABBCollidable {
             }
         });
         this.change_selected(min_dist_function_index);
+    }
+    graph_accepting_ui() {
+        const state = this.ui_state_manager.state;
+        const touchPos = this.touchListener.touchPos;
+        return !state.hamburger_activated &&
+            !this.options_gui_manager.collision(touchPos) && !this.guiManager.collision(touchPos);
     }
 }
 Game._colores = [new RGB(231, 76, 60),
@@ -1666,8 +1672,7 @@ async function main() {
         let scaler_y = game.deltaY / (game.height);
         const state = game.ui_state_manager.state;
         state.handleTouchEvents("touchmove", event);
-        if (!state.hamburger_activated && event.touchPos[0] > state.burger_x() + state.burger_width &&
-            !game.options_gui_manager.elementTouched && !game.guiManager.elementTouched) {
+        if (game.graph_accepting_ui()) {
             game.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
             game.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
         }

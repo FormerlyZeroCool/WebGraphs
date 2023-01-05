@@ -364,6 +364,10 @@ export class SimpleGridLayoutManager {
     isLayoutManager() {
         return true;
     }
+    collision(touchPos) {
+        return touchPos[0] >= this.x && touchPos[0] < this.x + this.width() &&
+            touchPos[1] >= this.y && touchPos[1] < this.y + this.height();
+    }
     handleKeyBoardEvents(type, e) {
         this.elements.forEach(el => el.handleKeyBoardEvents(type, e));
         if (e.repaint) {

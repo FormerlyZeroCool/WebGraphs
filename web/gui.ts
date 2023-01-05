@@ -434,6 +434,7 @@ export class SimpleGridLayoutManager implements GuiElement {
         this.elementsPositions = [];
         this.elementTouched = null;
     } 
+    
     createHandlers(keyboardHandler:KeyboardHandler, touchHandler:SingleTouchListener):void
     {
         if(keyboardHandler)
@@ -480,6 +481,11 @@ export class SimpleGridLayoutManager implements GuiElement {
     isLayoutManager():boolean {
         return true;
     } 
+    collision(touchPos:number[]):boolean
+    {
+        return touchPos[0] >= this.x && touchPos[0] < this.x + this.width() &&
+                        touchPos[1] >= this.y && touchPos[1] < this.y + this.height()
+    }
     handleKeyBoardEvents(type:string, e:any):void
     {
         this.elements.forEach(el => el.handleKeyBoardEvents(type, e));
