@@ -1229,7 +1229,7 @@ class Game extends SquareAABBCollidable {
         let last_render_x = -1;
         let last_render_text_width = 0;
         ctx.font = `${font_size}px Helvetica`;
-        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = "#B4B4B4";
         ctx.lineWidth = 3;
         //render points along x axis
         while (i < this.x_max) {
@@ -1470,7 +1470,7 @@ class Game extends SquareAABBCollidable {
             else if (screen_y > this.main_buf.height)
                 screen_y = this.main_buf.height - font_size;
             ctx.fillStyle = "#000000";
-            ctx.strokeStyle = "#FFFFFF";
+            ctx.strokeStyle = "#B4B4B4";
             ctx.lineWidth = 3;
             ctx.strokeText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
             ctx.fillText(text, screen_x + dim, screen_y + dim / 2 + offset_y);

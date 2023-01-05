@@ -1165,23 +1165,20 @@ export class GuiSlider implements GuiElement {
     {
         return [this.width() / 10, this.height()/ 10, this.width() - this.width() / 5, this.height() - this.height() / 5];
     }
-    refresh():void
+    refresh(): void {
+        
+    }
+    draw(ctx:CanvasRenderingContext2D = this.canvas.getContext("2d")!, x:number, y:number, offsetX:number, offsetY:number):void
     {
-        const ctx:CanvasRenderingContext2D = this.canvas.getContext("2d")!;
-        ctx.clearRect(0, 0, this.width(), this.height());
         ctx.fillStyle = "#FFFFFF";
         const bounds:number[] = this.getBounds();
         const center:number[] = [bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2];
         const displayLineX:number = this.state * bounds[2] + bounds[0];
-        ctx.fillRect(bounds[0] - 1, center[1] - 1, bounds[2]+2, 4);
-        ctx.fillRect(displayLineX - 1, bounds[1]-1, 5 + 1, bounds[3] + 2);
+        ctx.fillRect(x + bounds[0] - 1, y + center[1] - 1, bounds[2]+2, 4);
+        ctx.fillRect(x + displayLineX - 1, y + bounds[1]-1, 5 + 1, bounds[3] + 2);
         ctx.fillStyle = "#000000";
-        ctx.fillRect(bounds[0], center[1], bounds[2], 2);
-        ctx.fillRect(displayLineX, bounds[1], 4, bounds[3]);
-    }
-    draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number, offsetY:number):void
-    {
-        ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
+        ctx.fillRect(x + bounds[0], y + center[1], bounds[2], 2);
+        ctx.fillRect(x + displayLineX, y + bounds[1], 4, bounds[3]);
     }
     handleKeyBoardEvents(type:string, e:any):void
     {
