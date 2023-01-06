@@ -1570,7 +1570,7 @@ class Game extends SquareAABBCollidable {
         let closest_start_y = Math.ceil(this.y_min * msd_y * 10) / (msd_y*10);
         closest_start_y -= closest_start_y % delta_y;
         //calculate a starting x position
-        let i = closest_start_x;
+        let i = closest_start_x - delta_x;
         let last_render_x:number = -1;
         let last_render_text_width = 0;
         ctx.font = `${font_size}px Helvetica`;
@@ -1614,7 +1614,7 @@ class Game extends SquareAABBCollidable {
             i += delta_x;
         }
         //calculate a starting y position
-        i = closest_start_y;
+        i = closest_start_y -  delta_y;
         let last_render_y = -font_size;
         const old_screen_space_y_axis = screen_space_y_axis;
         //render points along y axis
