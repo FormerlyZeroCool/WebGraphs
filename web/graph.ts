@@ -1566,7 +1566,7 @@ class Game extends SquareAABBCollidable {
         let closest_start_x = Math.ceil(this.x_min * msd_x * 100) / (msd_x*100);
         closest_start_x -= closest_start_x % delta_x;
         const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.deltaY)));
-        const delta_y = Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
+        const delta_y = delta_x//Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
         let closest_start_y = Math.ceil(this.y_min * msd_y * 10) / (msd_y*10);
         closest_start_y -= closest_start_y % delta_y;
         //calculate a starting x position
