@@ -586,8 +586,8 @@ class FollowCursor extends GridUIState {
     }
     draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
         this.grid.render_labels_floating(ctx);
-        //if(this.grid.draw_point_labels)
-          //  this.grid.render_x_y_label_screen_space(ctx, this.grid.touchListener.touchPos);
+        if(this.grid.draw_point_labels && this.grid.chkbx_render_grid.checked)
+            this.grid.render_x_y_label_screen_space(ctx, this.grid.touchListener.touchPos);
     }
     handleKeyboardEvents(type: string, event: KeyboardEvent): void {
         throw new Error('Method not implemented.');
