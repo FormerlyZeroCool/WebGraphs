@@ -1654,7 +1654,6 @@ class Game extends SquareAABBCollidable {
             i += delta_y;
         }
             
-
         this.axes.ctx.stroke();
 
         ctx.drawImage(this.axes.image, x, y, width, height);
@@ -1672,9 +1671,10 @@ class Game extends SquareAABBCollidable {
             this.main_buf.ctx.imageSmoothingEnabled = false;
             this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
-            this.try_render_functions();
+            
             this.render_axes(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             
+            this.try_render_functions();
         }
         ctx.drawImage(this.main_buf.image, x, y, canvas.width, canvas.height);
         //this state manager controls what labels get rendered
