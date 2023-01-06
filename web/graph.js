@@ -853,7 +853,7 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI {
         else if (-this.grid.guiManager.x + 1 > this.grid.guiManager.width() + this.grid.options_gui_manager.width()) {
             this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
             const new_state = new UIViewStateNoUI(this.grid);
-            new_state.hamburger_activated = this.hamburger_activated;
+            new_state.hamburger_activated = this.hamburger_activated && !this.closing;
             return new_state;
         }
         return this;
@@ -912,7 +912,7 @@ class Game extends SquareAABBCollidable {
         this.graph_start_x = 200;
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
-        this.cell_dim = [getWidth(), getHeight() - 10];
+        this.cell_dim = [(getWidth()), (getHeight())];
         this.init(this.cell_dim[0], this.cell_dim[1], this.cell_dim[0], this.cell_dim[1]);
         this.guiManager = new SimpleGridLayoutManager([1, 1000], [this.graph_start_x, getHeight()], 2, 2);
         this.layer_manager = this.new_layer_manager();
@@ -964,13 +964,17 @@ class Game extends SquareAABBCollidable {
         const change_show_label_state = () => { this.draw_point_labels = draw_points.checked; draw_points.refresh(); };
         const draw_points = new GuiCheckBox(change_show_label_state, 100, 50 + touch_mod, this.draw_axis_labels);
         const show_label = new GuiButton(() => { draw_points.checked = !draw_points.checked; change_show_label_state(); }, "Show point", 100, 50 + touch_mod, 18);
+        const label_show_grid = new GuiLabel("Show Grid", 100, 18, 50 + touch_mod);
+        this.chkbx_render_grid = new GuiCheckBox((e) => {
+            this.repaint = true;
+        }, 100, 50 + touch_mod, false);
         this.chkbx_sync_curve_width = new GuiCheckBox((event) => {
         }, 100, 50 + touch_mod, true);
         const sync_label = new GuiLabel("Sync", show_label.width(), 18, 50 + touch_mod);
-        const grouping_type = (elements) => !isTouchSupported() ? vertical_group(elements) : horizontal_group(elements);
+        const dynamic_touch_based_grouping_type = (elements) => !isTouchSupported() ? vertical_group(elements) : horizontal_group(elements);
         this.options_gui_manager.addElement(vertical_group([
             vertical_group([
-                grouping_type([
+                dynamic_touch_based_grouping_type([
                     horizontal_group([
                         vertical_group([show_axes_label, show_axes_checkbox]),
                         vertical_group([show_labels_label, show_labels_checkbox])
@@ -985,16 +989,18 @@ class Game extends SquareAABBCollidable {
                     ])
                 ])
             ]),
-            grouping_type([
+            dynamic_touch_based_grouping_type([
                 this.color_controller.localLayout,
-                grouping_type([
+                dynamic_touch_based_grouping_type([
                     vertical_group([
-                        horizontal_group([show_label, draw_points]),
-                        grouping_type([
+                        dynamic_touch_based_grouping_type([
+                            horizontal_group([show_label, draw_points]),
+                            horizontal_group([label_show_grid, this.chkbx_render_grid])
+                        ]),
+                        dynamic_touch_based_grouping_type([
                             horizontal_group([
                                 sync_label,
-                                this.chkbx_sync_curve_width,
-                                new GuiSpacer([1, 20])
+                                this.chkbx_sync_curve_width
                             ]),
                             horizontal_group([width_label, this.slider_line_width]),
                             new GuiSpacer([isTouchSupported() ? 1 : 0, 0])
@@ -1006,6 +1012,8 @@ class Game extends SquareAABBCollidable {
         ]));
         this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
         this.options_gui_manager.activate();
+        this.guiManager.trimDim();
+        this.options_gui_manager.trimDim();
         this.repaint = true;
     }
     init(width, height, cell_width, cell_height) {
@@ -1241,10 +1249,14 @@ class Game extends SquareAABBCollidable {
             const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
             ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
             ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+            if (this.chkbx_render_grid.checked)
+                ctx.fillRect(screen_x, -0.75, 1.5, this.cell_dim[1]);
             {
                 const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
                 //ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                if (this.chkbx_render_grid.checked)
+                    ctx.fillRect(screen_x - 0.375, 0, 0.75, this.cell_dim[1]);
             }
             if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x * 15 / 16) {
                 last_render_x = screen_x + 3;
@@ -1270,11 +1282,15 @@ class Game extends SquareAABBCollidable {
             screen_space_y_axis = old_screen_space_y_axis;
             ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
             ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+            if (this.chkbx_render_grid.checked)
+                ctx.fillRect(0, screen_y - 0.75, this.cell_dim[0], 1.5);
             {
                 const screen_y = (i + delta_y / 2 - this.y_min) / this.deltaY * this.main_buf.height;
                 screen_space_y_axis = old_screen_space_y_axis;
                 //ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                if (this.chkbx_render_grid.checked)
+                    ctx.fillRect(0, screen_y - 0.375, this.cell_dim[0], 0.75);
             }
             if (screen_y > last_render_y + font_size * 2) {
                 last_render_y = screen_y;
@@ -1303,7 +1319,7 @@ class Game extends SquareAABBCollidable {
             this.try_render_functions();
             this.render_axes(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
         }
-        ctx.drawImage(this.main_buf.image, x, y);
+        ctx.drawImage(this.main_buf.image, x, y, canvas.width, canvas.height);
         //this state manager controls what labels get rendered
         if (this.draw_point_labels)
             this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
@@ -1629,6 +1645,9 @@ async function main() {
         const normalized_delta = (clamp(e.deltaY + 1, -getHeight(), getHeight())) / getHeight();
         game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
+        //e.preventDefault();
+    }, { passive: true });
+    canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
     }, { passive: false });
     canvas.width = getWidth();

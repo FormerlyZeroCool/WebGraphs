@@ -420,6 +420,7 @@ export class SimpleGridLayoutManager implements GuiElement {
     focused:boolean;
     lastTouched:number;
     elementTouched:RowRecord | null;
+    
     constructor(matrixDim:number[], pixelDim:number[], x:number = 0, y:number = 0)
     {
         this.lastTouched = 0;
@@ -477,6 +478,11 @@ export class SimpleGridLayoutManager implements GuiElement {
             }
         });
         return rightmost;
+    }
+    trimDim():SimpleGridLayoutManager
+    {
+        this.pixelDim = [this.max_element_x_bounds(), this.max_element_y_bounds()];
+        return this;
     }
     isLayoutManager():boolean {
         return true;
@@ -680,6 +686,8 @@ export class SimpleGridLayoutManager implements GuiElement {
     }
     addElement(element:GuiElement, position:number = -1):boolean //error state
     {
+        //if(!element)
+          //  return false;
         let inserted:boolean = false;
         if(position === -1)
         {
@@ -1127,16 +1135,12 @@ export class GuiSlider implements GuiElement {
     state:number;//between 0.0, and 1.0
     focused:boolean;
     dim:number[];
-    canvas:HTMLCanvasElement;
     callBack:((event:SlideEvent) => void) | null;
     constructor(state:number, dim:number[], movedCallBack:((event:SlideEvent) => void) | null){
         this.state = state;
         this.callBack = movedCallBack;
         this.focused = false;
         this.dim = [dim[0], dim[1]];
-        this.canvas = document.createElement("canvas");
-        this.canvas.width = this.width();
-        this.canvas.height = this.height();
         this.refresh();
     }
     setState(value:number):void
@@ -1174,7 +1178,7 @@ export class GuiSlider implements GuiElement {
     refresh(): void {
         
     }
-    draw(ctx:CanvasRenderingContext2D = this.canvas.getContext("2d")!, x:number, y:number, offsetX:number, offsetY:number):void
+    draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number, offsetY:number):void
     {
         ctx.fillStyle = "#FFFFFF";
         const bounds:number[] = this.getBounds();
@@ -1230,12 +1234,11 @@ export class CustomBackgroundSlider extends GuiSlider {
         if(!this.backgroundCanvas)
         {
             this.backgroundCanvas = document.createElement("canvas");
-            this.backctx = this.canvas.getContext("2d")!;
         }
-        if(this.backgroundCanvas.width !== this.canvas.width || this.backgroundCanvas.height !== this.canvas.height)
+        if(this.backgroundCanvas.width !== this.width() || this.backgroundCanvas.height !== this.height())
         {
-            this.backgroundCanvas.width = this.canvas.width;
-            this.backgroundCanvas.height = this.canvas.height;
+            this.backgroundCanvas.width = this.width();
+            this.backgroundCanvas.height = this.height();
             this.backctx = this.backgroundCanvas.getContext("2d")!;
         }
 
@@ -2911,6 +2914,56 @@ function sum(elements:number[]):number
     } 
     return sum;
 }
+interface UIGroup {
+    v?:UIGroup[] | UIGroup | GuiElement[];
+    h?:UIGroup[] | UIGroup | GuiElement[];
+    e?:GuiElement;
+};
+groupify({v:{h:{},v:[{h:{}, v:{}}]}});
+export function groupify(layout:UIGroup, layout_manager:SimpleGridLayoutManager = new HorizontalLayoutManager([0, 0])):SimpleGridLayoutManager
+{
+    const build_group = (sub_layout, type) => {
+        if(sub_layout)
+        {
+            if(Array.isArray(sub_layout))
+            {
+                const array:UIGroup[] | GuiElement[] = sub_layout;
+                if(array.length)
+                {
+                    if(array[0].draw)
+                    {
+                        const elements = <GuiElement[]> array;
+                        const hlayout = new type([4000, 4000]);
+                        elements.forEach(el => hlayout.addElement(el));
+                        layout_manager.addElement(hlayout.trimDim());
+                    }
+                    else
+                    {
+                        const elements = <UIGroup[]> array;
+                        const hlayout = new type([4000, 4000]);
+                        elements.forEach(el => {
+                            hlayout.addElement(groupify(el, new type([4000, 4000])).trimDim())
+                        });
+                        layout_manager.addElement(hlayout);
+                        hlayout.trimDim();
+                    }
+                }
+            }
+            else
+            {
+                layout_manager.addElement(groupify(sub_layout, new type([4000, 4000])).trimDim());
+            }
+        }
+    }
+    build_group(layout.h, HorizontalLayoutManager);
+    build_group(layout.v, VerticalLayoutManager);
+    if(layout.e)
+    {
+        layout_manager.addElement(layout.e);
+    }
+    layout_manager.trimDim();
+    return layout_manager;
+}
 export function horizontal_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
 {
     let height = 0;
@@ -2922,6 +2975,7 @@ export function horizontal_group(elements:GuiElement[], x:number = 0, y:number =
     }));
     const layout = new HorizontalLayoutManager([width, height], x, y);
     elements.forEach(el => layout.addElement(el));
+    layout.trimDim();
     return layout;
 }
 export function vertical_group(elements:GuiElement[], x:number = 0, y:number = 0):SimpleGridLayoutManager
@@ -2935,6 +2989,7 @@ export function vertical_group(elements:GuiElement[], x:number = 0, y:number = 0
     }));
     const layout = new VerticalLayoutManager([width, height], x, y);
     elements.forEach(el => layout.addElement(el));
+    layout.trimDim();
     return layout;
 }
 export class SpriteAnimation {

@@ -361,6 +361,10 @@ export class SimpleGridLayoutManager {
         });
         return rightmost;
     }
+    trimDim() {
+        this.pixelDim = [this.max_element_x_bounds(), this.max_element_y_bounds()];
+        return this;
+    }
     isLayoutManager() {
         return true;
     }
@@ -534,6 +538,8 @@ export class SimpleGridLayoutManager {
         return false;
     }
     addElement(element, position = -1) {
+        //if(!element)
+        //  return false;
         let inserted = false;
         if (position === -1) {
             this.elements.push(element);
@@ -891,9 +897,6 @@ export class GuiSlider {
         this.callBack = movedCallBack;
         this.focused = false;
         this.dim = [dim[0], dim[1]];
-        this.canvas = document.createElement("canvas");
-        this.canvas.width = this.width();
-        this.canvas.height = this.height();
         this.refresh();
     }
     setState(value) {
@@ -923,7 +926,7 @@ export class GuiSlider {
     }
     refresh() {
     }
-    draw(ctx = this.canvas.getContext("2d"), x, y, offsetX, offsetY) {
+    draw(ctx, x, y, offsetX, offsetY) {
         ctx.fillStyle = "#FFFFFF";
         const bounds = this.getBounds();
         const center = [bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2];
@@ -968,11 +971,10 @@ export class CustomBackgroundSlider extends GuiSlider {
         super.refresh();
         if (!this.backgroundCanvas) {
             this.backgroundCanvas = document.createElement("canvas");
-            this.backctx = this.canvas.getContext("2d");
         }
-        if (this.backgroundCanvas.width !== this.canvas.width || this.backgroundCanvas.height !== this.canvas.height) {
-            this.backgroundCanvas.width = this.canvas.width;
-            this.backgroundCanvas.height = this.canvas.height;
+        if (this.backgroundCanvas.width !== this.width() || this.backgroundCanvas.height !== this.height()) {
+            this.backgroundCanvas.width = this.width();
+            this.backgroundCanvas.height = this.height();
             this.backctx = this.backgroundCanvas.getContext("2d");
         }
         const bounds = this.getBounds();
@@ -2335,6 +2337,44 @@ function sum(elements) {
     }
     return sum;
 }
+;
+groupify({ v: { h: {}, v: [{ h: {}, v: {} }] } });
+export function groupify(layout, layout_manager = new HorizontalLayoutManager([0, 0])) {
+    const build_group = (sub_layout, type) => {
+        if (sub_layout) {
+            if (Array.isArray(sub_layout)) {
+                const array = sub_layout;
+                if (array.length) {
+                    if (array[0].draw) {
+                        const elements = array;
+                        const hlayout = new type([4000, 4000]);
+                        elements.forEach(el => hlayout.addElement(el));
+                        layout_manager.addElement(hlayout.trimDim());
+                    }
+                    else {
+                        const elements = array;
+                        const hlayout = new type([4000, 4000]);
+                        elements.forEach(el => {
+                            hlayout.addElement(groupify(el, new type([4000, 4000])).trimDim());
+                        });
+                        layout_manager.addElement(hlayout);
+                        hlayout.trimDim();
+                    }
+                }
+            }
+            else {
+                layout_manager.addElement(groupify(sub_layout, new type([4000, 4000])).trimDim());
+            }
+        }
+    };
+    build_group(layout.h, HorizontalLayoutManager);
+    build_group(layout.v, VerticalLayoutManager);
+    if (layout.e) {
+        layout_manager.addElement(layout.e);
+    }
+    layout_manager.trimDim();
+    return layout_manager;
+}
 export function horizontal_group(elements, x = 0, y = 0) {
     let height = 0;
     const width = sum(elements.map(el => {
@@ -2344,6 +2384,7 @@ export function horizontal_group(elements, x = 0, y = 0) {
     }));
     const layout = new HorizontalLayoutManager([width, height], x, y);
     elements.forEach(el => layout.addElement(el));
+    layout.trimDim();
     return layout;
 }
 export function vertical_group(elements, x = 0, y = 0) {
@@ -2355,6 +2396,7 @@ export function vertical_group(elements, x = 0, y = 0) {
     }));
     const layout = new VerticalLayoutManager([width, height], x, y);
     elements.forEach(el => layout.addElement(el));
+    layout.trimDim();
     return layout;
 }
 export class SpriteAnimation {
