@@ -1255,8 +1255,12 @@ class Game extends SquareAABBCollidable {
                 const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
                 //ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                if (this.chkbx_render_grid.checked)
+                if (this.chkbx_render_grid.checked) {
                     ctx.fillRect(screen_x - 0.375, 0, 0.75, this.cell_dim[1]);
+                    const sdx = delta_x / this.deltaX * this.cell_dim[0];
+                    ctx.fillRect(screen_x - 0.375 + sdx / 4, 0, 0.75, this.cell_dim[1]);
+                    ctx.fillRect(screen_x - 0.375 - sdx / 4, 0, 0.75, this.cell_dim[1]);
+                }
             }
             if (screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x * 15 / 16) {
                 last_render_x = screen_x + 3;
@@ -1289,8 +1293,12 @@ class Game extends SquareAABBCollidable {
                 screen_space_y_axis = old_screen_space_y_axis;
                 //ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                if (this.chkbx_render_grid.checked)
+                if (this.chkbx_render_grid.checked) {
                     ctx.fillRect(0, screen_y - 0.375, this.cell_dim[0], 0.75);
+                    const sdy = delta_y / this.deltaY * this.cell_dim[1];
+                    ctx.fillRect(0, screen_y - 0.1875 + sdy / 4, this.cell_dim[0], 0.375);
+                    ctx.fillRect(0, screen_y - 0.1875 - sdy / 4, this.cell_dim[0], 0.375);
+                }
             }
             if (screen_y > last_render_y + font_size * 2) {
                 last_render_y = screen_y;
