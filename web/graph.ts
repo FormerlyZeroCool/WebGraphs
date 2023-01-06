@@ -1217,7 +1217,7 @@ class Game extends SquareAABBCollidable {
         const label_show_grid = new GuiLabel("Show Grid", 100, 18, 50 + touch_mod);
         this.chkbx_render_grid = new GuiCheckBox((e) => {
             this.repaint = true;
-        }, 100, 50 + touch_mod, false);
+        }, 100, 50 + touch_mod, true);
 
         this.chkbx_sync_curve_width = new GuiCheckBox((event:any) => {
         }, 100, 50 + touch_mod, true);
