@@ -118,6 +118,8 @@ class ColorPickerTool extends ExtendedTool {
         this.hueSlider.refresh();
         this.saturationSlider.refresh();
         this.lightnessSlider.refresh();
+        this.localLayout.trimDim();
+        this.getOptionPanel()!.trimDim();
     }
     set_color(color:RGB):void
     {
@@ -1671,7 +1673,7 @@ class Game extends SquareAABBCollidable {
             this.main_buf.ctx.imageSmoothingEnabled = false;
             this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
-            
+
             this.render_axes(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             
             this.try_render_functions();

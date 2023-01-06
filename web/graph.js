@@ -96,6 +96,8 @@ class ColorPickerTool extends ExtendedTool {
         this.hueSlider.refresh();
         this.saturationSlider.refresh();
         this.lightnessSlider.refresh();
+        this.localLayout.trimDim();
+        this.getOptionPanel().trimDim();
     }
     set_color(color) {
         this.chosenColor.color.copy(color);
