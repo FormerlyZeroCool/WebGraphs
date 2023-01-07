@@ -1539,14 +1539,6 @@ class Game extends SquareAABBCollidable {
             this.axes.ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
             //render axes
             this.axes.ctx.beginPath();
-            /*this.axes.ctx.lineWidth = 4;
-            this.axes.ctx.strokeStyle = "#FFFFFF";
-            this.axes.ctx.moveTo(0, screen_space_x_axis);
-            this.axes.ctx.lineTo(this.cell_dim[0], screen_space_x_axis);
-            this.axes.ctx.moveTo(screen_space_y_axis, 0);
-            this.axes.ctx.lineTo(screen_space_y_axis, this.cell_dim[1]);
-            this.axes.ctx.stroke();*/
-            this.axes.ctx.beginPath();
             this.axes.ctx.lineWidth = 3;
             this.axes.ctx.strokeStyle = "#000000";
             this.axes.ctx.moveTo(0, screen_space_x_axis);
@@ -1681,6 +1673,7 @@ class Game extends SquareAABBCollidable {
             this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
 
+            this.calc_bounds();
             this.render_axes(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             
             this.try_render_functions();
