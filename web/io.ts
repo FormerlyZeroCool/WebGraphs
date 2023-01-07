@@ -410,7 +410,7 @@ export class MultiTouchListener {
         if(isTouchSupported())
         {
             component.addEventListener('touchmove', event => this.touchMoveHandler(event));
-            component.addEventListener('touchend', event => {this.registeredMultiTouchEvent = false; this.rotation_listening = false; this.lastDistance = 0; this.start_theta = 0; event.preventDefault()});
+            component.addEventListener('touchend', event => {this.registeredMultiTouchEvent = false; this.rotation_listening = false; this.lastDistance = 0; this.previous_touches = []; this.start_theta = 0; event.preventDefault()});
         }
     }    
     registerCallBack(listenerType:string, predicate:(event:any) => boolean, callBack:(event:any) => void):void
