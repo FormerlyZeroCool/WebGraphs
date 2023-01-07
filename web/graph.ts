@@ -589,7 +589,7 @@ class FollowCursor extends GridUIState {
     draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
         this.grid.render_labels_floating(ctx);
         if(this.grid.draw_point_labels && this.grid.chkbx_render_grid.checked)
-            this.grid.render_x_y_label_screen_space(ctx, this.grid.touchListener.touchPos);
+            this.grid.render_x_y_label_screen_space(ctx, this.grid.touchPos);
     }
     handleKeyboardEvents(type: string, event: KeyboardEvent): void {
         throw new Error('Method not implemented.');
@@ -1669,11 +1669,13 @@ class Game extends SquareAABBCollidable {
         }
         if(this.repaint)
         {
-            this.main_buf.ctx.imageSmoothingEnabled = false;
-            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
             this.repaint = false;
+            this.main_buf.ctx.imageSmoothingEnabled = true;
+            
+            this.main_buf.ctx.clearRect(0, 0, this.main_buf.width, this.main_buf.height);
 
             this.calc_bounds();
+
             this.render_axes(this.main_buf.image, this.main_buf.ctx, x, y, this.main_buf.width, this.main_buf.height);
             
             this.try_render_functions();
