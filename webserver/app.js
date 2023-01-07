@@ -20,8 +20,8 @@ const httpServer = http.createServer(app);
 
 //Middleware Definition 
 app.use(express.static('../'));
-app.use(express.json())
-app.use(express.urlencoded({extended:false}))
+app.use(express.urlencoded({extended:false}));
+app.use(express.json());
 routerGen.gen(app);
 //End Middleware definition
 

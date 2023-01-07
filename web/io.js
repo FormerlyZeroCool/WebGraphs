@@ -1,3 +1,4 @@
+import { get_angle, normalize } from "./utils.js";
 export class KeyListenerTypes {
     constructor() {
         this.keydown = new Array();
@@ -285,21 +286,32 @@ export class SingleTouchListener {
 }
 SingleTouchListener.mouseDown = new MouseDownTracker();
 ;
+export class MultiTouchHandler {
+    constructor(pred, callBack) {
+        this.pred = pred;
+        this.callBack = callBack;
+    }
+}
+;
 export class MultiTouchListenerTypes {
     constructor() {
         this.pinchIn = [];
         this.pinchOut = [];
+        this.rotate = [];
     }
 }
 ;
 export class MultiTouchListener {
     constructor(component) {
         this.lastDistance = 0;
+        this.start_theta = 0;
+        this.rotation_listening = false;
+        this.previous_touches = [];
         this.listenerTypeMap = new MultiTouchListenerTypes();
         this.registeredMultiTouchEvent = false;
         if (isTouchSupported()) {
-            component.addEventListener('touchmove', event => this.touchMoveHandler(event), { passive: true });
-            component.addEventListener('touchend', event => { this.registeredMultiTouchEvent = false; this.lastDistance = 0; event.preventDefault(); }, { passive: true });
+            component.addEventListener('touchmove', event => this.touchMoveHandler(event));
+            component.addEventListener('touchend', event => { this.registeredMultiTouchEvent = false; this.rotation_listening = false; this.lastDistance = 0; this.start_theta = 0; event.preventDefault(); });
         }
     }
     registerCallBack(listenerType, predicate, callBack) {
@@ -314,17 +326,44 @@ export class MultiTouchListener {
         });
     }
     touchMoveHandler(event) {
-        const touch1 = event.changedTouches.item(0);
-        const touch2 = event.changedTouches.item(1);
+        let touch1 = event.changedTouches.item(0);
+        let touch2 = event.changedTouches.item(1);
         if (SingleTouchListener.mouseDown.getTouchCount() > 1) {
             this.registeredMultiTouchEvent = true;
             if (this.lastDistance === 0)
                 this.lastDistance = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
+            if (this.start_theta === 0) {
+                this.start_theta = this.get_theta(touch1, touch2);
+            }
         }
-        if (this.registeredMultiTouchEvent) {
+        if (this.previous_touches.length > 1) {
+            if (!touch1 && !touch2) {
+                touch1 = this.previous_touches[0];
+                touch2 = this.previous_touches[1];
+            }
+            if (!touch2) {
+                if (dist(touch1.clientX, touch1.clientY, this.previous_touches[0].clientX, this.previous_touches[0].clientY) <
+                    dist(touch1.clientX, touch1.clientY, this.previous_touches[1].clientX, this.previous_touches[1].clientY)) {
+                    touch2 = this.previous_touches[1];
+                }
+                else {
+                    const temp = touch1;
+                    touch1 = this.previous_touches[0];
+                    touch2 = temp;
+                }
+            }
+        }
+        if (this.registeredMultiTouchEvent || (touch1 && touch2)) {
             const newDist = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
             event.delta = this.lastDistance - newDist;
-            if (this.lastDistance > newDist) {
+            const theta = this.get_theta(touch1, touch2);
+            event.theta = theta;
+            if (Math.abs(this.start_theta - theta) > Math.PI / 16)
+                this.rotation_listening = true;
+            if (this.rotation_listening) {
+                this.callHandler("rotation", event);
+            }
+            else if (this.lastDistance > newDist) {
                 this.callHandler("pinchOut", event);
             }
             else {
@@ -332,10 +371,21 @@ export class MultiTouchListener {
             }
             event.preventDefault();
             this.lastDistance = newDist;
+            if (touch1 && touch2)
+                this.previous_touches = [touch1, touch2];
         }
+    }
+    get_theta(touch1, touch2) {
+        const vec = normalize([touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY]);
+        return get_angle(vec[0], vec[1]);
     }
 }
 ;
+function dist(x1, y1, x2, y2) {
+    const dx = x1 - x2;
+    const dy = y1 - y2;
+    return Math.sqrt(dx * dx + dy * dy);
+}
 export async function fetchImage(url) {
     const img = new Image();
     img.src = URL.createObjectURL(await (await fetch(url)).blob());

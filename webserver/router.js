@@ -12,7 +12,7 @@ function gen(app)
     //Routes definition
     app.post('/data',async (req,res,err) => {
 	    console.log(req.body);
-        res.sent("hi");
+        res.send('{"data":"hi"}');
     });
     app.post('/game_state',async (req,res,err) => {
         
