@@ -1576,23 +1576,25 @@ class Game extends SquareAABBCollidable {
         let last_render_x:number = -1;
         let last_render_text_width = 0;
         ctx.font = `${font_size}px Helvetica`;
+        ctx.fillStyle = "#B4B4B4";
         ctx.strokeStyle = "#B4B4B4";
         ctx.lineWidth = 3;
         //render points along x axis
         while(i < this.x_max)
         {
+            ctx.fillStyle = "#B4B4B4";
             const screen_x = ((i - this.x_min) / this.deltaX) * this.main_buf.width;
             ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
             ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
             if(this.chkbx_render_grid.checked)
-                ctx.fillRect(screen_x, - 0.75, 1.5, this.cell_dim[1]);
+                ctx.fillRect(screen_x, - 0.45, 0.9, this.cell_dim[1]);
             {
                 const screen_x = ((i + delta_x / 2 - this.x_min) / this.deltaX) * this.main_buf.width;
                 //ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 if(this.chkbx_render_grid.checked)
                 {
-                    ctx.fillRect(screen_x - 0.375, 0, 0.75, this.cell_dim[1]);
+                    ctx.fillRect(screen_x - 0.375, 0, 0.5, this.cell_dim[1]);
                     const sdx = delta_x / this.deltaX * this.cell_dim[0];
                     ctx.fillRect(screen_x - 0.1 + sdx / 4, 0, 0.2, this.cell_dim[1]);
                     ctx.fillRect(screen_x - 0.1 - sdx / 4, 0, 0.2, this.cell_dim[1]);
@@ -1609,6 +1611,7 @@ class Game extends SquareAABBCollidable {
                 {
                     text_y += font_size + 10;
                 }
+                ctx.fillStyle = "#000000";
                 ctx.strokeText(text, screen_x + 3, text_y - 6);
                 ctx.fillText(text, screen_x + 3, text_y - 6);
             }
@@ -1622,12 +1625,15 @@ class Game extends SquareAABBCollidable {
         //render points along y axis
         while(i <= this.y_max)
         {
+            ctx.fillStyle = "#B4B4B4";
             const screen_y = (i - this.y_min) / this.deltaY * this.main_buf.height;
             screen_space_y_axis = old_screen_space_y_axis;
             ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
             ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-            if(this.chkbx_render_grid.checked)
-                ctx.fillRect(0, screen_y - 0.75, this.cell_dim[0], 1.5);
+            if(this.chkbx_render_grid.checked) {
+                ctx.fillRect(0, screen_y - 0.45, this.cell_dim[0], 0.9);
+            }
+            
             {
                 const screen_y = (i + delta_y / 2 - this.y_min) / this.deltaY * this.main_buf.height;
                 screen_space_y_axis = old_screen_space_y_axis;
@@ -1641,7 +1647,7 @@ class Game extends SquareAABBCollidable {
                     ctx.fillRect(0, screen_y - 0.1 - sdy / 4, this.cell_dim[0], 0.2);
                 }
             }
-            if(screen_y > last_render_y + font_size*2)
+            if(screen_y > last_render_y + font_size * 2)
             {
                 last_render_y = screen_y;
                 const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 +"";
@@ -1651,6 +1657,7 @@ class Game extends SquareAABBCollidable {
                     screen_space_y_axis -= text_width + 10;
                 }
                 ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
+                ctx.fillStyle = "#000000";
                 ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
             }
             i += delta_y;
