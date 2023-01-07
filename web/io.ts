@@ -472,10 +472,9 @@ export class MultiTouchListener {
             if(Math.abs(this.start_theta - theta) > Math.PI / 16)
                 this.rotation_listening = true;
 
-            if(this.rotation_listening)
+            if(this.rotation_listening && this.listenerTypeMap.rotate.length)
             {
                 this.callHandler("rotation", event);
-
             }
             else if(this.lastDistance > newDist)
             {
