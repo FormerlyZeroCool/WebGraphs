@@ -1,4 +1,4 @@
-import { get_angle, normalize } from "./utils.js";
+import { get_angle, logToServer, normalize } from "./utils.js";
 export class KeyListenerTypes {
     constructor() {
         this.keydown = new Array();
@@ -286,6 +286,7 @@ export class SingleTouchListener {
 }
 SingleTouchListener.mouseDown = new MouseDownTracker();
 ;
+;
 export class MultiTouchHandler {
     constructor(pred, callBack) {
         this.pred = pred;
@@ -311,7 +312,14 @@ export class MultiTouchListener {
         this.registeredMultiTouchEvent = false;
         if (isTouchSupported()) {
             component.addEventListener('touchmove', event => this.touchMoveHandler(event));
-            component.addEventListener('touchend', event => { this.registeredMultiTouchEvent = false; this.rotation_listening = false; this.lastDistance = 0; this.previous_touches = []; this.start_theta = 0; event.preventDefault(); });
+            component.addEventListener('touchend', event => {
+                this.registeredMultiTouchEvent = false;
+                this.rotation_listening = false;
+                this.lastDistance = 0;
+                this.start_theta = 0;
+                this.previous_touches = [];
+                event.preventDefault();
+            });
         }
     }
     registerCallBack(listenerType, predicate, callBack) {
@@ -356,8 +364,10 @@ export class MultiTouchListener {
         if (this.registeredMultiTouchEvent || (touch1 && touch2)) {
             const newDist = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
             event.delta = this.lastDistance - newDist;
+            event.distance = newDist;
             const theta = this.get_theta(touch1, touch2);
-            event.theta = theta;
+            event.rotation_theta = theta;
+            logToServer(event, '../data');
             if (Math.abs(this.start_theta - theta) > Math.PI / 16)
                 this.rotation_listening = true;
             if (this.rotation_listening && this.listenerTypeMap.rotate.length) {

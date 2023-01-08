@@ -371,19 +371,26 @@ export class SingleTouchListener
         return a[0]*b[0]+a[1]*b[1];
     }
 };
+interface MultiTouchEvent extends TouchMoveEvent {
+    delta:number;
+    distance:number;
+    rotation_theta:number;
+    defaultPrevented:boolean;
+    preventDefault():void;
+};
 export class MultiTouchHandler {
-    pred:(event:any) => boolean; 
-    callBack:(event:any) => void;
-    constructor(pred:(event:any) => boolean, callBack:(event:any) => void)
+    pred:(event:MultiTouchEvent) => boolean; 
+    callBack:(event:MultiTouchEvent) => void;
+    constructor(pred:(event:MultiTouchEvent) => boolean, callBack:(event:MultiTouchEvent) => void)
     {
         this.pred = pred;
         this.callBack = callBack;
     }
 };
 export class MultiTouchListenerTypes {
-    pinchOut:Array<TouchHandler>;
-    pinchIn:Array<TouchHandler>;
-    rotate:Array<TouchHandler>;
+    pinchOut:Array<MultiTouchHandler>;
+    pinchIn:Array<MultiTouchHandler>;
+    rotate:Array<MultiTouchHandler>;
     constructor(){
         this.pinchIn = [];
         this.pinchOut = [];
@@ -410,17 +417,24 @@ export class MultiTouchListener {
         if(isTouchSupported())
         {
             component.addEventListener('touchmove', event => this.touchMoveHandler(event));
-            component.addEventListener('touchend', event => {this.registeredMultiTouchEvent = false; this.rotation_listening = false; this.lastDistance = 0; this.previous_touches = []; this.start_theta = 0; event.preventDefault()});
+            component.addEventListener('touchend', event => {
+                this.registeredMultiTouchEvent = false; 
+                this.rotation_listening = false; 
+                this.lastDistance = 0; 
+                this.start_theta = 0; 
+                this.previous_touches = []; 
+                event.preventDefault();
+            });
         }
     }    
     registerCallBack(listenerType:string, predicate:(event:any) => boolean, callBack:(event:any) => void):void
     {
         (<any> this.listenerTypeMap)[listenerType].push(new TouchHandler(predicate, callBack));
     }
-    callHandler(type:string, event:any):void
+    callHandler(type:string, event:MultiTouchEvent):void
     {
-        const handlers:TouchHandler[] = (<any>this.listenerTypeMap)[type];
-        handlers.forEach((handler:TouchHandler) => {
+        const handlers:MultiTouchHandler[] = (<any>this.listenerTypeMap)[type];
+        handlers.forEach((handler:MultiTouchHandler) => {
             if(!event.defaultPrevented && handler.pred(event))
             {
                 handler.callBack(event);
@@ -467,8 +481,10 @@ export class MultiTouchListener {
         {
             const newDist:number = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX),2) + Math.pow(touch1.clientY - touch2.clientY, 2));
             event.delta = this.lastDistance - newDist;
+            event.distance = newDist;
             const theta = this.get_theta(touch1, touch2);
-            event.theta = theta;
+            event.rotation_theta = theta;
+            logToServer(event, '../data')
             if(Math.abs(this.start_theta - theta) > Math.PI / 16)
                 this.rotation_listening = true;
 
