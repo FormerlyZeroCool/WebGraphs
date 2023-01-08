@@ -1,4 +1,4 @@
-import { get_angle, logToServer, normalize } from "./utils.js";
+import { get_angle, normalize } from "./utils.js";
 export class KeyListenerTypes {
     constructor() {
         this.keydown = new Array();
@@ -349,7 +349,7 @@ export class MultiTouchListener {
                 touch1 = this.previous_touches[0];
                 touch2 = this.previous_touches[1];
             }
-            if (!touch2) {
+            else if (!touch2) {
                 if (dist(touch1.clientX, touch1.clientY, this.previous_touches[0].clientX, this.previous_touches[0].clientY) <
                     dist(touch1.clientX, touch1.clientY, this.previous_touches[1].clientX, this.previous_touches[1].clientY)) {
                     touch2 = this.previous_touches[1];
@@ -361,29 +361,28 @@ export class MultiTouchListener {
                 }
             }
         }
-        if (this.registeredMultiTouchEvent || (touch1 && touch2)) {
-            const newDist = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
-            event.delta = this.lastDistance - newDist;
-            event.distance = newDist;
-            const theta = this.get_theta(touch1, touch2);
-            event.rotation_theta = theta;
-            logToServer(event, '../data');
-            if (Math.abs(this.start_theta - theta) > Math.PI / 16)
-                this.rotation_listening = true;
-            if (this.rotation_listening && this.listenerTypeMap.rotate.length) {
-                this.callHandler("rotation", event);
-            }
-            else if (this.lastDistance > newDist) {
-                this.callHandler("pinchOut", event);
-            }
-            else {
-                this.callHandler("pinchIn", event);
-            }
-            event.preventDefault();
-            this.lastDistance = newDist;
-            if (touch1 && touch2)
-                this.previous_touches = [touch1, touch2];
+        if (!(this.registeredMultiTouchEvent || (touch1 && touch2)))
+            return;
+        const newDist = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
+        event.delta = this.lastDistance - newDist;
+        event.distance = newDist;
+        const theta = this.get_theta(touch1, touch2);
+        event.rotation_theta = theta;
+        if (Math.abs(this.start_theta - theta) > Math.PI / 16)
+            this.rotation_listening = true;
+        if (this.rotation_listening && this.listenerTypeMap.rotate.length) {
+            this.callHandler("rotation", event);
         }
+        else if (this.lastDistance > newDist) {
+            this.callHandler("pinchOut", event);
+        }
+        else {
+            this.callHandler("pinchIn", event);
+        }
+        event.preventDefault();
+        this.lastDistance = newDist;
+        if (touch1 && touch2)
+            this.previous_touches = [touch1, touch2];
     }
     get_theta(touch1, touch2) {
         const vec = normalize([touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY]);
