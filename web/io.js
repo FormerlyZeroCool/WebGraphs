@@ -200,10 +200,7 @@ export class SingleTouchListener {
             this.touchMoveCount++;
             this.deltaTouchPos += Math.abs(mag);
             this.touchVelocity = 100 * this.deltaTouchPos / (Date.now() - this.startTouchTime);
-            const a = this.normalize([deltaX, deltaY]);
-            const b = [1, 0];
-            const dotProduct = this.dotProduct(a, b);
-            const angle = Math.acos(dotProduct) * (180 / Math.PI) * (deltaY < 0 ? 1 : -1);
+            const angle = get_angle(deltaX, deltaY);
             event.deltaX = deltaX;
             event.startTouchPos = this.startTouchPos;
             event.deltaY = deltaY;
@@ -299,6 +296,7 @@ export class MultiTouchListenerTypes {
         this.pinchIn = [];
         this.pinchOut = [];
         this.rotate = [];
+        this.touchmove = [];
     }
 }
 ;
@@ -306,6 +304,7 @@ export class MultiTouchListener {
     constructor(component) {
         this.lastDistance = 0;
         this.start_theta = 0;
+        this.rotation_theta = 0;
         this.rotation_listening = false;
         this.previous_touches = [];
         this.listenerTypeMap = new MultiTouchListenerTypes();
@@ -317,6 +316,7 @@ export class MultiTouchListener {
                 this.rotation_listening = false;
                 this.lastDistance = 0;
                 this.start_theta = 0;
+                this.rotation_theta = 0;
                 this.previous_touches = [];
                 event.preventDefault();
             });
@@ -341,6 +341,10 @@ export class MultiTouchListener {
             if (this.lastDistance === 0)
                 this.lastDistance = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
             if (this.start_theta === 0) {
+                const temp1 = touch1.clientX < touch2.clientX ? touch1 : touch2;
+                const temp2 = touch1.clientX < touch2.clientX ? touch2 : touch1;
+                touch1 = temp1;
+                touch2 = temp2;
                 this.start_theta = this.get_theta(touch1, touch2);
             }
         }
@@ -368,6 +372,7 @@ export class MultiTouchListener {
         event.distance = newDist;
         const theta = this.get_theta(touch1, touch2);
         event.rotation_theta = theta;
+        this.rotation_theta = theta;
         if (Math.abs(this.start_theta - theta) > Math.PI / 16)
             this.rotation_listening = true;
         if (this.rotation_listening && this.listenerTypeMap.rotate.length) {

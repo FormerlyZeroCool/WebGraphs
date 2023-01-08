@@ -1,7 +1,7 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox, 
     GuiColoredSpacer, ExtendedTool, vertical_group, horizontal_group, CustomBackgroundSlider, StateManagedUI, UIState, GuiSpacer, is_landscape, GuiElement, groupify} from './gui.js'
-import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
+import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue, logToServer} from './utils.js'
 import {menu_font_size, SpatialHashMap2D, SquareAABBCollidable } from './game_utils.js'
 window.sec = (x:number) => 1/Math.sin(x);
 window.csc = (x:number) => 1/Math.cos(x);
@@ -2208,7 +2208,6 @@ async function main()
             ctx.strokeText(text, game.width - fps_text_width - 10, menu_font_size());
             ctx.fillText(text, game.width - fps_text_width - 10, menu_font_size());
         }
-
         requestAnimationFrame(drawLoop);
     }
     drawLoop();

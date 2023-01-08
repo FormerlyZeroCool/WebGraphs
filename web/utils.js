@@ -23,7 +23,7 @@ export function get_angle(deltaX, deltaY, unit_vectorX = 1, unit_vectorY = 0) {
     const a = normalize([deltaX, deltaY]);
     const b = [unit_vectorX, unit_vectorY];
     const dotProduct = scalarDotProduct(a, b);
-    return Math.acos(dotProduct) * (deltaY < 0 ? 1 : -1);
+    return Math.acos(dotProduct) * (deltaY < 0 ? -1 : 1);
 }
 export function threeByThreeMat(a, b) {
     return [a[0] * b[0] + a[1] * b[3] + a[2] * b[6],

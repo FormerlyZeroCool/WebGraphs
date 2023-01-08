@@ -32,7 +32,7 @@ export function get_angle(deltaX:number, deltaY:number, unit_vectorX:number = 1,
     const a:Array<number> = normalize([deltaX, deltaY]);
     const b:Array<number> = [unit_vectorX, unit_vectorY];
     const dotProduct:number = scalarDotProduct(a, b);
-    return Math.acos(dotProduct)*(deltaY<0?1:-1);
+    return Math.acos(dotProduct)*(deltaY<0?-1:1);
 }
 export function threeByThreeMat(a:number[], b:number[]):number[]
 {
