@@ -92,8 +92,9 @@ export class PriorityQueue<T> {
         let index = 0;
         
         while(left(index) < this.size() && right(index) < this.size() && 
-            ( this.comparator(this.data[left(index)], this.data[index]) < 0 ||
-             this.comparator(this.data[right(index)], this.data[index]) < 0)
+            ( 
+                this.comparator(this.data[left(index)], this.data[index]) < 0 ||
+                this.comparator(this.data[right(index)], this.data[index]) < 0)
             )
         {
             const lesser_child = this.comparator(this.data[left(index)], this.data[right(index)]) < 0? left(index) : right(index);
@@ -102,9 +103,7 @@ export class PriorityQueue<T> {
             this.data[index] = temp;
             index = lesser_child;
         }
-        if(
-            left(index) < this.size() && this.comparator(this.data[left(index)], this.data[index]) < 0
-          )
+        if(left(index) < this.size() && this.comparator(this.data[left(index)], this.data[index]) < 0)
         {
             const lesser_child = left(index);
             const temp = this.data[lesser_child];

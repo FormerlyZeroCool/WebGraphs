@@ -1656,6 +1656,8 @@ async function main() {
         game.repaint = true;
         //e.preventDefault();
     }, { passive: true });
+    if (!('TouchEvent' in window))
+        console.log("touch events not supported");
     canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
     }, { passive: false });
@@ -1730,6 +1732,10 @@ async function main() {
                 break;
             case ("KeyF"):
                 render_fps = !render_fps;
+                break;
+            case ("KeyQ"):
+                game.x_translation = 0;
+                game.y_translation = 0;
                 break;
         }
     });

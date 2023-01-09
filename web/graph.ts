@@ -2066,6 +2066,8 @@ async function main()
         game.repaint = true;
         //e.preventDefault();
     }, { passive:true });
+    if(!('TouchEvent' in window))
+        console.log("touch events not supported")
     canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
     }, { passive:false });
@@ -2078,14 +2080,12 @@ async function main()
     multi_touch_listener.registerCallBack("pinchIn", () => true, (event:any) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
         
-        
         game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
         event.preventDefault();
     });
     multi_touch_listener.registerCallBack("pinchOut", () => true, (event:any) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
-        
         
         game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
@@ -2151,6 +2151,10 @@ async function main()
             break;
             case("KeyF"):
             render_fps = !render_fps;
+            break;
+            case("KeyQ"):
+            game.x_translation = 0;
+            game.y_translation = 0;
             break;
         }
     });

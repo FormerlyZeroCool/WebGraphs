@@ -59,6 +59,19 @@ export class KeyboardHandler {
     }
     
 };
+interface Touch {
+    identifier:number,
+    target:number,
+    clientX:number,
+    clientY:number,
+    pageX:number,
+    pageY:number,
+    screenX:number,
+    screenY:number,
+    radiusX:number,
+    radiusY:number,
+    rotationAngle:number
+}
 export class TouchHandler {
     pred:(event:any) => boolean; 
     callBack:(event:any) => void;
@@ -239,11 +252,11 @@ export class SingleTouchListener
         if(this.registeredTouch !== SingleTouchListener.mouseDown.mouseDown){
             this.touchEndHandler(event);
         }
-        let touchMove = event.changedTouches.item(0);
-        for(let i = 0; i < event.changedTouches["length"]; i++)
+        let touchMove = event.touches.item(0);
+        for(let i = 0; i < event.touches["length"]; i++)
         {
-            if(event.changedTouches.item(i).identifier == this.touchStart.identifier){
-                touchMove = event.changedTouches.item(i);
+            if(event.touches.item(i).identifier == this.touchStart.identifier){
+                touchMove = event.touches.item(i);
             }
         }  
         
@@ -373,6 +386,7 @@ interface MultiTouchEvent extends TouchMoveEvent {
     distance:number;
     rotation_theta:number;
     defaultPrevented:boolean;
+    touches:TouchEvent[];
     preventDefault():void;
 };
 export class MultiTouchHandler {
@@ -445,8 +459,8 @@ export class MultiTouchListener {
     }
     touchMoveHandler(event:any):void
     {
-        let touch1 = event.changedTouches.item(0);
-        let touch2 = event.changedTouches.item(1);
+        let touch1 = event.touches.item(0);
+        let touch2 = event.touches.item(1);
         if(SingleTouchListener.mouseDown.getTouchCount() > 1)
         {
             this.registeredMultiTouchEvent = true;

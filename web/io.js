@@ -171,10 +171,10 @@ export class SingleTouchListener {
         if (this.registeredTouch !== SingleTouchListener.mouseDown.mouseDown) {
             this.touchEndHandler(event);
         }
-        let touchMove = event.changedTouches.item(0);
-        for (let i = 0; i < event.changedTouches["length"]; i++) {
-            if (event.changedTouches.item(i).identifier == this.touchStart.identifier) {
-                touchMove = event.changedTouches.item(i);
+        let touchMove = event.touches.item(0);
+        for (let i = 0; i < event.touches["length"]; i++) {
+            if (event.touches.item(i).identifier == this.touchStart.identifier) {
+                touchMove = event.touches.item(i);
             }
         }
         if (touchMove) {
@@ -334,8 +334,8 @@ export class MultiTouchListener {
         });
     }
     touchMoveHandler(event) {
-        let touch1 = event.changedTouches.item(0);
-        let touch2 = event.changedTouches.item(1);
+        let touch1 = event.touches.item(0);
+        let touch2 = event.touches.item(1);
         if (SingleTouchListener.mouseDown.getTouchCount() > 1) {
             this.registeredMultiTouchEvent = true;
             if (this.lastDistance === 0)
