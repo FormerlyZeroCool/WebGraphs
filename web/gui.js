@@ -624,17 +624,16 @@ export class ScrollingGridLayoutManager extends SimpleGridLayoutManager {
     }
 }
 ;
-export class GuiListItem extends SimpleGridLayoutManager {
+export class GuiListItem extends HorizontalLayoutManager {
     constructor(text, state, pixelDim, fontSize = 16, callBack = () => { }, genericCallBack = null, slideMoved = null, flags = GuiTextBox.bottom, genericTouchType = "touchend") {
-        super([200, 1], pixelDim);
+        super(pixelDim);
         this.callBackType = genericTouchType;
         this.callBack = genericCallBack;
         this.checkBox = new GuiCheckBox(callBack, pixelDim[0] / 5, pixelDim[1], state);
         const width = (pixelDim[0] - this.checkBox.width()); // >> (slideMoved ? 1: 0);
         this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags);
         this.textBox.setText(text);
-        this.addElement(this.checkBox);
-        this.addElement(this.textBox);
+        this.addElement(horizontal_group([this.checkBox, this.textBox]));
         if (slideMoved) {
             this.slider = new GuiSlider(1, [width, pixelDim[1]], slideMoved);
             this.sliderX = width + pixelDim[1];
@@ -1671,7 +1670,7 @@ export class GuiTextBox {
         return index;
     }
     screenToTextIndex(pos) {
-        const x = pos[0] - 50; // + this.scroll[0];
+        const x = pos[0] + this.scroll[0];
         const y = pos[1] + this.scroll[1];
         const rows = this.rows;
         let letters_in_previous_rows = 0;
@@ -1684,7 +1683,6 @@ export class GuiTextBox {
         while (rows[row_index].text[column_index] && rows[row_index].x + this.ctx.measureText(rows[row_index].text.substring(0, column_index + 1)).width < x) {
             column_index++;
         }
-        column_index++;
         return letters_in_previous_rows + column_index;
     }
     adjustScrollToCursor() {

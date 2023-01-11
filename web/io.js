@@ -380,6 +380,8 @@ export class MultiTouchListener {
             component.addEventListener("mouseleave", (event) => { this.mouse_over_element = false; });
             component.addEventListener('mousedown', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.single_touch_listener.touchStartHandler(event); });
             component.addEventListener('mousemove', (event) => {
+                event.changedTouches = {};
+                event.changedTouches.item = (x) => event;
                 this.single_touch_listener.touchMoveHandler(event);
                 if (preventDefault)
                     event.preventDefault();

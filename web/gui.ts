@@ -791,7 +791,7 @@ export class ScrollingGridLayoutManager extends SimpleGridLayoutManager {
     }
 
 };
-export class GuiListItem extends SimpleGridLayoutManager {
+export class GuiListItem extends HorizontalLayoutManager {
     textBox:GuiTextBox;
     checkBox:GuiCheckBox;
     slider:GuiSlider | null;
@@ -800,15 +800,14 @@ export class GuiListItem extends SimpleGridLayoutManager {
     callBack:((e:any) => void) | null;
     constructor(text:string, state:boolean, pixelDim:number[], fontSize:number = 16, callBack:((e:any) => void) | null = () => {}, genericCallBack:((e:any) => void) | null = null, slideMoved:((event:SlideEvent) => void) | null = null, flags:number = GuiTextBox.bottom, genericTouchType:string = "touchend")
     {
-        super([200, 1], pixelDim);
+        super(pixelDim);
         this.callBackType = genericTouchType;
         this.callBack = genericCallBack;
         this.checkBox = new GuiCheckBox(callBack, pixelDim[0] / 5, pixelDim[1], state);
         const width:number = (pixelDim[0] - this.checkBox.width())// >> (slideMoved ? 1: 0);
         this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags);
         this.textBox.setText(text);
-        this.addElement(this.checkBox);
-        this.addElement(this.textBox);
+        this.addElement(horizontal_group([this.checkBox, this.textBox]));
         if(slideMoved)
         {
             this.slider = new GuiSlider(1, [width, pixelDim[1]], slideMoved);
@@ -2117,7 +2116,7 @@ export class GuiTextBox implements GuiElement {
     }
     screenToTextIndex(pos:number[]):number
     {
-        const x = pos[0] - 50;// + this.scroll[0];
+        const x = pos[0] + this.scroll[0];
         const y = pos[1] + this.scroll[1];
         const rows:TextRow[] = this.rows;
         let letters_in_previous_rows = 0;
@@ -2132,7 +2131,6 @@ export class GuiTextBox implements GuiElement {
         {
             column_index++;
         }
-        column_index++;
         return letters_in_previous_rows + column_index;
     }
     adjustScrollToCursor():TextRow[]
