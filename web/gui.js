@@ -1575,6 +1575,7 @@ export class GuiTextBox {
                             }
                         }
                     }
+                    this.cursor = this.screenToTextIndex(e.touchPos);
                     this.drawInternalAndClear();
                     break;
             }
@@ -1668,6 +1669,23 @@ export class GuiTextBox {
                 index = i;
         }
         return index;
+    }
+    screenToTextIndex(pos) {
+        const x = pos[0] - 50; // + this.scroll[0];
+        const y = pos[1] + this.scroll[1];
+        const rows = this.rows;
+        let letters_in_previous_rows = 0;
+        let row_index = 0;
+        while (rows[row_index].y + this.fontSize < y) {
+            letters_in_previous_rows += rows[row_index].text.length;
+            row_index++;
+        }
+        let column_index = 0;
+        while (rows[row_index].text[column_index] && rows[row_index].x + this.ctx.measureText(rows[row_index].text.substring(0, column_index + 1)).width < x) {
+            column_index++;
+        }
+        column_index++;
+        return letters_in_previous_rows + column_index;
     }
     adjustScrollToCursor() {
         let deltaY = 0;

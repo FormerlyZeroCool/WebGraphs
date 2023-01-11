@@ -1,4 +1,5 @@
-import { get_angle, normalize } from "./utils.js";
+import { getHeight, getWidth } from "./gui.js";
+import { RollingStack, get_angle, normalize } from "./utils.js";
 export class KeyListenerTypes {
     constructor() {
         this.keydown = new Array();
@@ -10,16 +11,16 @@ export class KeyListenerTypes {
 export class KeyboardHandler {
     constructor() {
         this.keysHeld = {};
-        this.listenerTypeMap = new KeyListenerTypes();
+        this.listener_type_map = new KeyListenerTypes();
         document.addEventListener("keyup", (e) => this.keyUp(e));
         document.addEventListener("keydown", (e) => this.keyDown(e));
         document.addEventListener("keypressed", (e) => this.keyPressed(e));
     }
     registerCallBack(listenerType, predicate, callBack) {
-        this.listenerTypeMap[listenerType].push(new TouchHandler(predicate, callBack));
+        this.listener_type_map[listenerType].push(new TouchHandler(predicate, callBack));
     }
     callHandler(type, event) {
-        const handlers = this.listenerTypeMap[type];
+        const handlers = this.listener_type_map[type];
         handlers.forEach((handler) => {
             if (handler.pred(event)) {
                 handler.callBack(event);
@@ -57,6 +58,9 @@ export class ListenerTypes {
         this.touchstart = new Array();
         this.touchmove = new Array();
         this.touchend = new Array();
+        this.doubletap = new Array();
+        this.tap = new Array();
+        this.swipe = new Array();
     }
 }
 ;
@@ -83,11 +87,12 @@ export class MouseDownTracker {
     getTouchCount() { return this.count; }
 }
 export class SingleTouchListener {
-    constructor(component, preventDefault, mouseEmulation, stopRightClick = false) {
+    constructor(component, preventDefault, mouseEmulation, stopRightClick = false, tap_and_swipe_delay_limit = 250) {
         this.startTouchTime = Date.now();
         this.timeSinceLastTouch = Date.now() - this.startTouchTime;
         this.offset = [];
         this.moveCount = 0;
+        this.tap_and_swipe_delay_limit = tap_and_swipe_delay_limit;
         this.touchMoveEvents = [];
         this.translateEvent = (e, dx, dy) => e.touchPos = [e.touchPos[0] + dx, e.touchPos[1] + dy];
         this.scaleEvent = (e, dx, dy) => e.touchPos = [e.touchPos[0] * dx, e.touchPos[1] * dy];
@@ -95,15 +100,20 @@ export class SingleTouchListener {
         this.component = component;
         this.preventDefault = preventDefault;
         this.touchStart = null;
+        this.start_times = new RollingStack(2);
         this.registeredTouch = false;
         this.touchPos = [0, 0];
         this.touchVelocity = 0;
         this.touchMoveCount = 0;
+        this.double_tapped = false;
         this.deltaTouchPos = 0;
-        this.listenerTypeMap = {
+        this.listener_type_map = {
             touchstart: [],
             touchmove: [],
-            touchend: []
+            touchend: [],
+            tap: [],
+            doubletap: [],
+            swipe: []
         };
         this.mouseOverElement = false;
         if (component) {
@@ -112,7 +122,7 @@ export class SingleTouchListener {
                 component.addEventListener('touchmove', (event) => this.touchMoveHandler(event));
                 component.addEventListener('touchend', (event) => this.touchEndHandler(event));
             }
-            if (mouseEmulation && !isTouchSupported()) {
+            if (mouseEmulation) {
                 if (stopRightClick)
                     component.addEventListener("contextmenu", (e) => {
                         e.preventDefault();
@@ -131,10 +141,10 @@ export class SingleTouchListener {
         }
     }
     registerCallBack(listenerType, predicate, callBack) {
-        this.listenerTypeMap[listenerType].push(new TouchHandler(predicate, callBack));
+        this.listener_type_map[listenerType].push(new TouchHandler(predicate, callBack));
     }
     callHandler(type, event) {
-        const handlers = this.listenerTypeMap[type];
+        const handlers = this.listener_type_map[type];
         const touchSupported = isTouchSupported();
         if (SingleTouchListener.mouseDown.getTouchCount() < 2)
             handlers.forEach((handler) => {
@@ -171,10 +181,10 @@ export class SingleTouchListener {
         if (this.registeredTouch !== SingleTouchListener.mouseDown.mouseDown) {
             this.touchEndHandler(event);
         }
-        let touchMove = event.touches.item(0);
-        for (let i = 0; i < event.touches["length"]; i++) {
-            if (event.touches.item(i).identifier == this.touchStart.identifier) {
-                touchMove = event.touches.item(i);
+        let touchMove = event.changedTouches.item(0);
+        for (let i = 0; i < event.changedTouches["length"]; i++) {
+            if (event.changedTouches.item(i).identifier == this.touchStart.identifier) {
+                touchMove = event.changedTouches.item(i);
             }
         }
         if (touchMove) {
@@ -257,6 +267,21 @@ export class SingleTouchListener {
                 event.translateEvent = this.translateEvent;
                 event.scaleEvent = this.scaleEvent;
                 try {
+                    if (delay < this.tap_and_swipe_delay_limit) {
+                        if (this.mag([deltaX, deltaY]) > Math.min(getWidth(), getHeight()) * 0.1) //swipe
+                         {
+                            event.swipe_direction = Math.abs(deltaX) > Math.abs(deltaY) ? (deltaX < 0 ? "left" : "right") :
+                                (deltaY < 0 ? "up" : "down");
+                            this.callHandler("swipe", event);
+                        }
+                        else if (this.timeSinceLastTouch < this.tap_and_swipe_delay_limit) {
+                            this.callHandler("doubletap", event);
+                            this.double_tapped = true;
+                        }
+                        else //tap
+                            this.callHandler("tap", event);
+                    }
+                    this.double_tapped = false;
                     this.callHandler("touchend", event);
                 }
                 catch (error) {
@@ -293,45 +318,94 @@ export class MultiTouchHandler {
 ;
 export class MultiTouchListenerTypes {
     constructor() {
-        this.pinchIn = [];
-        this.pinchOut = [];
+        this.pinch = [];
         this.rotate = [];
         this.touchmove = [];
+        this.doubletap = new Array();
+        this.tap = new Array();
+        this.swipe = new Array();
     }
 }
 ;
 export class MultiTouchListener {
-    constructor(component) {
+    constructor(component, preventDefault, mouseEmulation, stopRightClick, tap_and_swipe_delay_limit = 250) {
         this.lastDistance = 0;
         this.start_theta = 0;
         this.rotation_theta = 0;
+        this.pinch_distance = 0;
+        this.start_delta_distance = 0;
         this.rotation_listening = false;
+        this.pinch_listening = false;
         this.previous_touches = [];
-        this.listenerTypeMap = new MultiTouchListenerTypes();
+        this.listener_type_map = new MultiTouchListenerTypes();
         this.registeredMultiTouchEvent = false;
+        this.single_touch_listener = new SingleTouchListener(null, preventDefault, false, false, tap_and_swipe_delay_limit);
+        this.single_touch_listener.component = component;
         if (isTouchSupported()) {
-            component.addEventListener('touchmove', event => this.touchMoveHandler(event));
+            component.addEventListener('touchstart', event => {
+                this.single_touch_listener.touchStartHandler(event);
+                this.touchStartHandler(event);
+                if (preventDefault)
+                    event.preventDefault();
+            });
+            component.addEventListener('touchmove', event => {
+                if (!this.registeredMultiTouchEvent)
+                    this.single_touch_listener.touchMoveHandler(event);
+                this.touchMoveHandler(event);
+                if (preventDefault)
+                    event.preventDefault();
+            });
             component.addEventListener('touchend', event => {
                 this.registeredMultiTouchEvent = false;
                 this.rotation_listening = false;
+                this.pinch_listening = false;
                 this.lastDistance = 0;
-                this.start_theta = 0;
+                this.start_theta = -100;
                 this.rotation_theta = 0;
+                this.pinch_distance = 0;
+                this.start_delta_distance = 0;
                 this.previous_touches = [];
-                event.preventDefault();
+                this.single_touch_listener.touchEndHandler(event);
+                if (preventDefault)
+                    event.preventDefault();
             });
         }
+        else if (mouseEmulation) {
+            if (stopRightClick)
+                component.addEventListener("contextmenu", (e) => {
+                    e.preventDefault();
+                    return false;
+                });
+            component.addEventListener("mouseover", (event) => { this.mouse_over_element = true; });
+            component.addEventListener("mouseleave", (event) => { this.mouse_over_element = false; });
+            component.addEventListener('mousedown', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.single_touch_listener.touchStartHandler(event); });
+            component.addEventListener('mousemove', (event) => {
+                this.single_touch_listener.touchMoveHandler(event);
+                if (preventDefault)
+                    event.preventDefault();
+            });
+            component.addEventListener('mouseup', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.single_touch_listener.touchEndHandler(event); });
+        }
     }
-    registerCallBack(listenerType, predicate, callBack) {
-        this.listenerTypeMap[listenerType].push(new TouchHandler(predicate, callBack));
+    registerCallBackPredicate(listenerType, predicate, callBack) {
+        if (listenerType in this.single_touch_listener.listener_type_map) {
+            this.single_touch_listener.registerCallBack(listenerType, predicate, callBack);
+        }
+        else
+            this.listener_type_map[listenerType].push(new TouchHandler(predicate, callBack));
+    }
+    registerCallBack(listenerType, callBack) {
+        this.registerCallBackPredicate(listenerType, () => true, callBack);
     }
     callHandler(type, event) {
-        const handlers = this.listenerTypeMap[type];
+        const handlers = this.listener_type_map[type];
         handlers.forEach((handler) => {
             if (!event.defaultPrevented && handler.pred(event)) {
                 handler.callBack(event);
             }
         });
+    }
+    touchStartHandler(event) {
     }
     touchMoveHandler(event) {
         let touch1 = event.touches.item(0);
@@ -365,25 +439,29 @@ export class MultiTouchListener {
                 }
             }
         }
-        if (!(this.registeredMultiTouchEvent || (touch1 && touch2)))
+        if (!(this.registeredMultiTouchEvent))
             return;
         const newDist = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
         event.delta = this.lastDistance - newDist;
         event.distance = newDist;
+        this.pinch_distance = newDist;
         const theta = this.get_theta(touch1, touch2);
         event.rotation_theta = theta;
+        event.rotation_delta = -theta + this.rotation_theta;
         this.rotation_theta = theta;
-        if (Math.abs(this.start_theta - theta) > Math.PI / 16)
+        //handle start theta attribute, and rotation listening
+        if (this.start_theta === -100)
+            this.start_theta = theta;
+        else if (!this.pinch_listening && Math.abs(this.start_theta - theta) > Math.PI / 12)
             this.rotation_listening = true;
-        if (this.rotation_listening && this.listenerTypeMap.rotate.length) {
-            this.callHandler("rotation", event);
-        }
-        else if (this.lastDistance > newDist) {
-            this.callHandler("pinchOut", event);
-        }
-        else {
-            this.callHandler("pinchIn", event);
-        }
+        if (this.start_delta_distance === 0)
+            this.start_delta_distance = newDist;
+        else if (Math.abs(this.start_delta_distance - newDist) > Math.min(getHeight(), getWidth()) / 20 && Math.abs(event.delta) > Math.min(getHeight(), getWidth()) / 65)
+            this.pinch_listening = true;
+        if (this.rotation_listening)
+            this.callHandler("rotate", event);
+        if (this.pinch_listening)
+            this.callHandler("pinch", event);
         event.preventDefault();
         this.lastDistance = newDist;
         if (touch1 && touch2)

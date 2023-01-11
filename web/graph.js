@@ -768,7 +768,7 @@ class UIViewState {
     }
     transition(delta_time) {
         if (this.hamburger_activated) {
-            const new_position = clamp(this.screen_to_burger_x(this.grid.touchListener.touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
+            const new_position = clamp(this.screen_to_burger_x(this.grid.multi_touchListener.single_touch_listener.touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
             const delta = -this.grid.guiManager.x + new_position;
             const current_vel = -delta / (Date.now() - this.last_touch_event);
             this.velocity_x = delta * 0.02;
@@ -895,7 +895,7 @@ class Game extends SquareAABBCollidable {
         this.repaint = true;
         this.multi_touchListener = multi_touchListener;
         this.touchListener = touchListener;
-        this.touchPos = [touchListener.touchPos[0], touchListener.touchPos[1]];
+        this.touchPos = [multi_touchListener.single_touch_listener.touchPos[0], multi_touchListener.single_touch_listener.touchPos[1]];
         this.functions = [];
         this.draw_axes = true;
         this.draw_axis_labels = true;
@@ -1137,18 +1137,18 @@ class Game extends SquareAABBCollidable {
                     this.main_buf.ctx.beginPath();
                     this.main_buf.ctx.strokeStyle = foo.color.htmlRBG();
                     this.main_buf.ctx.moveTo(this.world_x_to_screen(foo.index_to_x(0)), this.world_y_to_screen(foo.table[0]));
-                }
-                for (let i = 1; i < foo.table.length; i++) {
-                    const x = this.x_min + foo.dx * i;
-                    const y = -foo.table[i];
-                    //transform worldspace coordinates to screen space for rendering
-                    const sy = clamp(((y - this.y_min) / this.deltaY) * this.cell_dim[1], -20, this.main_buf.height + 20);
-                    const sx = clamp(((x - this.x_min) / this.deltaX) * this.cell_dim[0], -20, this.main_buf.width + 20);
-                    //render functions as lines between points in table to buffers
-                    if (sx > last_x || sy !== last_y) {
-                        this.main_buf.ctx.lineTo(sx, sy);
-                        last_x = sx;
-                        last_y = sy;
+                    for (let i = 1; i < foo.table.length; i++) {
+                        const x = this.x_min + foo.dx * i;
+                        const y = -foo.table[i];
+                        //transform worldspace coordinates to screen space for rendering
+                        const sy = clamp(((y - this.y_min) / this.deltaY) * this.cell_dim[1], -20, this.main_buf.height + 20);
+                        const sx = clamp(((x - this.x_min) / this.deltaX) * this.cell_dim[0], -20, this.main_buf.width + 20);
+                        //render functions as lines between points in table to buffers
+                        if (sx > last_x || sy !== last_y) {
+                            this.main_buf.ctx.lineTo(sx, sy);
+                            last_x = sx;
+                            last_y = sy;
+                        }
                     }
                 }
                 this.main_buf.ctx.stroke();
@@ -1178,8 +1178,8 @@ class Game extends SquareAABBCollidable {
         this.main_buf.ctx.stroke();
     }
     update_touch_pos() {
-        this.touchPos[0] = this.touchListener.touchPos[0];
-        this.touchPos[1] = this.touchListener.touchPos[1];
+        this.touchPos[0] = this.multi_touchListener.single_touch_listener.touchPos[0];
+        this.touchPos[1] = this.multi_touchListener.single_touch_listener.touchPos[1];
     }
     optimize_intersection(fun1, fun2, min_x, max_x, it) {
         const y = [];
@@ -1313,7 +1313,10 @@ class Game extends SquareAABBCollidable {
             i += delta_y;
         }
         this.axes.ctx.stroke();
+        ctx.rotate(this.multi_touchListener.rotation_theta);
         ctx.drawImage(this.axes.image, x, y, width, height);
+        ctx.rotate(-this.multi_touchListener.rotation_theta);
+        ctx.restore();
     }
     draw(canvas, ctx, x, y, width, height) {
         const font_size = 24;
@@ -1385,7 +1388,7 @@ class Game extends SquareAABBCollidable {
         }
     }
     render_labels_max(ctx) {
-        const touchPos = this.touchListener.touchPos;
+        const touchPos = this.multi_touchListener.single_touch_listener.touchPos;
         const selected_function = this.functions[this.layer_manager.list.selected()];
         this.render_labels_table(ctx, -0, (x) => {
             const index = selected_function.closest_max(x);
@@ -1398,7 +1401,7 @@ class Game extends SquareAABBCollidable {
         });
     }
     render_labels_poi(ctx) {
-        const touchPos = this.touchListener.touchPos;
+        const touchPos = this.multi_touchListener.single_touch_listener.touchPos;
         const selected_function = this.functions[this.layer_manager.list.selected()];
         this.render_labels_table(ctx, 0, (x) => {
             const index = selected_function.closest_poi(x);
@@ -1622,7 +1625,7 @@ class Game extends SquareAABBCollidable {
     }
     graph_accepting_ui() {
         const state = this.ui_state_manager.state;
-        const touchPos = this.touchListener.touchPos;
+        const touchPos = this.multi_touchListener.single_touch_listener.touchPos;
         return !state.hamburger_activated &&
             !this.options_gui_manager.collision(touchPos) && !this.guiManager.collision(touchPos);
     }
@@ -1638,7 +1641,8 @@ Game._colores = [new RGB(231, 76, 60),
 const keyboardHandler = new KeyboardHandler();
 async function main() {
     const canvas = document.getElementById("screen");
-    const touchListener = new SingleTouchListener(canvas, true, true, false);
+    const touchListener = new SingleTouchListener(canvas, false, true, false);
+    const multi_touch_listener = new MultiTouchListener(canvas, isTouchSupported(), true, false);
     canvas.onmousemove = (event) => {
     };
     const power_of_2_bounds = 300;
@@ -1666,14 +1670,7 @@ async function main() {
     canvas.style.cursor = "pointer";
     let counter = 0;
     const touchScreen = isTouchSupported();
-    const multi_touch_listener = new MultiTouchListener(canvas);
-    multi_touch_listener.registerCallBack("pinchIn", () => true, (event) => {
-        const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
-        game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
-        game.repaint = true;
-        event.preventDefault();
-    });
-    multi_touch_listener.registerCallBack("pinchOut", () => true, (event) => {
+    multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
         game.set_scale(calc_scale(game.x_scale, normalized_delta), calc_scale(game.y_scale, normalized_delta));
         game.repaint = true;
@@ -1687,17 +1684,16 @@ async function main() {
     let render_fps = false;
     let low_fps = true;
     let draw = false;
-    touchListener.registerCallBack("touchstart", (event) => event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0] * 1.2, (event) => render_fps = !render_fps);
-    touchListener.registerCallBack("touchstart", (event) => true, (event) => {
+    multi_touch_listener.registerCallBack("touchstart", (event) => {
         game.ui_state_manager.handleTouchEvents("touchstart", event);
-    });
-    touchListener.registerCallBack("touchstart", (event) => true, (event) => {
         game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
+        if (event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0] * 1.2)
+            render_fps = !render_fps;
     });
-    touchListener.registerCallBack("touchend", (event) => true, (event) => {
+    multi_touch_listener.registerCallBackPredicate("touchend", (event) => true, (event) => {
         game.ui_state_manager.handleTouchEvents("touchend", event);
     });
-    touchListener.registerCallBack("touchmove", (event) => true, (event) => {
+    multi_touch_listener.registerCallBackPredicate("touchmove", (event) => true, (event) => {
         let scaler_x = game.deltaX / (game.width);
         let scaler_y = game.deltaY / (game.height);
         const state = game.ui_state_manager.state;
@@ -1785,6 +1781,19 @@ async function main() {
         if (render_fps) {
             ctx.strokeText(text, game.width - fps_text_width - 10, menu_font_size());
             ctx.fillText(text, game.width - fps_text_width - 10, menu_font_size());
+        }
+        const touches = multi_touch_listener.previous_touches;
+        if (touches.length > 1) {
+            const sx = (touches[0].clientX); // + touches[1].clientX) / 2;
+            const sy = (touches[0].clientY); // + touches[1].clientY) / 2;
+            const ex = sx + Math.cos(multi_touch_listener.rotation_theta) * 400;
+            const ey = sy + Math.sin(multi_touch_listener.rotation_theta) * 400;
+            ctx.lineWidth = 30;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+            ctx.lineWidth = 2;
         }
         requestAnimationFrame(drawLoop);
     };
