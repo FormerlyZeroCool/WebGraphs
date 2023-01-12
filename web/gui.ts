@@ -807,11 +807,12 @@ export class GuiListItem extends HorizontalLayoutManager {
         const width:number = (pixelDim[0] - this.checkBox.width())// >> (slideMoved ? 1: 0);
         this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags);
         this.textBox.setText(text);
-        this.addElement(horizontal_group([this.checkBox, this.textBox]));
+        this.addElement(this.checkBox);
+        this.addElement(this.textBox);
         if(slideMoved)
         {
-            this.slider = new GuiSlider(1, [width, pixelDim[1]], slideMoved);
-            this.sliderX = width + pixelDim[1];
+            //this.slider = new GuiSlider(1, [width, pixelDim[1]], slideMoved);
+            //this.sliderX = width + pixelDim[1];
             //this.addElement(this.slider);
         }
         else
@@ -822,6 +823,7 @@ export class GuiListItem extends HorizontalLayoutManager {
     }
     handleTouchEvents(type: string, e: any): void {
         super.handleTouchEvents(type, e);
+        
         if(this.active() && type === this.callBackType)
         {
             e.item = this;
@@ -1044,7 +1046,7 @@ export class GuiCheckList implements GuiElement {
     {
         this.layoutManager.handleKeyBoardEvents(type, e);
     }
-    handleTouchEvents(type:string, e:any):void
+    handleTouchEvents(type:string, e:TouchMoveEvent):void
     {
         this.layoutManager.activate();
         const clicked:number = Math.floor(((e.touchPos[1]) / this.height()) * this.layoutManager.matrixDim[1]);
@@ -1055,7 +1057,11 @@ export class GuiCheckList implements GuiElement {
         {
             (<GuiListItem> element.element).elementsPositions.forEach(el => {
                 if(e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[0] > this.pos[0] + el.x)
+                {
+                    e.touchPos[0] -= this.list[0].checkBox.width();
                     el.element.handleTouchEvents(type, e);
+                    e.touchPos[0] += this.list[0].checkBox.width();
+                }
             });
         }
         this.layoutManager.deactivate();
@@ -2121,7 +2127,7 @@ export class GuiTextBox implements GuiElement {
         const rows:TextRow[] = this.rows;
         let letters_in_previous_rows = 0;
         let row_index = 0;
-        while(rows[row_index].y + this.fontSize < y)
+        while(rows[row_index + 1] && rows[row_index + 1].y < y)
         {
             letters_in_previous_rows += rows[row_index].text.length;
             row_index++;

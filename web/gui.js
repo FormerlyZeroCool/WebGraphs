@@ -633,10 +633,11 @@ export class GuiListItem extends HorizontalLayoutManager {
         const width = (pixelDim[0] - this.checkBox.width()); // >> (slideMoved ? 1: 0);
         this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags);
         this.textBox.setText(text);
-        this.addElement(horizontal_group([this.checkBox, this.textBox]));
+        this.addElement(this.checkBox);
+        this.addElement(this.textBox);
         if (slideMoved) {
-            this.slider = new GuiSlider(1, [width, pixelDim[1]], slideMoved);
-            this.sliderX = width + pixelDim[1];
+            //this.slider = new GuiSlider(1, [width, pixelDim[1]], slideMoved);
+            //this.sliderX = width + pixelDim[1];
             //this.addElement(this.slider);
         }
         else {
@@ -827,8 +828,11 @@ export class GuiCheckList {
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         if (element) {
             element.element.elementsPositions.forEach(el => {
-                if (e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[0] > this.pos[0] + el.x)
+                if (e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[0] > this.pos[0] + el.x) {
+                    e.touchPos[0] -= this.list[0].checkBox.width();
                     el.element.handleTouchEvents(type, e);
+                    e.touchPos[0] += this.list[0].checkBox.width();
+                }
             });
         }
         this.layoutManager.deactivate();
@@ -1675,7 +1679,7 @@ export class GuiTextBox {
         const rows = this.rows;
         let letters_in_previous_rows = 0;
         let row_index = 0;
-        while (rows[row_index].y + this.fontSize < y) {
+        while (rows[row_index + 1] && rows[row_index + 1].y < y) {
             letters_in_previous_rows += rows[row_index].text.length;
             row_index++;
         }
