@@ -340,7 +340,7 @@ class Function {
             y3))/dxsq*dxsq);
        
     }
-    calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):DynamicFloat64Array
+    async calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):Promise<DynamicFloat64Array>
     {
         this.x_max = x_max;
         this.x_min = x_min;
@@ -364,6 +364,8 @@ class Function {
             {
                 const x = this.x_min + j * dx;
                 this.table.push(this.compiled(x, this.dx));
+                if(j % 2000 === 0)
+                    await sleep(3);
             }
         } catch (error:any)
         {
@@ -1486,7 +1488,7 @@ class Game extends SquareAABBCollidable {
             {
                 main_buf.ctx.lineWidth = foo.line_width;
                 //build table of points, intersections, zeros, min/maxima inflections to be rendered
-                foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), 
+                await foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), 
                     this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
                 let last_x = 0;
