@@ -499,8 +499,7 @@ export class SimpleGridLayoutManager {
             this.elementsPositions.push(record);
         }
     }
-    refreshCanvas(ctx = this.ctx, x = 0, y = 0) {
-        //ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    refreshCanvas() {
     }
     active() {
         return this.focused;
@@ -2037,7 +2036,7 @@ export class ViewLayoutTool extends Tool {
         return this.layoutManager;
     }
     optionPanelSize() {
-        return [this.layoutManager.canvas.width, this.layoutManager.canvas.height];
+        return [this.layoutManager.width(), this.layoutManager.height()];
     }
     drawOptionPanel(ctx, x, y) {
         const optionPanel = this.getOptionPanel();
@@ -2108,7 +2107,7 @@ export class SingleCheckBoxTool extends GenericTool {
         super(name, imagePath);
         this.optionPanel = new SimpleGridLayoutManager([1, 4], [200, 90]);
         this.checkBox = new GuiCheckBox(callback, 40, 40);
-        this.optionPanel.addElement(new GuiLabel(label, 200, 16, GuiTextBox.bottom, 40));
+        this.optionPanel.addElement(new GuiLabel(label, 200, 16));
         this.optionPanel.addElement(this.checkBox);
     }
     activateOptionPanel() { this.optionPanel.activate(); }

@@ -638,9 +638,8 @@ export class SimpleGridLayoutManager implements GuiElement {
             this.elementsPositions.push(record);
         }
     }
-    refreshCanvas(ctx:CanvasRenderingContext2D = this.ctx, x:number = 0, y:number = 0):void
+    refreshCanvas():void
     {
-        //ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
     active():boolean
     {
@@ -2401,7 +2400,7 @@ export class GuiToolBar implements GuiElement {
             }
             const pixelX:number = gridX * this.toolRenderDim[0];
             const pixelY:number = gridY * this.toolRenderDim[1];
-            const image:HTMLImageElement | null = this.tools[i].image();
+            const image:HTMLImageElement | HTMLCanvasElement | null = this.tools[i].image();
             if(image && image.width && image.height)
             {
                 this.ctx.drawImage(image, pixelX, pixelY, this.toolRenderDim[0], this.toolRenderDim[1]);
@@ -2512,7 +2511,7 @@ export class ToolBarItem {
     {
         return this.imageContainer()!.image!.height;
     }
-    image():HTMLImageElement | null
+    image():HTMLImageElement | HTMLCanvasElement | null
     {
         if(this.imageContainer())
             return this.imageContainer()!.image!;
@@ -2557,7 +2556,7 @@ export class ViewLayoutTool extends Tool {
     }
     optionPanelSize():number[]
     {
-        return [this.layoutManager.canvas.width, this.layoutManager.canvas.height];
+        return [this.layoutManager.width(), this.layoutManager.height()];
     }
     drawOptionPanel(ctx:CanvasRenderingContext2D, x:number, y:number):void
     {
@@ -2636,7 +2635,7 @@ export class SingleCheckBoxTool extends GenericTool {
         super(name, imagePath);
         this.optionPanel = new SimpleGridLayoutManager([1,4], [200, 90]);
         this.checkBox = new GuiCheckBox(callback, 40, 40);
-        this.optionPanel.addElement(new GuiLabel(label, 200, 16, GuiTextBox.bottom, 40));
+        this.optionPanel.addElement(new GuiLabel(label, 200, 16));
         this.optionPanel.addElement(this.checkBox);
     }
     activateOptionPanel():void { this.optionPanel.activate(); }
