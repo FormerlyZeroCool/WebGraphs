@@ -276,6 +276,7 @@ class Function {
             if (iterations > this.table.data.length) {
                 this.table.reserve(iterations);
             }
+            let start_time = Date.now();
             for (let j = 0; j < iterations; j++) {
                 const x = this.x_min + j * dx;
                 this.table.push(this.compiled(x, this.dx));
@@ -1188,7 +1189,10 @@ class Game extends SquareAABBCollidable {
                         main_buf.ctx.stroke();
                         main_buf.ctx.beginPath();
                         main_buf.ctx.moveTo(sx, sy);
-                        await sleep(2);
+                    }
+                    if (Date.now() - start_time > 5) {
+                        start_time = Date.now();
+                        await sleep(3);
                     }
                 }
                 main_buf.ctx.stroke();

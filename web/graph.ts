@@ -360,6 +360,7 @@ class Function {
             {
                 this.table.reserve(iterations);
             }
+            let start_time = Date.now();
             for(let j = 0; j < iterations; j++)
             {
                 const x = this.x_min + j * dx;
@@ -1481,6 +1482,7 @@ class Game extends SquareAABBCollidable {
         main_buf.ctx.imageSmoothingEnabled = false;
         main_buf.ctx.lineJoin = "bevel";
         let start_time = Date.now();
+
         for(let index = 0; index < functions.length; index++) 
         {
             const foo = functions[index];
@@ -1519,7 +1521,11 @@ class Game extends SquareAABBCollidable {
                         main_buf.ctx.stroke();
                         main_buf.ctx.beginPath();
                         main_buf.ctx.moveTo(sx, sy);
-                        await sleep(2);
+                    }
+                    if(Date.now() - start_time > 5)
+                    {
+                        start_time = Date.now();
+                        await sleep(3);
                     }
                 }
                 
