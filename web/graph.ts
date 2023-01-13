@@ -1,7 +1,7 @@
 import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox, 
     GuiColoredSpacer, ExtendedTool, vertical_group, horizontal_group, CustomBackgroundSlider, StateManagedUI, UIState, GuiSpacer, is_landscape, GuiElement, groupify} from './gui.js'
-import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue, logToServer, sleep} from './utils.js'
+import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue, logToServer, sleep, DynamicFloat64Array} from './utils.js'
 import {menu_font_size, SpatialHashMap2D, SquareAABBCollidable } from './game_utils.js'
 window.sec = (x:number) => 1/Math.sin(x);
 window.csc = (x:number) => 1/Math.cos(x);
@@ -291,7 +291,7 @@ class Function {
     x_min:number;
     x_max:number;
     dx:number;
-    table:number[];
+    table:DynamicFloat64Array;
     constructor(source:string)
     {
         this.source = source;
@@ -307,7 +307,7 @@ class Function {
         this.local_maxima = [];
         this.local_minima = [];
         this.zeros = [];
-        this.table = [];
+        this.table = new DynamicFloat64Array(0);
         this.points_of_inflection = [];
         this.x_max = 0;
         this.x_min = 0;
@@ -340,7 +340,7 @@ class Function {
             y3))/dxsq*dxsq);
        
     }
-    calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):number[]
+    calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):DynamicFloat64Array
     {
         this.x_max = x_max;
         this.x_min = x_min;
@@ -356,6 +356,10 @@ class Function {
         
         try {
             const iterations = (this.x_max - this.x_min) / this.dx;
+            if(iterations > this.table.data.length)
+            {
+                this.table.reserve(iterations);
+            }
             for(let j = 0; j < iterations; j++)
             {
                 const x = this.x_min + j * dx;
@@ -368,10 +372,10 @@ class Function {
         }
         for(let i = 1; i < this.table.length - 1; i++)
         {
-            const prev_y = this.table[i - 1];
+            const prev_y = this.table.data[i - 1];
             const x = this.index_to_x(i);
-            const y = this.table[i];
-            const next_y = this.table[i + 1];
+            const y = this.table.data[i];
+            const next_y = this.table.data[i + 1];
             const prev_delta_y = prev_y - y;
             const current_delta_y = y - next_y;
             const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
@@ -421,7 +425,7 @@ class Function {
         if(!calc_poi && i <= 1)
             return;
             
-        const prev_prev_y = this.table[i - 2];
+        const prev_prev_y = this.table.data[i - 2];
         const ddy = prev_delta_y - current_delta_y;
         const prev_ddy = (prev_prev_y - prev_y) - prev_delta_y;
         if(sign(ddy) != sign(prev_ddy))
@@ -1165,13 +1169,14 @@ class Game extends SquareAABBCollidable {
     current_bounds:ViewTransformation;
     target_bounds:ViewTransformation;
     execution_time_delay:number;
+    
     constructor(multi_touchListener:MultiTouchListener, touchListener:SingleTouchListener, x:number, y:number, width:number, height:number)
     {
         super(x, y, width, height);
         this.rendering_functions = false;
         this.intersections = [];
         this.last_selected_item = 0;
-        this.execution_time_delay = 0;
+        this.execution_time_delay = 10;
         this.selected_item = 0;
         this.ui_state_manager = new StateManagedUI(new UIViewStateShowingUI(this));
         this.state_manager_grid = new StateManagedUI(new FollowCursor(this));
@@ -1472,7 +1477,7 @@ class Game extends SquareAABBCollidable {
         
         const view = new Int32Array(main_buf.imageData!.data.buffer);
         main_buf.ctx.imageSmoothingEnabled = false;
-        main_buf.ctx.lineJoin = "round";
+        main_buf.ctx.lineJoin = "bevel";
         let start_time = Date.now();
         for(let index = 0; index < functions.length; index++) 
         {
@@ -1485,18 +1490,18 @@ class Game extends SquareAABBCollidable {
                     this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
                 let last_x = 0;
-                let last_y = ((-foo.table[0] - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1];
+                let last_y = ((-foo.table.data[0] - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1];
                 //setup state for for loop (if error is non null then the table will be empty)
                 if(foo.error_message !== null)
                     continue;
                 main_buf.ctx.beginPath();
                 main_buf.ctx.strokeStyle = foo.color.htmlRBG();
-                main_buf.ctx.moveTo(this.world_x_to_screen(foo.index_to_x(0)), this.world_y_to_screen(foo.table[0]));
+                main_buf.ctx.moveTo(this.world_x_to_screen(foo.index_to_x(0)), this.world_y_to_screen(foo.table.data[0]));
             
                 for(let i = 1; i < foo.table.length; i++)
                 {
                     const x = target_bounds.x_min + foo.dx * i;
-                    const y = -foo.table[i];
+                    const y = -foo.table.data[i];
                     //transform worldspace coordinates to screen space for rendering
                     const sy = clamp(((y - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1], -20, main_buf.height + 20);
                     const sx = clamp(((x - target_bounds.x_min) / target_bounds.deltaX) * this.cell_dim[0], -20, main_buf.width + 20);
@@ -1507,15 +1512,18 @@ class Game extends SquareAABBCollidable {
                         last_x = sx;
                         last_y = sy;
                     }
+                    if(i % 500 === 0)
+                    {
+                        main_buf.ctx.stroke();
+                        main_buf.ctx.beginPath();
+                        main_buf.ctx.moveTo(sx, sy);
+                        await sleep(2);
+                    }
                 }
                 
                 main_buf.ctx.stroke();
-                if(this.execution_time_delay > 2)
-                    await sleep(this.execution_time_delay);
             }
         }
-        main_buf.ctx.beginPath();
-        main_buf.ctx.stroke();
         //clear previous intersections calc just in case we end up with the wrong ones from a previous frame
         //better to have none than the wrong ones
         this.intersections.length = 0;
@@ -1528,15 +1536,15 @@ class Game extends SquareAABBCollidable {
             {
                 for(let j = 0; j < functions[0].table.length - 1; j++)
                 {   
-                    if(fun1.table[j+1] - fun2.table[j+1] === 0)
+                    if(fun1.table.data[j+1] - fun2.table.data[j+1] === 0)
                     {
                         this.intersections.push(fun1.index_to_x(j));
-                        this.intersections.push(fun1.table[j]);
+                        this.intersections.push(fun1.table.data[j]);
                     }
-                    else if(sign(fun1.table[j] - fun2.table[j]) !== sign(fun1.table[j + 1] - fun2.table[j + 1]))
+                    else if(sign(fun1.table.data[j] - fun2.table.data[j]) !== sign(fun1.table.data[j + 1] - fun2.table.data[j + 1]))
                     {
                         this.intersections.push(fun1.index_to_x(j));
-                        this.intersections.push(fun1.table[j]);
+                        this.intersections.push(fun1.table.data[j]);
                     }
                 }
             }
@@ -1584,7 +1592,6 @@ class Game extends SquareAABBCollidable {
         if(this.draw_axes)
         {
             //clear previous image
-            ctx.clearRect(0, 0, this.cell_dim[0], this.cell_dim[1]);
             //render axes
             ctx.beginPath();
             ctx.lineWidth = 4;
@@ -1733,9 +1740,8 @@ class Game extends SquareAABBCollidable {
         const dw = this.cell_dim[0] - rx;
         const dh = this.cell_dim[1] - ry;
         this.calc_bounds();
-        this.render_axes(canvas, ctx, x, y, canvas.width, canvas.height);
         ctx.drawImage(this.main_buf.image, x + dx + dw / 2, y + dy + dh / 2, rx, ry);
-        ctx.drawImage(this.axes_buf.image, x, y, canvas.width, canvas.height);
+        this.render_axes(canvas, ctx, x, y, canvas.width, canvas.height);
         //this state manager controls what labels get rendered
         if(this.draw_point_labels)
             this.state_manager_grid.draw(ctx, canvas, x, y, width, height);
@@ -2076,10 +2082,10 @@ class Game extends SquareAABBCollidable {
     make_closest_curve_selected(coords:number[]):void
     {
         const index = this.x_to_index(coords[0]);
-        let min_dist:number = Math.abs(this.functions[0].table[index] - coords[1]);
+        let min_dist:number = Math.abs(this.functions[0].table.data[index] - coords[1]);
         let min_dist_function_index = 0;
         this.functions.forEach((foo, arr_index) => {
-            const dist = Math.abs(foo.table[index] + coords[1]);
+            const dist = Math.abs(foo.table.data[index] + coords[1]);
             if(dist < min_dist)
             {
                 min_dist = dist;
