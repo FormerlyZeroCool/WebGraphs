@@ -1745,7 +1745,6 @@ class Game extends SquareAABBCollidable {
         const dw = this.width - rx;
         const dh = this.height - ry;
         this.calc_bounds();
-        logToServer([dx, dy, dw, dh, this.width, this.height], "../data");
         ctx.drawImage(this.main_buf.image, x + dx + dw / 2, y + dy + dh / 2, rx, ry);
         this.render_axes(canvas, ctx, x, y, width, height);
         //this state manager controls what labels get rendered

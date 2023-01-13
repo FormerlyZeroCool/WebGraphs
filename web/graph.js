@@ -1,6 +1,6 @@
 import { SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler } from './io.js';
 import { getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiSlider, GuiCheckBox, GuiColoredSpacer, ExtendedTool, vertical_group, horizontal_group, CustomBackgroundSlider, StateManagedUI, GuiSpacer } from './gui.js';
-import { sign, srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue, logToServer, sleep, DynamicFloat64Array } from './utils.js';
+import { sign, srand, clamp, max_32_bit_signed, round_with_precision, FixedSizeQueue, sleep, DynamicFloat64Array } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 window.sec = (x) => 1 / Math.sin(x);
 window.csc = (x) => 1 / Math.cos(x);
@@ -1379,7 +1379,6 @@ class Game extends SquareAABBCollidable {
         const dw = this.width - rx;
         const dh = this.height - ry;
         this.calc_bounds();
-        logToServer([dx, dy, dw, dh, this.width, this.height], "../data");
         ctx.drawImage(this.main_buf.image, x + dx + dw / 2, y + dy + dh / 2, rx, ry);
         this.render_axes(canvas, ctx, x, y, width, height);
         //this state manager controls what labels get rendered
