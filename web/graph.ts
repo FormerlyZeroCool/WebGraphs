@@ -365,8 +365,6 @@ class Function {
             {
                 const x = this.x_min + j * dx;
                 this.table.push(this.compiled(x, this.dx));
-                if(j % 2000 === 0)
-                    await sleep(3);
             }
         } catch (error:any)
         {
@@ -1527,7 +1525,7 @@ class Game extends SquareAABBCollidable {
                         main_buf.ctx.beginPath();
                         main_buf.ctx.moveTo(sx, sy);
                     }
-                    if(Date.now() - start_time > 5)
+                    if(Date.now() - start_time > 14)
                     {
                         start_time = Date.now();
                         await sleep(3);
@@ -1733,7 +1731,7 @@ class Game extends SquareAABBCollidable {
         {
             ctx.font = `${font_size}px Helvetica`;
         }
-        if(!this.current_bounds.compare(this.target_bounds) && !this.rendering_functions)
+        if((this.repaint || !this.current_bounds.compare(this.target_bounds)) && !this.rendering_functions)
         {
             this.repaint = false;
             
