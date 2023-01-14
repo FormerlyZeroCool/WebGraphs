@@ -343,16 +343,17 @@ export class MultiTouchListener {
         this.single_touch_listener.component = component;
         if (isTouchSupported()) {
             component.addEventListener('touchstart', event => {
-                this.reset_state();
-                this.single_touch_listener.touchStartHandler(event);
+                //if(event.touches.length < 1)
+                //  this.reset_state()
                 this.touchStartHandler(event);
+                this.single_touch_listener.touchStartHandler(event);
                 if (preventDefault)
                     event.preventDefault();
             });
             component.addEventListener('touchmove', event => {
-                if (!this.registeredMultiTouchEvent)
-                    this.single_touch_listener.touchMoveHandler(event);
                 this.touchMoveHandler(event);
+                if (event.touches.length < 2)
+                    this.single_touch_listener.touchMoveHandler(event);
                 if (preventDefault)
                     event.preventDefault();
             });
@@ -468,7 +469,6 @@ export class MultiTouchListener {
             this.callHandler("rotate", event);
         //if(this.pinch_listening)
         this.callHandler("pinch", event);
-        event.preventDefault();
         this.lastDistance = newDist;
         if (touch1 && touch2)
             this.previous_touches = [touch1, touch2];
