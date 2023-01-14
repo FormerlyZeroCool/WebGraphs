@@ -486,6 +486,7 @@ export class MultiTouchListener {
         if(isTouchSupported())
         {
             component.addEventListener('touchstart', event => {
+                this.reset_state();
                 this.single_touch_listener.touchStartHandler(event);
                 this.touchStartHandler(event);
                 if(preventDefault)
@@ -499,15 +500,7 @@ export class MultiTouchListener {
                     event.preventDefault();
             });
             component.addEventListener('touchend', event => {
-                this.registeredMultiTouchEvent = false; 
-                this.rotation_listening = false; 
-                this.pinch_listening = false;
-                this.lastDistance = 0; 
-                this.start_theta = -100; 
-                this.rotation_theta = 0;
-                this.pinch_distance = 0;
-                this.start_delta_distance = 0;
-                this.previous_touches = []; 
+                this.reset_state()
                 this.single_touch_listener.touchEndHandler(event);
                 if(preventDefault)
                     event.preventDefault();
@@ -533,6 +526,18 @@ export class MultiTouchListener {
     
         }
     }    
+    reset_state():void
+    {
+        this.registeredMultiTouchEvent = false; 
+        this.rotation_listening = false; 
+        this.pinch_listening = false;
+        this.lastDistance = 0; 
+        this.start_theta = -100; 
+        this.rotation_theta = 0;
+        this.pinch_distance = 0;
+        this.start_delta_distance = 0;
+        this.previous_touches = []; 
+    }
     registerCallBackPredicate(listenerType:string, predicate:(event:any) => boolean, callBack:(event:any) => void):void
     {
         if(listenerType in this.single_touch_listener.listener_type_map)

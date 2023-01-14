@@ -343,6 +343,7 @@ export class MultiTouchListener {
         this.single_touch_listener.component = component;
         if (isTouchSupported()) {
             component.addEventListener('touchstart', event => {
+                this.reset_state();
                 this.single_touch_listener.touchStartHandler(event);
                 this.touchStartHandler(event);
                 if (preventDefault)
@@ -356,15 +357,7 @@ export class MultiTouchListener {
                     event.preventDefault();
             });
             component.addEventListener('touchend', event => {
-                this.registeredMultiTouchEvent = false;
-                this.rotation_listening = false;
-                this.pinch_listening = false;
-                this.lastDistance = 0;
-                this.start_theta = -100;
-                this.rotation_theta = 0;
-                this.pinch_distance = 0;
-                this.start_delta_distance = 0;
-                this.previous_touches = [];
+                this.reset_state();
                 this.single_touch_listener.touchEndHandler(event);
                 if (preventDefault)
                     event.preventDefault();
@@ -388,6 +381,17 @@ export class MultiTouchListener {
             });
             component.addEventListener('mouseup', (event) => { event.changedTouches = {}; event.changedTouches.item = (x) => event; this.single_touch_listener.touchEndHandler(event); });
         }
+    }
+    reset_state() {
+        this.registeredMultiTouchEvent = false;
+        this.rotation_listening = false;
+        this.pinch_listening = false;
+        this.lastDistance = 0;
+        this.start_theta = -100;
+        this.rotation_theta = 0;
+        this.pinch_distance = 0;
+        this.start_delta_distance = 0;
+        this.previous_touches = [];
     }
     registerCallBackPredicate(listenerType, predicate, callBack) {
         if (listenerType in this.single_touch_listener.listener_type_map) {
