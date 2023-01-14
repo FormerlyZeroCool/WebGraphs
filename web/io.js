@@ -462,8 +462,8 @@ export class MultiTouchListener {
             this.pinch_listening = true;
         if (this.rotation_listening)
             this.callHandler("rotate", event);
-        if (this.pinch_listening)
-            this.callHandler("pinch", event);
+        //if(this.pinch_listening)
+        this.callHandler("pinch", event);
         event.preventDefault();
         this.lastDistance = newDist;
         if (touch1 && touch2)

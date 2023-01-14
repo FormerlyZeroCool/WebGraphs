@@ -1482,7 +1482,7 @@ class Game extends SquareAABBCollidable {
         
         const view = new Int32Array(main_buf.imageData!.data.buffer);
         main_buf.ctx.imageSmoothingEnabled = false;
-        main_buf.ctx.lineJoin = "bevel";
+        main_buf.ctx.lineJoin = "round";
         let start_time = Date.now();
 
         for(let index = 0; index < functions.length; index++) 

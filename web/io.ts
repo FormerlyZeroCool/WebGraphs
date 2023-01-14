@@ -626,7 +626,7 @@ export class MultiTouchListener {
 
         if(this.rotation_listening)
             this.callHandler("rotate", event);
-        if(this.pinch_listening)
+        //if(this.pinch_listening)
             this.callHandler("pinch", event);
 
 
