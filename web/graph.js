@@ -260,7 +260,7 @@ class Function {
         return -(((dxsq * y1 - xsq * y1 + 2 * x * y2 - y3) * (-this.dx * x * y1 + xsq * y1 + this.dx * y2 - 2 * x * y2 +
             y3)) / dxsq * dxsq);
     }
-    async calc_for(x_min, x_max, dx, calc_minmax, calc_zeros, calc_poi) {
+    calc_for(x_min, x_max, dx, calc_minmax, calc_zeros, calc_poi) {
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
@@ -276,7 +276,6 @@ class Function {
             if (iterations > this.table.data.length) {
                 this.table.reserve(iterations);
             }
-            let start_time = Date.now();
             for (let j = 0; j < iterations; j++) {
                 const x = this.x_min + j * dx;
                 this.table.push(this.compiled(x, this.dx));
@@ -1166,7 +1165,7 @@ class Game extends SquareAABBCollidable {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 main_buf.ctx.lineWidth = foo.line_width;
                 //build table of points, intersections, zeros, min/maxima inflections to be rendered
-                await foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
+                foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table.data[0] - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1];
@@ -1188,14 +1187,14 @@ class Game extends SquareAABBCollidable {
                         last_x = sx;
                         last_y = sy;
                     }
-                    if (i % 500 === 0) {
+                    if (i % 250 === 0) {
                         main_buf.ctx.stroke();
                         main_buf.ctx.beginPath();
                         main_buf.ctx.moveTo(sx, sy);
                     }
-                    if (Date.now() - start_time > 14) {
+                    if (Date.now() - start_time > 15) {
                         start_time = Date.now();
-                        await sleep(3);
+                        await sleep(2);
                     }
                 }
                 main_buf.ctx.stroke();
