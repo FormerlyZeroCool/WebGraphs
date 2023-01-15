@@ -82,16 +82,24 @@ class ColorPickerTool extends ExtendedTool {
                 }
             }
         });
-        this.localLayout.addElement(new GuiButton(() => document.body.style.backgroundColor = "#4B4B4B", "Color:", 100, this.chosenColor.height(), 16));
-        this.localLayout.addElement(this.chosenColor);
-        const slidersLayout = new SimpleGridLayoutManager([4, 30], [200, slider_height * 3]);
-        slidersLayout.addElement(new GuiLabel("Hue", 50, 16, slider_height));
-        slidersLayout.addElement(this.hueSlider);
-        slidersLayout.addElement(new GuiLabel("Sat.", 50, 16, slider_height));
-        slidersLayout.addElement(this.saturationSlider);
-        slidersLayout.addElement(new GuiLabel("Light", 50, 16, slider_height));
-        slidersLayout.addElement(this.lightnessSlider);
-        this.localLayout.addElement(slidersLayout);
+        this.localLayout.addElement(horizontal_group([
+            new GuiButton(() => document.body.style.backgroundColor = "#4B4B4B", "Color:", 100, this.chosenColor.height(), 16),
+            this.chosenColor
+        ]));
+        this.localLayout.addElement(vertical_group([
+            horizontal_group([
+                new GuiLabel("Hue", 50, 16, slider_height),
+                this.hueSlider
+            ]),
+            horizontal_group([
+                new GuiLabel("Sat.", 50, 16, slider_height),
+                this.saturationSlider
+            ]),
+            horizontal_group([
+                new GuiLabel("Light", 50, 16, slider_height),
+                this.lightnessSlider
+            ])
+        ]));
         this.setColorText();
         this.hueSlider.refresh();
         this.saturationSlider.refresh();
@@ -1231,20 +1239,25 @@ class Game extends SquareAABBCollidable {
         this.touchPos[1] = this.multi_touchListener.single_touch_listener.touchPos[1];
     }
     optimize_intersection(fun1, fun2, min_x, max_x, it) {
-        const y = [];
-        while (it > 0) {
-            const delta = max_x - min_x;
-            const dx = delta * (1 / 5);
-            const mid = (min_x + max_x) * (1 / 2);
-            const ly1 = fun1.compiled(min_x + dx, fun1.dx);
-            const hy1 = fun1.compiled(max_x - dx, fun1.dx);
-            const ly2 = fun2.compiled(min_x + dx, fun2.dx);
-            const hy2 = fun2.compiled(max_x - dx, fun2.dx);
-            if (Math.abs(ly1 - ly2) < Math.abs(hy1 - hy2))
-                max_x = mid;
-            else
-                min_x = mid;
-            it--;
+        try {
+            const y = [];
+            while (it > 0) {
+                const delta = max_x - min_x;
+                const dx = delta * (1 / 5);
+                const mid = (min_x + max_x) * (1 / 2);
+                const ly1 = fun1.compiled(min_x + dx, fun1.dx);
+                const hy1 = fun1.compiled(max_x - dx, fun1.dx);
+                const ly2 = fun2.compiled(min_x + dx, fun2.dx);
+                const hy2 = fun2.compiled(max_x - dx, fun2.dx);
+                if (Math.abs(ly1 - ly2) < Math.abs(hy1 - hy2))
+                    max_x = mid;
+                else
+                    min_x = mid;
+                it--;
+            }
+        }
+        catch (error) {
+            console.log(error.message);
         }
         return (min_x + max_x) / 2;
     }
