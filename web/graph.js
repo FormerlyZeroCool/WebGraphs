@@ -940,8 +940,8 @@ class Game extends SquareAABBCollidable {
         this.draw_axis_labels = true;
         this.draw_point_labels = true;
         const whratio = width / (height > 0 ? height : width);
-        this.target_bounds = new ViewTransformation(1 / 10, 1 / 10, 0, 0);
-        this.current_bounds = new ViewTransformation(1 / 10, 1 / 10, 0, 0);
+        this.target_bounds = new ViewTransformation(1 / 10, 1 / 10 * whratio, 0, 0);
+        this.current_bounds = new ViewTransformation(1 / 10, 1 / 10 * whratio, 0, 0);
         this.graph_start_x = 200;
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
@@ -1267,8 +1267,6 @@ class Game extends SquareAABBCollidable {
             ctx.stroke();
         }
         if (!this.draw_axis_labels) {
-            ctx.stroke();
-            //ctx.drawImage(this.axes.image, x, y, width, height);
             return;
         }
         const msd_x = Math.pow(10, Math.floor(-Math.log10(this.target_bounds.deltaX)));
