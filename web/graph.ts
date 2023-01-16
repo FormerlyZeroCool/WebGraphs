@@ -410,6 +410,7 @@ class Function {
                     const max = this.local_maxima[this.local_maxima.length - 2] + dx;
                     this.discontinuities.push(min);
                     this.discontinuities.push(max);
+                    this.discontinuities.push(min_max_code);
                 }
             }
             else if(min_max_code === -1)
@@ -420,6 +421,7 @@ class Function {
                     const max = this.local_minima[this.local_minima.length - 2] + dx;
                     this.discontinuities.push(min);
                     this.discontinuities.push(max);
+                    this.discontinuities.push(min_max_code);
                 }
             }
 
@@ -1559,8 +1561,17 @@ class Game extends SquareAABBCollidable {
                     {
                         if(foo.discontinuities[j] < x)
                         {
-                            main_buf.ctx.moveTo(sx, sy);
-                            j += 2;
+                            if(foo.discontinuities[j + 2] === 1)//line to -inf then move to inf
+                            {
+                                main_buf.ctx.lineTo(sx, this.height + 50);
+                                main_buf.ctx.moveTo(sx, -50);
+                            }
+                            else
+                            {
+                                main_buf.ctx.lineTo(sx, -50);
+                                main_buf.ctx.moveTo(sx, this.height + 50);
+                            }
+                            j += 3;
                         }
                         else
                             main_buf.ctx.lineTo(sx, sy);
@@ -1571,7 +1582,7 @@ class Game extends SquareAABBCollidable {
                     {
                         main_buf.ctx.stroke();
                         main_buf.ctx.beginPath();
-                        main_buf.ctx.moveTo(sx, sy);
+                        main_buf.ctx.moveTo(last_x, last_y);
                     }
                     if(Date.now() - start_time > 15)
                     {
