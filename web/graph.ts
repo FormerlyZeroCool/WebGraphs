@@ -297,6 +297,7 @@ class Function {
     color:RGB;
     line_width:number;
     compiled:(x:number, dx:number) => number;
+    discontinuities:number[];
     local_minima:number[];//x,y pairs
     local_maxima:number[];//x,y pairs
     zeros:number[];//x,y pairs
@@ -322,6 +323,7 @@ class Function {
         this.local_maxima = [];
         this.local_minima = [];
         this.zeros = [];
+        this.discontinuities = [];
         this.table = new DynamicFloat64Array(0);
         this.points_of_inflection = [];
         this.x_max = 0;
@@ -363,6 +365,7 @@ class Function {
         this.points_of_inflection.length = 0;
         this.table.length = 0;
         this.zeros.length = 0;
+        this.discontinuities.length = 0;
         this.local_maxima.length = 0;
         this.local_minima.length = 0;
 
@@ -396,25 +399,50 @@ class Function {
             const is_maxima = prev_delta_y < 0 && current_delta_y > 0;
             const is_minima = prev_delta_y > 0 && current_delta_y < 0;
             this.check_for_point_zero(calc_zeros, dx, x, y, prev_y, is_minima, is_maxima);
-            this.check_for_point_minmax(calc_minmax, x, y, is_minima, is_maxima);
+            const min_max_code = this.check_for_point_minmax(true, x, y, is_minima, is_maxima);
             this.check_for_point_of_inflection(calc_poi, i, x, y, prev_y, prev_delta_y, current_delta_y);
+            if(min_max_code === 1)//maxima
+            {
+                if(this.local_minima.length > 0 && Math.abs(this.local_minima[this.local_minima.length - 2] + dx - this.local_maxima[this.local_maxima.length - 2]) < dx / 1000)
+                {
+                    //between this range is where a discontinuity may lie
+                    const min = this.local_minima[this.local_minima.length - 2];
+                    const max = this.local_maxima[this.local_maxima.length - 2] + dx;
+                    this.discontinuities.push(min);
+                    this.discontinuities.push(max);
+                }
+            }
+            else if(min_max_code === -1)
+            {
+                if(this.local_maxima.length > 0 && Math.abs(this.local_maxima[this.local_maxima.length - 2] + dx - this.local_minima[this.local_minima.length - 2]) < dx / 1000)
+                {
+                    const min = this.local_maxima[this.local_maxima.length - 2];
+                    const max = this.local_minima[this.local_minima.length - 2] + dx;
+                    this.discontinuities.push(min);
+                    this.discontinuities.push(max);
+                }
+            }
+
+            
         }
 
         return this.table;
     }    
-    check_for_point_minmax(calc_minmax:boolean, x:number, y:number, is_minima:boolean, is_maxima:boolean):void
+    check_for_point_minmax(calc_minmax:boolean, x:number, y:number, is_minima:boolean, is_maxima:boolean):number
     {
         if(!calc_minmax)
-            return
+            return 0;
         if(is_maxima)// maxima
         {
             this.local_maxima.push(x);
             this.local_maxima.push(y);
+            return 1;
         }
         else if(is_minima)//minima
         {
             this.local_minima.push(x);
             this.local_minima.push(y);
+            return -1;
         }
         
     }
@@ -1518,8 +1546,8 @@ class Game extends SquareAABBCollidable {
                 main_buf.ctx.beginPath();
                 main_buf.ctx.strokeStyle = foo.color.htmlRBG();
                 main_buf.ctx.moveTo(this.world_x_to_screen(foo.x_min, target_bounds), this.world_y_to_screen(foo.table.data[0], target_bounds));
-            
-                for(let i = 1; i < foo.table.length; i++)
+                
+                for(let i = 1, j = 0; i < foo.table.length; i++)
                 {
                     const x = target_bounds.x_min + foo.dx * i;
                     const y = -foo.table.data[i];
@@ -1529,7 +1557,13 @@ class Game extends SquareAABBCollidable {
                     //render functions as lines between points in table to buffers
                     if(sx > last_x || sy !== last_y)
                     {
-                        main_buf.ctx.lineTo(sx, sy);
+                        if(foo.discontinuities[j] < x)
+                        {
+                            main_buf.ctx.moveTo(sx, sy);
+                            j += 2;
+                        }
+                        else
+                            main_buf.ctx.lineTo(sx, sy);
                         last_x = sx;
                         last_y = sy;
                     }
