@@ -403,7 +403,7 @@ class Function {
             this.check_for_point_of_inflection(calc_poi, i, x, y, prev_y, prev_delta_y, current_delta_y);
             if(min_max_code === 1)//maxima
             {
-                if(this.local_minima.length > 0 && Math.abs(this.local_minima[this.local_minima.length - 2] + dx - this.local_maxima[this.local_maxima.length - 2]) < dx / 1000)
+                if(this.local_minima.length > 0 && Math.abs(this.local_minima[this.local_minima.length - 2] + dx - this.local_maxima[this.local_maxima.length - 2]) < 1 / 100000000)
                 {
                     //between this range is where a discontinuity may lie
                     const min = this.local_minima[this.local_minima.length - 2];
@@ -415,7 +415,7 @@ class Function {
             }
             else if(min_max_code === -1)
             {
-                if(this.local_maxima.length > 0 && Math.abs(this.local_maxima[this.local_maxima.length - 2] + dx - this.local_minima[this.local_minima.length - 2]) < dx / 1000)
+                if(this.local_maxima.length > 0 && Math.abs(this.local_maxima[this.local_maxima.length - 2] + dx - this.local_minima[this.local_minima.length - 2]) < 1 / 100000000)
                 {
                     const min = this.local_maxima[this.local_maxima.length - 2];
                     const max = this.local_minima[this.local_minima.length - 2] + dx;
