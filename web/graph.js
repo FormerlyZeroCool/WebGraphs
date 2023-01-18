@@ -174,7 +174,7 @@ class LayerManagerTool {
         this.layoutManager.addElement(this.buttonAddLayer);
         this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 75, 16));
         this.runningId = 2;
-        this.pushList(`sin(x*x)`);
+        this.pushList(`tan(x)`);
         this.list.refresh();
     }
     deleteItem(index = this.list.selected()) {
@@ -1191,13 +1191,13 @@ class Game extends SquareAABBCollidable {
         const view = new Int32Array(main_buf.imageData.data.buffer);
         main_buf.ctx.imageSmoothingEnabled = false;
         main_buf.ctx.lineJoin = "round";
-        let start_time = Date.now();
         for (let index = 0; index < functions.length; index++) {
             const foo = functions[index];
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 main_buf.ctx.lineWidth = foo.line_width;
                 //build table of points, intersections, zeros, min/maxima inflections to be rendered
                 foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
+                let start_time = Date.now();
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table.data[0] - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1];
@@ -1216,14 +1216,19 @@ class Game extends SquareAABBCollidable {
                     //render functions as lines between points in table to buffers
                     if (sx > last_x || sy !== last_y) {
                         if (foo.discontinuities[j] < x) {
+                            const optimized_x = foo.optimize_xmax(foo.discontinuities[j] - 2 * foo.dx, foo.discontinuities[j + 1] + 2 * foo.dx, 102, (x, dx) => Math.abs(foo.compiled(x, dx)));
+                            //+- the min max bounds clamps functions
+                            const min_max_bounds = clamp(foo.compiled(optimized_x, foo.dx), target_bounds.y_min, target_bounds.y_max);
+                            const max = this.world_y_to_screen(Math.min(-min_max_bounds, min_max_bounds), target_bounds);
+                            const min = this.world_y_to_screen(Math.max(-min_max_bounds, min_max_bounds), target_bounds);
                             if (foo.discontinuities[j + 2] === 1) //line to -inf then move to inf
                              {
-                                main_buf.ctx.lineTo(sx, this.height + 50);
-                                main_buf.ctx.moveTo(sx, -50);
+                                main_buf.ctx.lineTo(sx, clamp(this.height + 50, min, max));
+                                main_buf.ctx.moveTo(sx, clamp(-50, min, max));
                             }
                             else {
-                                main_buf.ctx.lineTo(sx, -50);
-                                main_buf.ctx.moveTo(sx, this.height + 50);
+                                main_buf.ctx.lineTo(sx, clamp(-50, min, max));
+                                main_buf.ctx.moveTo(sx, clamp(this.height + 50, min, max));
                             }
                             j += 3;
                         }
