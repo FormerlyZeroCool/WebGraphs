@@ -1162,7 +1162,7 @@ class Game extends SquareAABBCollidable {
         if (this.options_gui_manager)
             this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
     }
-    async try_render_functions(main_buf) {
+    async regenerate_curve_view(main_buf) {
         this.rendering_functions = true;
         this.calc_bounds();
         const target_bounds = new ViewTransformation(1, 1, 1, 1);
@@ -1216,9 +1216,9 @@ class Game extends SquareAABBCollidable {
                     //render functions as lines between points in table to buffers
                     if (sx > last_x || sy !== last_y) {
                         if (foo.discontinuities[j] < x) {
-                            const optimized_x = foo.optimize_xmax(foo.discontinuities[j] - 2 * foo.dx, foo.discontinuities[j + 1] + 2 * foo.dx, 102, (x, dx) => Math.abs(foo.compiled(x, dx)));
+                            const optimized_x = foo.optimize_xmax(foo.discontinuities[j] - 4 * foo.dx, foo.discontinuities[j + 1] + 4 * foo.dx, 50, (x, dx) => Math.abs(foo.compiled(x, dx)));
                             //+- the min max bounds clamps functions
-                            const min_max_bounds = clamp(foo.compiled(optimized_x, foo.dx), target_bounds.y_min, target_bounds.y_max);
+                            const min_max_bounds = foo.compiled(optimized_x, foo.dx);
                             const max = this.world_y_to_screen(Math.min(-min_max_bounds, min_max_bounds), target_bounds);
                             const min = this.world_y_to_screen(Math.max(-min_max_bounds, min_max_bounds), target_bounds);
                             if (foo.discontinuities[j + 2] === 1) //line to -inf then move to inf
@@ -1422,7 +1422,7 @@ class Game extends SquareAABBCollidable {
         }
         if ((this.repaint || !this.current_bounds.compare(this.target_bounds)) && !this.rendering_functions) {
             this.repaint = false;
-            this.try_render_functions(this.render_buf);
+            this.regenerate_curve_view(this.render_buf);
         }
         const dx = (this.current_bounds.x_translation - this.target_bounds.x_translation) / this.target_bounds.deltaX * this.width;
         const dy = (this.current_bounds.y_translation - this.target_bounds.y_translation) / this.target_bounds.deltaY * this.height;
@@ -1431,6 +1431,7 @@ class Game extends SquareAABBCollidable {
         const dw = this.width - rx;
         const dh = this.height - ry;
         this.calc_bounds();
+        //render current curve view
         ctx.drawImage(this.main_buf.image, x + dx + dw / 2, y + dy + dh / 2, rx, ry);
         this.render_axes(canvas, ctx, x, y, width, height);
         //this state manager controls what labels get rendered

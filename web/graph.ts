@@ -1489,7 +1489,7 @@ class Game extends SquareAABBCollidable {
         new RGB(46, 204, 113),
         new RGB(245, 146, 65),
         new RGB(51, 204, 0)];
-    async try_render_functions(main_buf:Sprite):Promise<void>
+    async regenerate_curve_view(main_buf:Sprite):Promise<void>
     {
         this.rendering_functions = true;
         this.calc_bounds();
@@ -1562,10 +1562,10 @@ class Game extends SquareAABBCollidable {
                     {
                         if(foo.discontinuities[j] < x)
                         {
-                            const optimized_x = foo.optimize_xmax(foo.discontinuities[j] - 2*foo.dx, foo.discontinuities[j+1] + 2*foo.dx, 102,
+                            const optimized_x = foo.optimize_xmax(foo.discontinuities[j] - 4*foo.dx, foo.discontinuities[j+1] + 4*foo.dx, 50,
                                  (x, dx) => Math.abs(foo.compiled(x,dx)));
                             //+- the min max bounds clamps functions
-                            const min_max_bounds = clamp(foo.compiled(optimized_x, foo.dx), target_bounds.y_min, target_bounds.y_max);
+                            const min_max_bounds = foo.compiled(optimized_x, foo.dx);
                             const max = this.world_y_to_screen(Math.min(-min_max_bounds, min_max_bounds), target_bounds);
                             const min = this.world_y_to_screen(Math.max(-min_max_bounds, min_max_bounds), target_bounds);
                         
@@ -1804,7 +1804,7 @@ class Game extends SquareAABBCollidable {
         {
             this.repaint = false;
             
-            this.try_render_functions(this.render_buf);
+            this.regenerate_curve_view(this.render_buf);
         }
         const dx = (this.current_bounds.x_translation - this.target_bounds.x_translation) / this.target_bounds.deltaX * this.width;
         const dy = (this.current_bounds.y_translation - this.target_bounds.y_translation) / this.target_bounds.deltaY * this.height;
@@ -1814,6 +1814,7 @@ class Game extends SquareAABBCollidable {
         const dw = this.width - rx;
         const dh = this.height - ry;
         this.calc_bounds();
+        //render current curve view
         ctx.drawImage(this.main_buf.image, x + dx + dw / 2, y + dy + dh / 2, rx, ry);
         this.render_axes(canvas, ctx, x, y, width, height);
         //this state manager controls what labels get rendered
