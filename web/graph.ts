@@ -2191,7 +2191,7 @@ async function main()
         const multiplier = 100;
         const scaler = scale / 100;
         scale -= normalized_delta * multiplier * scaler;
-        return clamp(scale, Math.pow(2, -power_of_2_bounds), Math.pow(2, power_of_2_bounds));
+        return clamp(scale, game.target_bounds.x_scale / 2, game.target_bounds.x_scale * 2);
     }
     canvas.addEventListener("wheel", (e) => {
         if(e.deltaY > 10000)
