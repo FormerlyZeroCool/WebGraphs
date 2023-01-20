@@ -1603,8 +1603,8 @@ class Game extends SquareAABBCollidable {
                     }
                     if(Date.now() - start_time > 15)
                     {
-                        start_time = Date.now();
                         await sleep(2);
+                        start_time = Date.now();
                     }
                 }
                 

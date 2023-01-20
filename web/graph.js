@@ -1250,8 +1250,8 @@ class Game extends SquareAABBCollidable {
                         main_buf.ctx.moveTo(last_x, last_y);
                     }
                     if (Date.now() - start_time > 15) {
-                        start_time = Date.now();
                         await sleep(2);
+                        start_time = Date.now();
                     }
                 }
                 main_buf.ctx.stroke();
