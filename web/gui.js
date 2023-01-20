@@ -2172,7 +2172,7 @@ export class Sprite {
         this.imageData = null;
         this.pixels = null;
         this.image = document.createElement("canvas");
-        this.ctx = this.image.getContext("2d");
+        this.ctx = this.image.getContext("2d", { desynchronized: true });
         this.width = width;
         this.height = height;
         if (width * height > 0)
