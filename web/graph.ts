@@ -2157,10 +2157,10 @@ class Game extends SquareAABBCollidable {
     make_closest_curve_selected(coords:number[]):void
     {
         const index = this.x_to_index(coords[0]);
-        let min_dist:number = Math.abs(this.functions[0].table.data[index] - coords[1]);
+        let min_dist:number = Math.abs(this.functions[0].table.data[index] - -coords[1]);
         let min_dist_function_index = 0;
         this.functions.forEach((foo, arr_index) => {
-            const dist = Math.abs(foo.table.data[index] - coords[1]);
+            const dist = Math.abs(foo.table.data[index] - -coords[1]);
             if(dist < min_dist)
             {
                 min_dist = dist;
