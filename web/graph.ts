@@ -357,6 +357,15 @@ class Function {
             y3))/dxsq*dxsq);
        
     }
+    possibly_discontinous(x:number):boolean
+    {
+        for(let i = 0; i < this.discontinuities.length; i += 3)
+        {
+            if(x > this.discontinuities[i] && x < this.discontinuities[i + 1])
+                return true;
+        }
+        return false;
+    }
     calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):DynamicFloat64Array
     {
         this.x_max = x_max;
@@ -406,8 +415,8 @@ class Function {
                 if(this.local_minima.length > 0 && Math.abs(this.local_minima[this.local_minima.length - 2] + dx - this.local_maxima[this.local_maxima.length - 2]) < 1 / 100000000)
                 {
                     //between this range is where a discontinuity may lie
-                    const min = this.local_minima[this.local_minima.length - 2];
-                    const max = this.local_maxima[this.local_maxima.length - 2] + dx;
+                    const min = this.local_minima[this.local_minima.length - 2] - dx / 2;
+                    const max = this.local_maxima[this.local_maxima.length - 2] + dx / 2;
                     this.discontinuities.push(min);
                     this.discontinuities.push(max);
                     this.discontinuities.push(min_max_code);
@@ -417,8 +426,8 @@ class Function {
             {
                 if(this.local_maxima.length > 0 && Math.abs(this.local_maxima[this.local_maxima.length - 2] + dx - this.local_minima[this.local_minima.length - 2]) < 1 / 100000000)
                 {
-                    const min = this.local_maxima[this.local_maxima.length - 2];
-                    const max = this.local_minima[this.local_minima.length - 2] + dx;
+                    const min = this.local_maxima[this.local_maxima.length - 2] - dx / 2;
+                    const max = this.local_minima[this.local_minima.length - 2] + dx / 2;
                     this.discontinuities.push(min);
                     this.discontinuities.push(max);
                     this.discontinuities.push(min_max_code);
@@ -1669,28 +1678,17 @@ class Game extends SquareAABBCollidable {
     {
         //setup variables for rendering
         const font_size = 20;
-        const screen_space_x_axis = -this.target_bounds.y_min >= 0 && -this.target_bounds.y_max <= 0 ? (0 - this.target_bounds.y_min) / this.target_bounds.deltaY * this.cell_dim[1] :  -this.target_bounds.y_min < 0 ? 0 : this.height;
-        let screen_space_y_axis = -this.target_bounds.x_min >= 0 && -this.target_bounds.x_max <= 0 ? (0 - this.target_bounds.x_min) / this.target_bounds.deltaX * this.cell_dim[0] : -this.target_bounds.x_min < 0 ? 0 : this.width;
+        const screen_space_x_axis = -this.target_bounds.y_min >= 0 && -this.target_bounds.y_max <= 0 ? this.world_y_to_screen(0) :  -this.target_bounds.y_min < 0 ? 0 : this.height;
+        let screen_space_y_axis = -this.target_bounds.x_min >= 0 && -this.target_bounds.x_max <= 0 ? this.world_x_to_screen(0) : -this.target_bounds.x_min < 0 ? 0 : this.width;
         
         if(this.draw_axes)
         {
             //clear previous image
             //render axes
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = "#000000";
-            ctx.moveTo(0, screen_space_x_axis);
-            ctx.lineTo(canvas.width, screen_space_x_axis);
-            ctx.moveTo(screen_space_y_axis, canvas.height);
-            ctx.lineTo(screen_space_y_axis, canvas.height);
-            //finish rendering axes
-            ctx.stroke();
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, screen_space_x_axis - 2, this.width, 4);
+            ctx.fillRect(screen_space_y_axis - 2, 0, 4, this.height);
         }
-        
-        if(!this.draw_axis_labels)
-        {
-            return;
-        }  
         const msd_x = Math.pow(10, Math.floor(-Math.log10(this.target_bounds.deltaX)));
         const delta_x = Math.floor(this.target_bounds.deltaX * msd_x * 10) / (msd_x * 100);
         let closest_start_x = Math.ceil(this.target_bounds.x_min * msd_x * 100) / (msd_x*100);
@@ -1705,30 +1703,34 @@ class Game extends SquareAABBCollidable {
         let last_render_text_width = 0;
         ctx.font = `${font_size}px Helvetica`;
         ctx.fillStyle = "#B4B4B4";
-        ctx.strokeStyle = "#B4B4B4";
+        ctx.strokeStyle = "#000000";
         ctx.lineWidth = 3;
         //render points along x axis
         while(i < this.target_bounds.x_max)
         {
             ctx.fillStyle = "#B4B4B4";
             const screen_x = ((i - this.target_bounds.x_min) / this.target_bounds.deltaX) * this.width;
-            ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-            ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+
+            if(this.draw_axis_labels)
+            {
+                ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+            }
             if(this.chkbx_render_grid.checked)
-                ctx.fillRect(screen_x, - 0.45, 0.9, this.cell_dim[1]);
+                ctx.fillRect(screen_x, - 0.45, 0.9, this.height);
             {
                 const screen_x = ((i + delta_x / 2 - this.target_bounds.x_min) / this.target_bounds.deltaX) * this.width;
                 //ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 if(this.chkbx_render_grid.checked)
                 {
-                    ctx.fillRect(screen_x - 0.375, 0, 0.5, this.cell_dim[1]);
-                    const sdx = delta_x / this.target_bounds.deltaX * this.cell_dim[0];
-                    ctx.fillRect(screen_x - 0.1 + sdx / 4, 0, 0.2, this.cell_dim[1]);
-                    ctx.fillRect(screen_x - 0.1 - sdx / 4, 0, 0.2, this.cell_dim[1]);
+                    ctx.fillRect(screen_x - 0.375, 0, 0.5, this.height);
+                    const sdx = delta_x / this.target_bounds.deltaX * this.width;
+                    ctx.fillRect(screen_x - 0.1 + sdx / 4, 0, 0.2, this.height);
+                    ctx.fillRect(screen_x - 0.1 - sdx / 4, 0, 0.2, this.height);
                 }
             }
-            if(screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*15/16)
+            if(this.draw_axis_labels && screen_x > last_render_x + last_render_text_width + 10 && Math.abs(i) >= delta_x*15/16)
             {
                 last_render_x = screen_x + 3;
                 const text = this.format_number(i);
@@ -1740,6 +1742,7 @@ class Game extends SquareAABBCollidable {
                     text_y += font_size + 10;
                 }
                 ctx.fillStyle = "#000000";
+                ctx.strokeStyle = "#B4B4B4";
                 ctx.strokeText(text, screen_x + 3, text_y - 6);
                 ctx.fillText(text, screen_x + 3, text_y - 6);
             }
@@ -1756,10 +1759,13 @@ class Game extends SquareAABBCollidable {
             ctx.fillStyle = "#B4B4B4";
             const screen_y = (i - this.target_bounds.y_min) / this.target_bounds.deltaY * this.height;
             screen_space_y_axis = old_screen_space_y_axis;
-            ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-            ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+            if(this.draw_axis_labels)
+            {
+                ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+            }
             if(this.chkbx_render_grid.checked) {
-                ctx.fillRect(0, screen_y - 0.45, this.cell_dim[0], 0.9);
+                ctx.fillRect(0, screen_y - 0.45, this.width, 0.9);
             }
             
             {
@@ -1768,14 +1774,14 @@ class Game extends SquareAABBCollidable {
                 //ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 if(this.chkbx_render_grid.checked){
-                    ctx.fillRect(0, screen_y - 0.375, this.cell_dim[0], 0.75);
+                    ctx.fillRect(0, screen_y - 0.375, this.width, 0.75);
 
-                    const sdy = delta_y / this.target_bounds.deltaY * this.cell_dim[1];
-                    ctx.fillRect(0, screen_y - 0.1 + sdy / 4, this.cell_dim[0], 0.2);
-                    ctx.fillRect(0, screen_y - 0.1 - sdy / 4, this.cell_dim[0], 0.2);
+                    const sdy = delta_y / this.target_bounds.deltaY * this.height;
+                    ctx.fillRect(0, screen_y - 0.1 + sdy / 4, this.width, 0.2);
+                    ctx.fillRect(0, screen_y - 0.1 - sdy / 4, this.width, 0.2);
                 }
             }
-            if(screen_y > last_render_y + font_size * 2)
+            if(this.draw_axis_labels && screen_y > last_render_y + font_size * 2)
             {
                 last_render_y = screen_y;
                 const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 +"";
@@ -1790,8 +1796,6 @@ class Game extends SquareAABBCollidable {
             }
             i += delta_y;
         }
-        //ctx.drawImage(this.axes.image, x, y, width, height);
-        
     }
     draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
     {
@@ -1917,13 +1921,15 @@ class Game extends SquareAABBCollidable {
     {
         if(this.intersections.length > 0)
         {
+            const fun1 = this.functions[this.layer_manager.list.selected()];
+            const fun2 = this.functions[this.last_selected_item];
             let closest_intersection = 0;
             let dist = Math.abs(x - this.intersections[closest_intersection]);
             for(let i = 2;  i < this.intersections.length; i+=2)
             {
                 const xi = this.intersections[i];
                 const dist_xi = Math.abs(x - xi);
-                if(dist! > dist_xi)
+                if(dist! > dist_xi && !fun1.possibly_discontinous(xi) && !fun2.possibly_discontinous(xi))
                 {
                     dist = dist_xi;
                     closest_intersection = i;
