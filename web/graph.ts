@@ -1,4 +1,4 @@
-import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent} from './io.js'
+import {SingleTouchListener, isTouchSupported, MultiTouchListener, KeyboardHandler, TouchMoveEvent, MultiTouchEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite, GuiCheckList, GuiButton, SimpleGridLayoutManager, GuiLabel, GuiListItem, GuiSlider, SlideEvent, GuiCheckBox, 
     GuiColoredSpacer, ExtendedTool, vertical_group, horizontal_group, CustomBackgroundSlider, StateManagedUI, UIState, GuiSpacer, is_landscape, GuiElement, groupify, VerticalLayoutManager} from './gui.js'
 import {sign, srand, clamp, max_32_bit_signed, round_with_precision, saveBlob, FixedSizeQueue, Queue, PriorityQueue, logToServer, sleep, DynamicFloat64Array} from './utils.js'
@@ -2136,13 +2136,13 @@ class Game extends SquareAABBCollidable {
         this.state_manager_grid.transition(delta_time);
         this.ui_state_manager.transition(delta_time);
     }
-    set_scale(x_scale:number, y_scale:number):void
+    set_scale(x_scale:number, y_scale:number, keep_in_place:number[] = this.touchPos):void
     {
-        const touch_worldPos = this.screen_to_world(this.touchPos);
+        const touch_worldPos = this.screen_to_world(keep_in_place);
         this.target_bounds.x_scale = x_scale;
         this.target_bounds.y_scale = y_scale;
         this.calc_bounds();
-        const new_touch_worldPos = this.screen_to_world(this.touchPos);
+        const new_touch_worldPos = this.screen_to_world(keep_in_place);
         const delta = [new_touch_worldPos[0] - touch_worldPos[0], new_touch_worldPos[1] - touch_worldPos[1]];
         //const screen_delta = [delta[0] / this.target_bounds.deltaX, delta[1] / this.target_bounds.deltaY];
         this.target_bounds.x_translation -= delta[0];
@@ -2225,10 +2225,11 @@ async function main()
     canvas.style.cursor = "pointer";
     let counter = 0;
     const touchScreen:boolean = isTouchSupported();
-    multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event:any) => {
+    multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event:MultiTouchEvent) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
-        
-        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta));
+        //game.touchPos = [event.touchPos[0], event.touchPos[1]];
+        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta),
+            event.touchPos);
         game.repaint = true;
         event.preventDefault();
     });

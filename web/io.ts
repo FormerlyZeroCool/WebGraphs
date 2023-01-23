@@ -418,7 +418,7 @@ export class SingleTouchListener
         return a[0]*b[0]+a[1]*b[1];
     }
 };
-interface MultiTouchEvent extends TouchMoveEvent {
+export interface MultiTouchEvent extends TouchMoveEvent {
     delta:number;
     distance:number;
     rotation_delta:number;
@@ -610,6 +610,7 @@ export class MultiTouchListener {
             return;
         
         const newDist:number = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX),2) + Math.pow(touch1.clientY - touch2.clientY, 2));
+        event.touchPos = [(touch1.clientX + touch2.clientX) / 2, (touch1.clientY + touch2.clientY) / 2];
         event.delta = this.lastDistance - newDist;
         event.distance = newDist;
         this.pinch_distance = newDist;

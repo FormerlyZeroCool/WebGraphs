@@ -449,6 +449,7 @@ export class MultiTouchListener {
         if (!(this.registeredMultiTouchEvent))
             return;
         const newDist = Math.sqrt(Math.pow((touch1.clientX - touch2.clientX), 2) + Math.pow(touch1.clientY - touch2.clientY, 2));
+        event.touchPos = [(touch1.clientX + touch2.clientX) / 2, (touch1.clientY + touch2.clientY) / 2];
         event.delta = this.lastDistance - newDist;
         event.distance = newDist;
         this.pinch_distance = newDist;

@@ -1697,12 +1697,12 @@ class Game extends SquareAABBCollidable {
         this.state_manager_grid.transition(delta_time);
         this.ui_state_manager.transition(delta_time);
     }
-    set_scale(x_scale, y_scale) {
-        const touch_worldPos = this.screen_to_world(this.touchPos);
+    set_scale(x_scale, y_scale, keep_in_place = this.touchPos) {
+        const touch_worldPos = this.screen_to_world(keep_in_place);
         this.target_bounds.x_scale = x_scale;
         this.target_bounds.y_scale = y_scale;
         this.calc_bounds();
-        const new_touch_worldPos = this.screen_to_world(this.touchPos);
+        const new_touch_worldPos = this.screen_to_world(keep_in_place);
         const delta = [new_touch_worldPos[0] - touch_worldPos[0], new_touch_worldPos[1] - touch_worldPos[1]];
         //const screen_delta = [delta[0] / this.target_bounds.deltaX, delta[1] / this.target_bounds.deltaY];
         this.target_bounds.x_translation -= delta[0];
@@ -1785,7 +1785,8 @@ async function main() {
     const touchScreen = isTouchSupported();
     multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
-        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta));
+        //game.touchPos = [event.touchPos[0], event.touchPos[1]];
+        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta), event.touchPos);
         game.repaint = true;
         event.preventDefault();
     });
