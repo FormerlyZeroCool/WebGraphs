@@ -941,7 +941,7 @@ class UIViewState implements GridUIState {
         }
     }
     handleKeyboardEvents(type: string, event: KeyboardEvent): void {
-        throw new Error('Method not implemented.');
+
     }
     collision_predicate(type: string, event: TouchMoveEvent):boolean
     {
@@ -1036,6 +1036,11 @@ class UIViewStateShowUI extends UIViewState
             this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
             this.grid.options_gui_manager.draw(ctx);
         }
+    }
+    handleKeyboardEvents(type: string, event: KeyboardEvent): void {
+        this.grid.guiManager.handleKeyBoardEvents(type, event);
+        this.grid.options_gui_manager.handleKeyBoardEvents(type, event);
+        this.grid.repaint = true;
     }
     collision_predicate(type: string, event: TouchMoveEvent):boolean
     {
@@ -2295,17 +2300,13 @@ async function main()
         game.repaint = true;
     });
     keyboardHandler.registerCallBack("keyup", () => true, (event:any) => {
-        game.guiManager.handleKeyBoardEvents("keyup", event);
-        game.options_gui_manager.handleKeyBoardEvents("keyup", event);
+        game.ui_state_manager.handleKeyboardEvents("keyup", event);
     });
     keyboardHandler.registerCallBack("keydown", () => true, (event:any) => {
         if(!keyboardHandler.keysHeld["MetaLeft"] && !keyboardHandler.keysHeld["ControlLeft"] &&
             !keyboardHandler.keysHeld["MetaRight"] && !keyboardHandler.keysHeld["ControlRight"])
             event.preventDefault();
-
-        game.guiManager.handleKeyBoardEvents("keydown", event);
-        game.options_gui_manager.handleKeyBoardEvents("keydown", event);
-        game.repaint = true;
+        game.ui_state_manager.handleKeyboardEvents("keydown", event);
         switch(event.code)
         {
             case("KeyF"):
