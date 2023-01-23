@@ -174,7 +174,7 @@ class LayerManagerTool {
         this.layoutManager.addElement(this.buttonAddLayer);
         this.layoutManager.addElement(new GuiButton(() => this.deleteItem(), "Delete", this.layoutManager.width() / 2, 75, 16));
         this.runningId = 2;
-        this.pushList(`tan(x)`);
+        this.pushList(`sin(x*x)`);
         this.list.refresh();
     }
     deleteItem(index = this.list.selected()) {
@@ -853,6 +853,21 @@ class UIViewStateNoUI extends UIViewState {
     }
     transition(delta_time) {
         super.transition(delta_time);
+        const mod_x = (1000 / delta_time) * this.grid.target_bounds.deltaX / 1000;
+        const mod_y = (1000 / delta_time) * this.grid.target_bounds.deltaY / 1000;
+        if (keyboardHandler.keysHeld["ArrowUp"])
+            this.grid.target_bounds.acceleration[1] -= mod_y;
+        else if (!keyboardHandler.keysHeld["ArrowDown"])
+            this.grid.target_bounds.acceleration[1] = -this.grid.target_bounds.velocity[1] * 2;
+        if (keyboardHandler.keysHeld["ArrowDown"])
+            this.grid.target_bounds.acceleration[1] += mod_y;
+        if (keyboardHandler.keysHeld["ArrowLeft"])
+            this.grid.target_bounds.acceleration[0] -= mod_x;
+        else if (!keyboardHandler.keysHeld["ArrowRight"])
+            this.grid.target_bounds.acceleration[0] = -this.grid.target_bounds.velocity[0] * 2;
+        if (keyboardHandler.keysHeld["ArrowRight"])
+            this.grid.target_bounds.acceleration[0] += mod_x;
+        this.grid.target_bounds.update_state(delta_time);
         //console.log("no ui")
         if (this.tapped) {
             const new_state = new UIViewStateTransitioningUI(this.grid);
@@ -937,10 +952,24 @@ class ViewTransformation {
         this.y_min = this.y_translation - 1 / this.y_scale;
         this.y_max = this.y_translation + 1 / this.y_scale;
         this.deltaY = this.y_max - this.y_min;
+        this.velocity = [0, 0];
+        this.acceleration = [0, 0];
     }
     compare(target_bounds) {
         return target_bounds.x_scale === this.x_scale && target_bounds.x_translation === this.x_translation &&
             target_bounds.y_scale === this.y_scale && target_bounds.y_translation === this.y_translation;
+    }
+    update_state(delta_time) {
+        const mult = delta_time / 1000;
+        this.x_translation += this.velocity[0] * mult;
+        this.y_translation += this.velocity[1] * mult;
+        this.velocity[0] += this.acceleration[0] * mult;
+        this.velocity[1] += this.acceleration[1] * mult;
+        this.recalc();
+    }
+    stop_motion() {
+        this.velocity = [0, 0];
+        this.acceleration = [0, 0];
     }
     recalc(x_scale = this.x_scale, y_scale = this.y_scale, x_translation = this.x_translation, y_translation = this.y_translation) {
         this.x_scale = x_scale;
@@ -1703,10 +1732,8 @@ class Game extends SquareAABBCollidable {
         this.target_bounds.y_scale = y_scale;
         this.calc_bounds();
         const new_touch_worldPos = this.screen_to_world(keep_in_place);
-        const delta = [new_touch_worldPos[0] - touch_worldPos[0], new_touch_worldPos[1] - touch_worldPos[1]];
-        //const screen_delta = [delta[0] / this.target_bounds.deltaX, delta[1] / this.target_bounds.deltaY];
-        this.target_bounds.x_translation -= delta[0];
-        this.target_bounds.y_translation -= delta[1];
+        this.target_bounds.x_translation -= new_touch_worldPos[0] - touch_worldPos[0];
+        this.target_bounds.y_translation -= new_touch_worldPos[1] - touch_worldPos[1];
     }
     x_to_index(x) {
         return Math.floor((x - this.target_bounds.x_min) / this.target_bounds.deltaX * this.functions[0].table.length);
@@ -1758,20 +1785,20 @@ async function main() {
     const multi_touch_listener = new MultiTouchListener(canvas, isTouchSupported(), true, false);
     canvas.onmousemove = (event) => {
     };
-    const power_of_2_bounds = 300;
-    const calc_scale = (scale, normalized_delta) => {
+    const clamp_x = (x) => clamp(x, game.target_bounds.x_scale / 2, game.target_bounds.x_scale * 2);
+    const clamp_y = (x) => clamp(x, game.target_bounds.y_scale / 2, game.target_bounds.y_scale * 2);
+    const calc_scale = (scale, normalized_delta, clamp) => {
         const multiplier = 100;
         const scaler = scale / 100;
         scale -= normalized_delta * multiplier * scaler;
-        return clamp(scale, game.target_bounds.x_scale / 2, game.target_bounds.x_scale * 2);
+        return clamp(scale);
     };
     canvas.addEventListener("wheel", (e) => {
-        if (e.deltaY > 10000)
+        if (Math.abs(e.deltaY) > 1000)
             return;
         const normalized_delta = (clamp(e.deltaY + 1, -getHeight(), getHeight())) / getHeight();
-        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta));
+        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y));
         game.repaint = true;
-        //e.preventDefault();
     }, { passive: true });
     if (!('TouchEvent' in window))
         console.log("touch events not supported");
@@ -1781,11 +1808,9 @@ async function main() {
     canvas.width = getWidth();
     canvas.height = getHeight();
     canvas.style.cursor = "pointer";
-    let counter = 0;
     const touchScreen = isTouchSupported();
     multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
-        //game.touchPos = [event.touchPos[0], event.touchPos[1]];
         game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta), event.touchPos);
         game.repaint = true;
         event.preventDefault();
@@ -1829,17 +1854,7 @@ async function main() {
         game.guiManager.handleKeyBoardEvents("keydown", event);
         game.options_gui_manager.handleKeyBoardEvents("keydown", event);
         game.repaint = true;
-        let scaler_x = game.target_bounds.deltaX / (game.width);
-        let scaler_y = game.target_bounds.deltaY / (game.height);
         switch (event.code) {
-            case ("ArrowUp"):
-                break;
-            case ("ArrowDown"):
-                break;
-            case ("ArrowLeft"):
-                break;
-            case ("ArrowRight"):
-                break;
             case ("KeyF"):
                 render_fps = !render_fps;
                 break;
