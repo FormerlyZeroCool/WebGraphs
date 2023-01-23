@@ -2260,7 +2260,7 @@ async function main()
     const touchScreen:boolean = isTouchSupported();
     multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event:MultiTouchEvent) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
-        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta), calc_scale(game.target_bounds.y_scale, normalized_delta),
+        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y),
             event.touchPos);
         game.repaint = true;
         event.preventDefault();
