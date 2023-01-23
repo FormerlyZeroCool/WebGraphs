@@ -858,13 +858,13 @@ class UIViewStateNoUI extends UIViewState {
         if (keyboardHandler.keysHeld["ArrowUp"])
             this.grid.target_bounds.acceleration[1] -= mod_y;
         else if (!keyboardHandler.keysHeld["ArrowDown"])
-            this.grid.target_bounds.acceleration[1] = -this.grid.target_bounds.velocity[1] * 2;
+            this.grid.target_bounds.acceleration[1] = -this.grid.target_bounds.velocity[1] * 5;
         if (keyboardHandler.keysHeld["ArrowDown"])
             this.grid.target_bounds.acceleration[1] += mod_y;
         if (keyboardHandler.keysHeld["ArrowLeft"])
             this.grid.target_bounds.acceleration[0] -= mod_x;
         else if (!keyboardHandler.keysHeld["ArrowRight"])
-            this.grid.target_bounds.acceleration[0] = -this.grid.target_bounds.velocity[0] * 2;
+            this.grid.target_bounds.acceleration[0] = -this.grid.target_bounds.velocity[0] * 5;
         if (keyboardHandler.keysHeld["ArrowRight"])
             this.grid.target_bounds.acceleration[0] += mod_x;
         this.grid.target_bounds.update_state(delta_time);
@@ -1805,24 +1805,22 @@ async function main() {
     canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
     }, { passive: false });
-    canvas.width = getWidth();
-    canvas.height = getHeight();
     canvas.style.cursor = "pointer";
-    const touchScreen = isTouchSupported();
     multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
         game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y), event.touchPos);
         game.repaint = true;
         event.preventDefault();
     });
-    let height = getHeight();
     let width = getWidth();
+    let height = getHeight();
+    canvas.width = width;
+    canvas.height = height;
     let game = new Game(multi_touch_listener, touchListener, 0, 0, height, width);
     window.game = game;
     let fps_text_width = 0;
     let render_fps = false;
     let low_fps = true;
-    let draw = false;
     multi_touch_listener.registerCallBack("touchstart", (event) => {
         game.ui_state_manager.handleTouchEvents("touchstart", event);
         game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
