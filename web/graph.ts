@@ -2138,8 +2138,15 @@ class Game extends SquareAABBCollidable {
     }
     set_scale(x_scale:number, y_scale:number):void
     {
+        const touch_worldPos = this.screen_to_world(this.touchPos);
         this.target_bounds.x_scale = x_scale;
         this.target_bounds.y_scale = y_scale;
+        this.calc_bounds();
+        const new_touch_worldPos = this.screen_to_world(this.touchPos);
+        const delta = [new_touch_worldPos[0] - touch_worldPos[0], new_touch_worldPos[1] - touch_worldPos[1]];
+        //const screen_delta = [delta[0] / this.target_bounds.deltaX, delta[1] / this.target_bounds.deltaY];
+        this.target_bounds.x_translation -= delta[0];
+        this.target_bounds.y_translation -= delta[1];
     }
     x_to_index(x:number):number
     {
