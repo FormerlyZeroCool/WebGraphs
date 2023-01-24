@@ -1735,7 +1735,7 @@ class Game extends SquareAABBCollidable {
         }
         const msd_x = Math.pow(10, Math.floor(Math.log10(this.target_bounds.deltaX / 3)));
         const delta_x = msd_x;
-        let closest_start_x = Math.ceil(this.target_bounds.x_min * msd_x) / (msd_x);
+        let closest_start_x = this.target_bounds.x_min;
         console.log(delta_x, closest_start_x, msd_x)
         closest_start_x -= closest_start_x % delta_x;
         const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.target_bounds.deltaY)));
