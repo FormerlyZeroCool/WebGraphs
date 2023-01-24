@@ -2049,6 +2049,7 @@ class Game extends SquareAABBCollidable {
     }
     render_formatted_point(ctx:CanvasRenderingContext2D, world_x:number, world_y:number, screen_x:number, screen_y:number, precision:number = 2, offset_y:number = 0):void
     {
+        ctx.lineWidth = 2.5;
         ctx.fillStyle = "#000000";
         ctx.strokeStyle = "#B4B4B4";
         const dim = 7;
@@ -2076,7 +2077,6 @@ class Game extends SquareAABBCollidable {
                 screen_y = font_size * 2;
             else if(screen_y > this.main_buf.height)
                 screen_y = this.main_buf.height - font_size;
-            ctx.lineWidth = 3;
             ctx.strokeText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
             ctx.fillText(text, screen_x + dim, screen_y + dim / 2 + offset_y);
             ctx.lineWidth = 1;
