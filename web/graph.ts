@@ -1817,7 +1817,6 @@ class Game extends SquareAABBCollidable {
             {
                 const screen_y = (i + delta_y / 2 - this.target_bounds.y_min) / this.target_bounds.deltaY * this.height;
                 screen_space_y_axis = old_screen_space_y_axis;
-                //ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 if(this.draw_axis_labels)
                     ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 if(this.chkbx_render_grid.checked){
