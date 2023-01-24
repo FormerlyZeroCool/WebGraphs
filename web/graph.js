@@ -857,20 +857,21 @@ class UIViewStateNoUI extends UIViewState {
     }
     transition(delta_time) {
         super.transition(delta_time);
-        const mod_x = (1000 / delta_time) * this.grid.target_bounds.deltaX / 1000;
-        const mod_y = (1000 / delta_time) * this.grid.target_bounds.deltaY / 1000;
+        const mod_x = (1000 / delta_time) * this.grid.target_bounds.deltaX / 30;
+        const mod_y = (1000 / delta_time) * this.grid.target_bounds.deltaY / 30;
         if (keyboardHandler.keysHeld["ArrowUp"])
-            this.grid.target_bounds.acceleration[1] -= mod_y;
+            this.grid.target_bounds.acceleration[1] = -mod_y;
         else if (!keyboardHandler.keysHeld["ArrowDown"])
-            this.grid.target_bounds.acceleration[1] = -this.grid.target_bounds.velocity[1] * 5;
+            this.grid.target_bounds.acceleration[1] = -this.grid.target_bounds.velocity[1] * 3;
         if (keyboardHandler.keysHeld["ArrowDown"])
-            this.grid.target_bounds.acceleration[1] += mod_y;
-        if (keyboardHandler.keysHeld["ArrowLeft"])
-            this.grid.target_bounds.acceleration[0] -= mod_x;
+            this.grid.target_bounds.acceleration[1] = mod_y;
+        if (keyboardHandler.keysHeld["ArrowLeft"]) {
+            this.grid.target_bounds.acceleration[0] = -mod_x;
+        }
         else if (!keyboardHandler.keysHeld["ArrowRight"])
-            this.grid.target_bounds.acceleration[0] = -this.grid.target_bounds.velocity[0] * 5;
+            this.grid.target_bounds.acceleration[0] = -this.grid.target_bounds.velocity[0] * 3;
         if (keyboardHandler.keysHeld["ArrowRight"])
-            this.grid.target_bounds.acceleration[0] += mod_x;
+            this.grid.target_bounds.acceleration[0] = mod_x;
         this.grid.target_bounds.update_state(delta_time);
         //console.log("no ui")
         if (this.tapped) {
@@ -965,10 +966,12 @@ class ViewTransformation {
     }
     update_state(delta_time) {
         const mult = delta_time / 1000;
-        this.x_translation += this.velocity[0] * mult;
-        this.y_translation += this.velocity[1] * mult;
-        this.velocity[0] += this.acceleration[0] * mult;
-        this.velocity[1] += this.acceleration[1] * mult;
+        this.x_translation = clamp(this.x_translation + this.velocity[0] * mult, -max_32_bit_signed, max_32_bit_signed);
+        this.y_translation = clamp(this.y_translation + this.velocity[1] * mult, -max_32_bit_signed, max_32_bit_signed);
+        const velx_bounds = this.deltaX * 10;
+        const vely_bounds = this.deltaX * 10;
+        this.velocity[0] = clamp(this.velocity[0] + this.acceleration[0] * mult, -velx_bounds, velx_bounds);
+        this.velocity[1] = clamp(this.velocity[1] + this.acceleration[1] * mult, -vely_bounds, vely_bounds);
         this.recalc();
     }
     stop_motion() {
@@ -1349,15 +1352,15 @@ class Game extends SquareAABBCollidable {
         const screen_space_x_axis = -this.target_bounds.y_min >= 0 && -this.target_bounds.y_max <= 0 ? this.world_y_to_screen(0) : -this.target_bounds.y_min < 0 ? 0 : this.height;
         let screen_space_y_axis = -this.target_bounds.x_min >= 0 && -this.target_bounds.x_max <= 0 ? this.world_x_to_screen(0) : -this.target_bounds.x_min < 0 ? 0 : this.width;
         if (this.draw_axes) {
-            //clear previous image
             //render axes
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, screen_space_x_axis - 2, this.width, 4);
             ctx.fillRect(screen_space_y_axis - 2, 0, 4, this.height);
         }
-        const msd_x = Math.pow(10, Math.floor(-Math.log10(this.target_bounds.deltaX)));
-        const delta_x = Math.floor(this.target_bounds.deltaX * msd_x * 10) / (msd_x * 100);
+        const msd_x = Math.pow(10, Math.floor(Math.log10(this.target_bounds.deltaX / 2)));
+        const delta_x = msd_x;
         let closest_start_x = Math.ceil(this.target_bounds.x_min * msd_x * 100) / (msd_x * 100);
+        console.log(delta_x, closest_start_x, msd_x);
         closest_start_x -= closest_start_x % delta_x;
         const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.target_bounds.deltaY)));
         const delta_y = delta_x; //Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
