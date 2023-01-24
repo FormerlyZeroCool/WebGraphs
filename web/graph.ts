@@ -1733,9 +1733,9 @@ class Game extends SquareAABBCollidable {
             ctx.fillRect(0, screen_space_x_axis - 2, this.width, 4);
             ctx.fillRect(screen_space_y_axis - 2, 0, 4, this.height);
         }
-        const msd_x = Math.pow(10, Math.floor(Math.log10(this.target_bounds.deltaX / 3.5)));
+        const msd_x = Math.pow(10, Math.floor(Math.log10(this.target_bounds.deltaX / 3)));
         const delta_x = msd_x;
-        let closest_start_x = Math.ceil(this.target_bounds.x_min * msd_x * 100) / (msd_x*100);
+        let closest_start_x = Math.ceil(this.target_bounds.x_min * msd_x) / (msd_x);
         console.log(delta_x, closest_start_x, msd_x)
         closest_start_x -= closest_start_x % delta_x;
         const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.target_bounds.deltaY)));
