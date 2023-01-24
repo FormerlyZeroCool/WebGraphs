@@ -1764,8 +1764,10 @@ class Game extends SquareAABBCollidable {
                 ctx.fillRect(screen_x, - 0.45, 0.9, this.height);
             {
                 const screen_x = ((i + delta_x / 2 - this.target_bounds.x_min) / this.target_bounds.deltaX) * this.width;
-                //ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
-                ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+                
+                if(this.draw_axis_labels)
+                    ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
+
                 if(this.chkbx_render_grid.checked)
                 {
                     ctx.fillRect(screen_x - 0.375, 0, 0.5, this.height);
@@ -1816,7 +1818,8 @@ class Game extends SquareAABBCollidable {
                 const screen_y = (i + delta_y / 2 - this.target_bounds.y_min) / this.target_bounds.deltaY * this.height;
                 screen_space_y_axis = old_screen_space_y_axis;
                 //ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
-                ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
+                if(this.draw_axis_labels)
+                    ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 if(this.chkbx_render_grid.checked){
                     ctx.fillRect(0, screen_y - 0.375, this.width, 0.75);
 
