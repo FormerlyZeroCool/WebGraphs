@@ -1294,8 +1294,8 @@ class Game extends SquareAABBCollidable {
         this.draw_axis_labels = true;
         this.draw_point_labels = true;
         const whratio = width / (height > 0 ? height : width);
-        this.target_bounds = new ViewTransformation(1/10, 1/10  * whratio, 0, 0);
-        this.current_bounds = new ViewTransformation(1/10, 1/10 * whratio, 0, 0);
+        this.target_bounds = new ViewTransformation(1/9, 1/9  * whratio, 0, 0);
+        this.current_bounds = new ViewTransformation(1/9, 1/9 * whratio, 0, 0);
         this.graph_start_x = 200;
         const rough_dim = getWidth();
         this.background_color = new RGB(0, 0, 0, 0);
@@ -1733,7 +1733,7 @@ class Game extends SquareAABBCollidable {
             ctx.fillRect(0, screen_space_x_axis - 2, this.width, 4);
             ctx.fillRect(screen_space_y_axis - 2, 0, 4, this.height);
         }
-        const msd_x = Math.pow(10, Math.floor(Math.log10(this.target_bounds.deltaX / 2)));
+        const msd_x = Math.pow(10, Math.floor(Math.log10(this.target_bounds.deltaX / 3.5)));
         const delta_x = msd_x;
         let closest_start_x = Math.ceil(this.target_bounds.x_min * msd_x * 100) / (msd_x*100);
         console.log(delta_x, closest_start_x, msd_x)
