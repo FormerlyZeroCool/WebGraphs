@@ -1362,7 +1362,7 @@ class Game extends SquareAABBCollidable {
         let closest_start_x = this.target_bounds.x_min;
         closest_start_x -= closest_start_x % delta_x;
         const msd_y = Math.pow(10, Math.ceil(-Math.log10(this.target_bounds.deltaY)));
-        const delta_y = delta_x; //Math.floor(this.deltaY * msd_y * 10) / (msd_y * 100);
+        const delta_y = delta_x;
         let closest_start_y = Math.ceil(this.target_bounds.y_min * msd_y * 10) / (msd_y * 10);
         closest_start_y -= closest_start_y % delta_y;
         //calculate a starting x position
@@ -1738,8 +1738,8 @@ class Game extends SquareAABBCollidable {
         this.target_bounds.y_scale = y_scale;
         this.calc_bounds();
         const new_touch_worldPos = this.screen_to_world(keep_in_place);
-        this.target_bounds.x_translation -= new_touch_worldPos[0] - touch_worldPos[0];
-        this.target_bounds.y_translation -= new_touch_worldPos[1] - touch_worldPos[1];
+        this.target_bounds.x_translation -= (new_touch_worldPos[0] - touch_worldPos[0]);
+        this.target_bounds.y_translation -= (new_touch_worldPos[1] - touch_worldPos[1]);
     }
     x_to_index(x) {
         return Math.floor((x - this.target_bounds.x_min) / this.target_bounds.deltaX * this.functions[0].table.length);
