@@ -168,7 +168,7 @@ class LayerManagerTool {
             const index = this.list.list.findIndex(element => element.slider === event.element);
             this.callback_slide_event(index, event.value);
         }, callback_get_error_parallel_array, callback_get_non_error_background_color);
-        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x*${this.runningId++}`); this.callback_onclick_event(0); }, "Add Function", this.layoutManager.width() / 2, 75, 16);
+        this.buttonAddLayer = new GuiButton(() => { this.pushList(`x*x-${this.runningId++}`); this.callback_onclick_event(0); }, "Add Function", this.layoutManager.width() / 2, 75, 16);
         this.layoutManager.addElement(new GuiLabel("Functions list:", this.layoutManager.width(), 20));
         this.layoutManager.addElement(this.list);
         this.layoutManager.addElement(this.buttonAddLayer);
@@ -780,7 +780,8 @@ class UIViewState {
         const touchPos = event.touchPos;
         this.hamburger_activated = (!this.grid.options_gui_manager.elementTouched && this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated;
         if (!this.hamburger_activated) {
-            this.grid.guiManager.handleTouchEvents(type, event);
+            if (this.grid.guiManager.collision(touchPos))
+                this.grid.guiManager.handleTouchEvents(type, event);
             this.grid.options_gui_manager.handleTouchEvents(type, event);
         }
         switch (type) {
@@ -854,6 +855,11 @@ class UIViewStateNoUI extends UIViewState {
     }
     collision_predicate(type, event) {
         return event.deltaX > 0;
+    }
+    handleTouchEvents(type, event) {
+        super.handleTouchEvents(type, event);
+        if (type === "touchstart" && !this.burger_collision(event.touchPos[0], event.touchPos[1]))
+            this.grid.make_closest_curve_selected(this.grid.screen_to_world(event.touchPos));
     }
     transition(delta_time) {
         super.transition(delta_time);
@@ -1034,7 +1040,7 @@ class Game extends SquareAABBCollidable {
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
         this.color_controller = new ColorPickerTool((color) => {
-            this.functions[this.selected_item].color.copy(color);
+            this.functions[this.layer_manager.list.selected()].color.copy(color);
             this.repaint = true;
         });
         this.slider_line_width = new GuiSlider(0, [125, 50 + touch_mod], (slide_event) => {
@@ -1042,7 +1048,7 @@ class Game extends SquareAABBCollidable {
             const line_width = 2 + Math.floor(state * 30);
             if (this.chkbx_sync_curve_width.checked)
                 this.functions.forEach(foo => foo.line_width = line_width);
-            this.functions[this.selected_item].line_width = line_width;
+            this.functions[this.layer_manager.list.selected()].line_width = line_width;
             this.repaint = true;
         });
         const width_label = new GuiLabel("Width", 75, 18, this.slider_line_width.height());
@@ -1378,6 +1384,7 @@ class Game extends SquareAABBCollidable {
             ctx.fillStyle = "#B4B4B4";
             const screen_x = ((i - this.target_bounds.x_min) / this.target_bounds.deltaX) * this.width;
             if (this.draw_axis_labels) {
+                ctx.strokeStyle = "#000000";
                 ctx.strokeRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
                 ctx.fillRect(screen_x - 3, screen_space_x_axis - 3, 6, 6);
             }
@@ -1405,6 +1412,7 @@ class Game extends SquareAABBCollidable {
                 }
                 ctx.fillStyle = "#000000";
                 ctx.strokeStyle = "#B4B4B4";
+                ctx.lineWidth = 2;
                 ctx.strokeText(text, screen_x + 3, text_y - 6);
                 ctx.fillText(text, screen_x + 3, text_y - 6);
             }
@@ -1416,6 +1424,7 @@ class Game extends SquareAABBCollidable {
         const old_screen_space_y_axis = screen_space_y_axis;
         //render points along y axis
         while (i <= this.target_bounds.y_max) {
+            ctx.strokeStyle = "#000000";
             ctx.fillStyle = "#B4B4B4";
             const screen_y = (i - this.target_bounds.y_min) / this.target_bounds.deltaY * this.height;
             screen_space_y_axis = old_screen_space_y_axis;
@@ -1445,8 +1454,10 @@ class Game extends SquareAABBCollidable {
                 if (screen_space_y_axis + text_width > this.width) {
                     screen_space_y_axis -= text_width + 10;
                 }
-                ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
                 ctx.fillStyle = "#000000";
+                ctx.strokeStyle = "#B4B4B4";
+                ctx.lineWidth = 2;
+                ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
                 ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
             }
             i += delta_y;
@@ -1555,7 +1566,7 @@ class Game extends SquareAABBCollidable {
     closest_intersection(x) {
         if (this.intersections.length > 0) {
             const fun1 = this.functions[this.layer_manager.list.selected()];
-            const fun2 = this.functions[this.last_selected_item];
+            const fun2 = this.functions[this.selected_item];
             let closest_intersection = 0;
             let dist = Math.abs(x - this.intersections[closest_intersection]);
             for (let i = 2; i < this.intersections.length; i += 2) {
@@ -1572,7 +1583,7 @@ class Game extends SquareAABBCollidable {
     }
     render_labels_intersection(ctx) {
         const selected_function = this.functions[this.layer_manager.list.selected()];
-        if (!this.functions[this.last_selected_item])
+        if (!this.functions[this.selected_item])
             return;
         this.render_labels_table(ctx, 0, (x) => {
             const index = this.closest_intersection(x);
@@ -1580,7 +1591,7 @@ class Game extends SquareAABBCollidable {
                 return this.intersections[index];
             return -1;
         }, (lower_bound, upper_bound, iterations) => {
-            const optimized_x = this.optimize_intersection(selected_function, this.functions[this.last_selected_item], lower_bound, upper_bound, iterations);
+            const optimized_x = this.optimize_intersection(selected_function, this.functions[this.selected_item], lower_bound, upper_bound, iterations);
             return [optimized_x, selected_function.call(optimized_x)];
         });
     }
@@ -1829,7 +1840,6 @@ async function main() {
     let low_fps = true;
     multi_touch_listener.registerCallBack("touchstart", (event) => {
         game.ui_state_manager.handleTouchEvents("touchstart", event);
-        game.make_closest_curve_selected(game.screen_to_world(event.touchPos));
         if (event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0] * 1.2)
             render_fps = !render_fps;
     });
