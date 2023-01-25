@@ -1319,7 +1319,7 @@ class Game extends SquareAABBCollidable {
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
         this.color_controller = new ColorPickerTool((color:RGB) => {
-            this.functions[this.layer_manager.list.selected()].color.copy(color);
+            this.functions[this.selected_item].color.copy(color);
             this.repaint = true;
         });
         this.slider_line_width = new GuiSlider(0, [125, 50 + touch_mod], (slide_event:SlideEvent) => {
@@ -1603,6 +1603,9 @@ class Game extends SquareAABBCollidable {
                 //render table to main buffer
                 let last_x = 0;
                 let last_y = ((-foo.table.data[0] - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1];
+                
+                let lastp_x = 0;
+                let lastp_y = ((-foo.table.data[0] - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1];
                 //setup state for for loop (if error is non null then the table will be empty)
                 if(foo.error_message !== null)
                     continue;
@@ -1643,6 +1646,8 @@ class Game extends SquareAABBCollidable {
                         }
                         else
                             main_buf.ctx.lineTo(sx, sy);
+                        lastp_x = last_x;
+                        lastp_y = last_y;
                         last_x = sx;
                         last_y = sy;
                     }
