@@ -1062,11 +1062,20 @@ class UIViewStateNoUI extends UIViewState {
     }
     handleTouchEvents(type: string, event: TouchMoveEvent): void {
         super.handleTouchEvents(type, event);
-        if(type === "touchstart" && !this.burger_collision(event.touchPos[0], event.touchPos[1]))
+        if(this.burger_collision(event.touchPos[0], event.touchPos[1])) {}//do noting
+        else if(type === "touchstart")
             this.grid.make_closest_curve_selected(this.grid.screen_to_world(event.touchPos));
+        else if(type === "touchmove")
+        {
+            let scaler_x = this.grid.target_bounds.deltaX / (this.grid.width);
+            let scaler_y = this.grid.target_bounds.deltaY / (this.grid.height);
+            this.grid.target_bounds.y_translation -= this.grid.scaling_multiplier * scaler_y * (event.deltaY);
+            this.grid.target_bounds.x_translation -= this.grid.scaling_multiplier * scaler_x * (event.deltaX);
+        }
     }
     transition(delta_time: number): UIState {
         super.transition(delta_time);
+        this.grid.update_touch_pos();
         const mod_x = (1000 / delta_time) * this.grid.target_bounds.deltaX / 30;
         const mod_y = (1000 / delta_time) * this.grid.target_bounds.deltaY / 30;
         if(keyboardHandler.keysHeld["ArrowUp"])
@@ -2185,8 +2194,6 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time: number): void 
     {
-        if(this.graph_accepting_ui())
-            this.update_touch_pos();
         //update selected item
         if(this.layer_manager.list.selected() !== this.selected_item)
         {
@@ -2307,16 +2314,7 @@ async function main()
         game.ui_state_manager.handleTouchEvents("touchend", event);
     });
     multi_touch_listener.registerCallBackPredicate("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
-        let scaler_x = game.target_bounds.deltaX / (game.width);
-        let scaler_y = game.target_bounds.deltaY / (game.height);
-        const state = <UIViewStateNoUI> game.ui_state_manager.state;
-        state.handleTouchEvents("touchmove", event);
-        if(game.graph_accepting_ui())
-        {
-            game.target_bounds.y_translation -= game.scaling_multiplier * scaler_y * (event.deltaY);
-            game.target_bounds.x_translation -= game.scaling_multiplier * scaler_x * (event.deltaX);
-
-        }
+        game.ui_state_manager.state.handleTouchEvents("touchmove", event);
         game.repaint = true;
     });
     keyboardHandler.registerCallBack("keyup", () => true, (event:any) => {
