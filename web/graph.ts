@@ -2294,9 +2294,7 @@ async function main()
     const clamp_x = (x:number) => clamp(x, game.target_bounds.x_scale / 2, game.target_bounds.x_scale * 2);
     const clamp_y = (x:number) => clamp(x, game.target_bounds.y_scale / 2, game.target_bounds.y_scale * 2);
     const calc_scale = (scale, normalized_delta, clamp) => {
-        const multiplier = 100;
-        const scaler = scale / 100;
-        scale -= normalized_delta * multiplier * scaler;
+        scale -= normalized_delta * scale;
         return clamp(scale);
     }
     canvas.addEventListener("wheel", (e) => {
@@ -2316,7 +2314,7 @@ async function main()
     }, { passive:false });
     canvas.style.cursor = "pointer";
     multi_touch_listener.registerCallBackPredicate("pinch", () => game.graph_accepting_ui(), (event:MultiTouchEvent) => {
-        const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
+        const normalized_delta = event.delta / Math.max(getHeight(), getWidth());
         game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y),
             event.touchPos);
         game.repaint = true;
