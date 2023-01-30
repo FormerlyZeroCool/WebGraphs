@@ -733,6 +733,9 @@ class UIViewState {
         this.velocity_x = 0;
         this.coefficient_of_friction = 0.02;
     }
+    taking_user_input() {
+        return false;
+    }
     burger_x() {
         return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
     }
@@ -852,6 +855,9 @@ class UIViewStateShowUI extends UIViewState {
 class UIViewStateNoUI extends UIViewState {
     constructor(grid) {
         super(grid);
+    }
+    taking_user_input() {
+        return true;
     }
     collision_predicate(type, event) {
         return event.deltaX > 0;
@@ -1753,14 +1759,29 @@ class Game extends SquareAABBCollidable {
         this.state_manager_grid.transition(delta_time);
         this.ui_state_manager.transition(delta_time);
     }
+    world_to_screen(point) {
+        return [(point[0] - this.target_bounds.x_min) / this.target_bounds.deltaX,
+            (point[1] - this.target_bounds.y_min) / this.target_bounds.deltaY];
+    }
+    normalize_point(p) {
+        return [(p[0] - this.target_bounds.x_min) / this.target_bounds.deltaX, (p[1] - this.target_bounds.y_min) / this.target_bounds.deltaY];
+    }
+    round_to_grid(p, cells) {
+        const normalized = this.normalize_point(p);
+        const final = [(Math.floor(normalized[0] * cells[0]) * (this.target_bounds.deltaX / cells[0])) + this.target_bounds.x_min,
+            (Math.floor(normalized[1] * cells[1]) * (this.target_bounds.deltaY / cells[1])) + this.target_bounds.y_min];
+        return final;
+    }
     set_scale(x_scale, y_scale, keep_in_place = this.touchPos) {
-        const touch_worldPos = this.screen_to_world(keep_in_place);
-        this.target_bounds.x_scale = x_scale;
-        this.target_bounds.y_scale = y_scale;
+        const old_worldPos = this.screen_to_world(keep_in_place);
+        this.target_bounds.x_scale = clamp(x_scale, 1 / max_32_bit_signed, max_32_bit_signed);
+        this.target_bounds.y_scale = clamp(y_scale, 1 / max_32_bit_signed, max_32_bit_signed);
         this.calc_bounds();
-        const new_touch_worldPos = this.screen_to_world(keep_in_place);
-        this.target_bounds.x_translation -= (new_touch_worldPos[0] - touch_worldPos[0]);
-        this.target_bounds.y_translation -= (new_touch_worldPos[1] - touch_worldPos[1]);
+        const new_worldPos = this.screen_to_world(keep_in_place);
+        const dx = (new_worldPos[0] - old_worldPos[0]);
+        const dy = (new_worldPos[1] - old_worldPos[1]);
+        this.target_bounds.x_translation -= dx;
+        this.target_bounds.y_translation -= dy;
     }
     x_to_index(x) {
         return Math.floor((x - this.target_bounds.x_min) / this.target_bounds.deltaX * this.functions[0].table.length);
@@ -1792,9 +1813,7 @@ class Game extends SquareAABBCollidable {
     }
     graph_accepting_ui() {
         const state = this.ui_state_manager.state;
-        const touchPos = this.multi_touchListener.single_touch_listener.touchPos;
-        return !state.hamburger_activated &&
-            !this.options_gui_manager.collision(touchPos) && !this.guiManager.collision(touchPos);
+        return state.taking_user_input();
     }
 }
 Game._colores = [new RGB(231, 76, 60),
@@ -1824,8 +1843,10 @@ async function main() {
         if (Math.abs(e.deltaY) > 1000)
             return;
         const normalized_delta = (clamp(e.deltaY + 1, -getHeight(), getHeight())) / getHeight();
-        game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y));
-        game.repaint = true;
+        if (game.graph_accepting_ui()) {
+            game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y));
+            game.repaint = true;
+        }
     }, { passive: true });
     if (!('TouchEvent' in window))
         console.log("touch events not supported");
@@ -1833,7 +1854,7 @@ async function main() {
         e.preventDefault();
     }, { passive: false });
     canvas.style.cursor = "pointer";
-    multi_touch_listener.registerCallBackPredicate("pinch", () => true, (event) => {
+    multi_touch_listener.registerCallBackPredicate("pinch", () => game.graph_accepting_ui(), (event) => {
         const normalized_delta = event.delta / Math.max(getHeight(), getWidth()) * 2;
         game.set_scale(calc_scale(game.target_bounds.x_scale, normalized_delta, clamp_x), calc_scale(game.target_bounds.y_scale, normalized_delta, clamp_y), event.touchPos);
         game.repaint = true;
