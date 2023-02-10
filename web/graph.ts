@@ -1751,8 +1751,8 @@ class Game extends SquareAABBCollidable {
     {
         //setup variables for rendering
         const font_size = 20;
-        const screen_space_x_axis = -this.target_bounds.y_min >= 0 && -this.target_bounds.y_max <= 0 ? this.world_y_to_screen(0) :  -this.target_bounds.y_min < 0 ? 0 : this.height;
-        let screen_space_y_axis = -this.target_bounds.x_min >= 0 && -this.target_bounds.x_max <= 0 ? this.world_x_to_screen(0) : -this.target_bounds.x_min < 0 ? 0 : this.width;
+        const screen_space_x_axis = clamp(this.world_y_to_screen(0), 0, this.cell_dim[1] - font_size / 2);
+        const screen_space_y_axis = clamp(this.world_x_to_screen(0), 0, this.cell_dim[0]);
         
         if(this.draw_axes)
         {
@@ -1835,7 +1835,6 @@ class Game extends SquareAABBCollidable {
             ctx.strokeStyle = "#000000";
             ctx.fillStyle = "#B4B4B4";
             const screen_y = (i - this.target_bounds.y_min) / this.target_bounds.deltaY * this.height;
-            screen_space_y_axis = old_screen_space_y_axis;
             if(this.draw_axis_labels)
             {
                 ctx.strokeRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
@@ -1847,7 +1846,6 @@ class Game extends SquareAABBCollidable {
             
             {
                 const screen_y = (i + delta_y / 2 - this.target_bounds.y_min) / this.target_bounds.deltaY * this.height;
-                screen_space_y_axis = old_screen_space_y_axis;
                 if(this.draw_axis_labels)
                     ctx.fillRect(old_screen_space_y_axis - 3, screen_y - 3, 6, 6);
                 if(this.chkbx_render_grid.checked){
@@ -1863,15 +1861,16 @@ class Game extends SquareAABBCollidable {
                 last_render_y = screen_y;
                 const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 +"";
                 const text_width = ctx.measureText(text).width;
+                let adjusted_y_axis = screen_space_y_axis;
                 if(screen_space_y_axis + text_width > this.width)
                 {
-                    screen_space_y_axis -= text_width + 10;
+                    adjusted_y_axis -= text_width + 10;
                 }
                 ctx.fillStyle = "#000000";
                 ctx.strokeStyle = "#B4B4B4";
                 ctx.lineWidth = 2;
-                ctx.strokeText(text, screen_space_y_axis + 3, screen_y - 4);
-                ctx.fillText(text, screen_space_y_axis + 3, screen_y - 4);
+                ctx.strokeText(text, adjusted_y_axis + 3, screen_y - 4);
+                ctx.fillText(text, adjusted_y_axis + 3, screen_y - 4);
             }
             i += delta_y;
         }
