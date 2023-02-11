@@ -1467,15 +1467,15 @@ class Game extends SquareAABBCollidable {
                 last_render_y = screen_y;
                 const text = Math.abs(i) >= delta_y / 16 ? this.format_number(-i) : 0 + "";
                 const text_width = ctx.measureText(text).width;
-                let adjusted_y_axis = screen_space_y_axis;
+                let text_x_pos = screen_space_y_axis;
                 if (screen_space_y_axis + text_width > this.width) {
-                    adjusted_y_axis -= text_width + 10;
+                    text_x_pos -= text_width + 10;
                 }
                 ctx.fillStyle = "#000000";
                 ctx.strokeStyle = "#B4B4B4";
                 ctx.lineWidth = 2;
-                ctx.strokeText(text, adjusted_y_axis + 3, screen_y - 4);
-                ctx.fillText(text, adjusted_y_axis + 3, screen_y - 4);
+                ctx.strokeText(text, text_x_pos + 3, screen_y - 4);
+                ctx.fillText(text, text_x_pos + 3, screen_y - 4);
             }
             i += delta_y;
         }
@@ -1759,8 +1759,7 @@ class Game extends SquareAABBCollidable {
         this.ui_state_manager.transition(delta_time);
     }
     world_to_screen(point) {
-        return [(point[0] - this.target_bounds.x_min) / this.target_bounds.deltaX,
-            (point[1] - this.target_bounds.y_min) / this.target_bounds.deltaY];
+        return [this.world_x_to_screen(point[0]), this.world_y_to_screen(point[1])];
     }
     normalize_point(p) {
         return [(p[0] - this.target_bounds.x_min) / this.target_bounds.deltaX, (p[1] - this.target_bounds.y_min) / this.target_bounds.deltaY];
