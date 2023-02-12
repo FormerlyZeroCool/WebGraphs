@@ -14,6 +14,10 @@ window.atan = Math.atan;
 window.log = Math.log;
 window.pow = Math.pow;
 window.sqrt = Math.sqrt;
+window.pi = Math.PI;
+window.PI = Math.PI;
+window.e = Math.E;
+window.E = Math.E;
 const derx = (foo, x, dx) => {
     return (foo(x + dx, dx) - foo(x, dx)) / dx;
 };

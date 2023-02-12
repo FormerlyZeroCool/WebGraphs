@@ -1,5 +1,5 @@
 import { isTouchSupported, fetchImage } from './io.js';
-import { max_32_bit_signed } from './utils.js';
+import { clamp, max_32_bit_signed } from './utils.js';
 export function blendAlphaCopy(color0, color) {
     const alphant = color0.alphaNormal();
     const alphanc = color.alphaNormal();
@@ -1287,7 +1287,7 @@ export class GuiCheckBox {
 }
 ;
 export class TextRow {
-    constructor(text, x, y, width) {
+    constructor(text, x, y, width, start) {
         this.text = text;
         this.x = x;
         this.y = y;
@@ -1312,8 +1312,9 @@ export class Optional {
 ;
 ;
 export class GuiTextBox {
-    constructor(keyListener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "Helvetica", customFontFace = null) {
-        this.handleKeyEvents = keyListener;
+    constructor(key_listener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "Helvetica", customFontFace = null) {
+        this.highlighted_delta = 0;
+        this.handleKeyEvents = key_listener;
         this.outlineTextBox = outline;
         this.validationCallback = validationCallback;
         GuiTextBox.textBoxRunningNumber++;
@@ -1375,7 +1376,32 @@ export class GuiTextBox {
     bottom() {
         return (this.flags & GuiTextBox.verticalAlignmentFlagsMask) === GuiTextBox.bottom;
     }
+    delete_selection() {
+        const min_bound = this.highlighted_delta < 0 ? this.cursor + this.highlighted_delta : this.cursor;
+        const max_bound = this.highlighted_delta > 0 ? this.cursor + this.highlighted_delta : this.cursor;
+        this.text = this.text.substring(0, min_bound) + this.text.substring(max_bound, this.text.length);
+        if (this.highlighted_delta < 0)
+            this.cursor += this.highlighted_delta;
+        this.highlighted_delta = 0;
+        this.cursor = clamp(this.cursor, 0, this.text.length);
+    }
+    rebuild_text_widths() {
+        this.text_widths = [];
+        for (let i = 0; i < this.text.length; i++) {
+            this.text_widths.push(this.ctx.measureText(this.text[i]).width);
+        }
+    }
     insert_char(char, e) {
+        if (this.text_widths === undefined || this.text.length !== this.text_widths.length) {
+            this.rebuild_text_widths();
+        }
+        //if highlight active delete highlighted first
+        if (this.highlight_active()) {
+            this.delete_selection();
+        }
+        //keep text_widths metadata up to date
+        const char_width = this.ctx.measureText(char).width;
+        this.text_widths.splice(this.cursor, 0, char_width);
         const oldText = this.text;
         const oldCursor = this.cursor;
         this.text = this.text.substring(0, this.cursor) + char + this.text.substring(this.cursor, this.text.length);
@@ -1386,13 +1412,8 @@ export class GuiTextBox {
                 this.text = oldText;
                 this.cursor = oldCursor;
             }
-            else {
-                this.drawInternalAndClear();
-            }
         }
-        else {
-            this.drawInternalAndClear();
-        }
+        this.drawInternalAndClear();
     }
     handleKeyBoardEvents(type, e) {
         let preventDefault = false;
@@ -1467,6 +1488,10 @@ export class GuiTextBox {
                                 break;
                             case ("NumpadEnter"):
                             case ("Enter"):
+                                //if highlight active delete highlighted first
+                                if (this.highlight_active()) {
+                                    this.delete_selection();
+                                }
                                 this.deactivate();
                                 if (this.submissionButton) {
                                     this.submissionButton.activate();
@@ -1483,10 +1508,18 @@ export class GuiTextBox {
                                 this.insert_char(";", e);
                                 break;
                             case ("Space"):
+                                //if highlight active delete highlighted first
+                                if (this.highlight_active()) {
+                                    this.delete_selection();
+                                }
                                 this.text = this.text.substring(0, this.cursor) + ' ' + this.text.substring(this.cursor, this.text.length);
                                 this.cursor++;
                                 break;
                             case ("Backspace"):
+                                //if highlight active delete highlighted first
+                                if (this.highlight_active()) {
+                                    this.delete_selection();
+                                }
                                 this.text = this.text.substring(0, this.cursor - 1) + this.text.substring(this.cursor, this.text.length);
                                 this.cursor -= +(this.cursor > 0);
                                 break;
@@ -1561,26 +1594,29 @@ export class GuiTextBox {
         else
             this.asNumber.clear();
     }
+    highlight_active() {
+        return this.highlighted_delta !== 0;
+    }
     handleTouchEvents(type, e) {
         if (this.active()) {
-            switch (type) {
-                case ("touchend"):
-                    if (isTouchSupported() && this.handleKeyEvents) {
-                        const value = prompt(this.promptText, this.text);
-                        if (value) {
-                            this.setText(value);
-                            this.calcNumber();
-                            this.deactivate();
-                            if (this.submissionButton) {
-                                this.submissionButton.activate();
-                                this.submissionButton.callback();
-                            }
-                        }
-                    }
-                    this.cursor = this.screenToTextIndex(e.touchPos);
-                    this.drawInternalAndClear();
-                    break;
+            const touch_text_index = this.screenToTextIndex(e.touchPos);
+            this.highlighted_delta = this.cursor - touch_text_index;
+            if (type === "touchend" && this.handleKeyEvents) {
+                this.cursor = touch_text_index;
             }
+            if (type === "touchend" && isTouchSupported() && this.handleKeyEvents) {
+                const value = prompt(this.promptText, this.text);
+                if (value) {
+                    this.setText(value);
+                    this.calcNumber();
+                    this.deactivate();
+                    if (this.submissionButton) {
+                        this.submissionButton.activate();
+                        this.submissionButton.callback();
+                    }
+                }
+            }
+            this.drawInternalAndClear();
         }
     }
     static initGlobalText() {
@@ -1621,12 +1657,41 @@ export class GuiTextBox {
     height() {
         return this.dimensions[1];
     }
-    refreshMetaData(text = this.text, x = 0, y = this.fontSize, cursorOffset = 0) {
+    refreshMetaData() {
+        // use text_widths to calculate spacing also ignore horizontal offset for simplicity
+        let i = 0;
+        let x = 0;
+        let y = 0;
+        let start = 0;
+        this.rows = [];
+        if (this.text_widths === undefined || this.text.length !== this.text_widths.length) {
+            this.rebuild_text_widths();
+        }
+        for (; i < this.text.length; i++) {
+            const char = this.text[i];
+            const width = this.text_widths[i];
+            if (i === this.cursor) {
+                this.cursorPos = [x, y];
+            }
+            if (x > this.width() || char === '\n') {
+                this.rows.push(new TextRow(this.text.substring(start, i), 0, y, this.width(), start));
+                start = i;
+                y += this.fontSize;
+                x = 0;
+            }
+            x += width;
+        }
+        if (i === this.cursor) {
+            this.cursorPos = [x, y];
+        }
+        this.rows.push(new TextRow(this.text.substring(start, i), 0, y, this.width(), start));
+    }
+    refreshMetaData_old(text = this.text, x = 0, y = this.fontSize, cursorOffset = 0) {
         if (text.search("\n") !== -1) {
             const rows = text.split("\n");
             let indeces = new Pair(cursorOffset, [x, y]);
             rows.forEach(row => {
-                indeces = this.refreshMetaData(row, indeces.second[0], indeces.second[1] + this.fontSize, indeces.first);
+                indeces = this.refreshMetaData_old(row, indeces.second[0], indeces.second[1] + this.fontSize, indeces.first);
             });
             return indeces;
         }
@@ -1645,21 +1710,21 @@ export class GuiTextBox {
                 this.cursorPos[0] = substrWidth + x;
             }
             const substr = text.substring(charIndex, charIndex + charsPerRow);
-            this.rows.push(new TextRow(substr, x, yPos, this.width() - x));
+            this.rows.push(new TextRow(substr, x, yPos, this.width() - x, 0));
             charIndex += charsPerRow;
         }
         const yPos = i * this.fontSize + y;
         const substring = text.substring(charIndex, text.length);
         const substrWidth = this.ctx.measureText(substring).width;
         if (substrWidth > this.width() - x)
-            this.refreshMetaData(substring, x, i * this.fontSize + y, cursorOffset + charIndex);
+            this.refreshMetaData_old(substring, x, i * this.fontSize + y, cursorOffset + charIndex);
         else if (substring.length > 0) {
             if (cursor >= charIndex) {
                 this.cursorPos[1] = yPos;
                 const substrWidth = this.ctx.measureText(text.substring(charIndex, cursor)).width;
                 this.cursorPos[0] = substrWidth + x;
             }
-            this.rows.push(new TextRow(substring, x, yPos, this.width() - x));
+            this.rows.push(new TextRow(substring, x, yPos, this.width() - x, 0));
         }
         return new Pair(cursorOffset + charIndex, [x, i * this.fontSize + y]);
     }
@@ -1726,22 +1791,24 @@ export class GuiTextBox {
                 }
             });
             if (this.hcenter()) {
-                deltaX -= freeSpace / 2 - maxWidth / 2;
+                //deltaX -= freeSpace / 2 - maxWidth / 2;
             }
             else if (this.left()) {
-                deltaX -= this.ctx.measureText("0").width / 3;
+                //deltaX -= this.ctx.measureText("0").width / 3;
             }
             else if (this.right()) {
-                deltaX -= freeSpace + this.ctx.measureText("0").width / 3;
+                //deltaX -= freeSpace + this.ctx.measureText("0").width / 3;
             }
         }
+        deltaX -= 5;
         const newRows = [];
-        this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width)));
+        this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, 0)));
         this.scaledCursorPos[1] = this.cursorPos[1] - deltaY;
         this.scaledCursorPos[0] = this.cursorPos[0] - deltaX;
         return newRows;
     }
     drawRows(rows) {
+        //todo render highlighted selection
         rows.forEach(row => {
             this.ctx.lineWidth = 4;
             if (row.width > this.width()) {
