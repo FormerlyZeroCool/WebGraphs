@@ -630,7 +630,7 @@ export class GuiListItem extends HorizontalLayoutManager {
         this.callBack = genericCallBack;
         this.checkBox = new GuiCheckBox(callBack, pixelDim[0] / 5, pixelDim[1], state);
         const width = (pixelDim[0] - this.checkBox.width()); // >> (slideMoved ? 1: 0);
-        this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags);
+        this.textBox = new GuiTextBox(true, width, null, fontSize, pixelDim[1], flags, () => true, new RGB(0, 0, 0, 0), new RGB(0, 0, 0, 0), true, "courier");
         this.textBox.setText(text);
         this.addElement(this.checkBox);
         this.addElement(this.textBox);
@@ -1065,7 +1065,7 @@ export class GuiColoredSpacer {
 }
 ;
 export class GuiButton {
-    constructor(callBack, text, width = 200, height = 50, fontSize = 12, pressedColor = new RGB(150, 150, 200, 255), unPressedColor = new RGB(255, 255, 255, 195), fontName = "Arial") {
+    constructor(callBack, text, width = 200, height = 50, fontSize = 12, pressedColor = new RGB(150, 150, 200, 255), unPressedColor = new RGB(255, 255, 255, 195), fontName = "courier") {
         this.text = text;
         this.fontSize = fontSize;
         this.dimensions = [width, height];
@@ -1292,6 +1292,7 @@ export class TextRow {
         this.x = x;
         this.y = y;
         this.width = width;
+        this.source_start_index = start;
     }
 }
 ;
@@ -1312,7 +1313,7 @@ export class Optional {
 ;
 ;
 export class GuiTextBox {
-    constructor(key_listener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "Helvetica", customFontFace = null) {
+    constructor(key_listener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "courier", customFontFace = null) {
         this.highlighted_delta = 0;
         this.handleKeyEvents = key_listener;
         this.outlineTextBox = outline;
@@ -1376,10 +1377,17 @@ export class GuiTextBox {
     bottom() {
         return (this.flags & GuiTextBox.verticalAlignmentFlagsMask) === GuiTextBox.bottom;
     }
+    min_selection_bound() {
+        return this.highlighted_delta < 0 ? this.cursor + this.highlighted_delta : this.cursor;
+    }
+    max_selection_bound() {
+        return this.highlighted_delta > 0 ? this.cursor + this.highlighted_delta : this.cursor;
+    }
     delete_selection() {
-        const min_bound = this.highlighted_delta < 0 ? this.cursor + this.highlighted_delta : this.cursor;
-        const max_bound = this.highlighted_delta > 0 ? this.cursor + this.highlighted_delta : this.cursor;
+        const min_bound = this.min_selection_bound();
+        const max_bound = this.max_selection_bound();
         this.text = this.text.substring(0, min_bound) + this.text.substring(max_bound, this.text.length);
+        this.text_widths.splice(min_bound, max_bound - min_bound);
         if (this.highlighted_delta < 0)
             this.cursor += this.highlighted_delta;
         this.highlighted_delta = 0;
@@ -1512,14 +1520,14 @@ export class GuiTextBox {
                                 if (this.highlight_active()) {
                                     this.delete_selection();
                                 }
-                                this.text = this.text.substring(0, this.cursor) + ' ' + this.text.substring(this.cursor, this.text.length);
-                                this.cursor++;
+                                this.insert_char(' ', e);
                                 break;
                             case ("Backspace"):
                                 //if highlight active delete highlighted first
                                 if (this.highlight_active()) {
                                     this.delete_selection();
                                 }
+                                this.text_widths.splice(this.cursor, 1);
                                 this.text = this.text.substring(0, this.cursor - 1) + this.text.substring(this.cursor, this.text.length);
                                 this.cursor -= +(this.cursor > 0);
                                 break;
@@ -1539,12 +1547,10 @@ export class GuiTextBox {
                                 this.cursor = (this.text.length);
                                 break;
                             case ("Period"):
-                                this.text = this.text.substring(0, this.cursor) + "." + this.text.substring(this.cursor, this.text.length);
-                                this.cursor++;
+                                this.insert_char('.', e);
                                 break;
                             case ("Comma"):
-                                this.text = this.text.substring(0, this.cursor) + "," + this.text.substring(this.cursor, this.text.length);
-                                this.cursor++;
+                                this.insert_char(',', e);
                                 break;
                             default:
                                 {
@@ -1600,8 +1606,13 @@ export class GuiTextBox {
     handleTouchEvents(type, e) {
         if (this.active()) {
             const touch_text_index = this.screenToTextIndex(e.touchPos);
-            this.highlighted_delta = this.cursor - touch_text_index;
-            if (type === "touchend" && this.handleKeyEvents) {
+            this.highlighted_delta = -this.cursor + touch_text_index;
+            if (type === "touchstart" && this.handleKeyEvents) {
+                this.highlighted_delta = 0;
+                this.cursor = touch_text_index;
+            }
+            else if (type === "touchend" && this.handleKeyEvents) {
+                this.highlighted_delta = this.cursor - touch_text_index;
                 this.cursor = touch_text_index;
             }
             if (type === "touchend" && isTouchSupported() && this.handleKeyEvents) {
@@ -1686,48 +1697,6 @@ export class GuiTextBox {
         }
         this.rows.push(new TextRow(this.text.substring(start, i), 0, y, this.width(), start));
     }
-    refreshMetaData_old(text = this.text, x = 0, y = this.fontSize, cursorOffset = 0) {
-        if (text.search("\n") !== -1) {
-            const rows = text.split("\n");
-            let indeces = new Pair(cursorOffset, [x, y]);
-            rows.forEach(row => {
-                indeces = this.refreshMetaData_old(row, indeces.second[0], indeces.second[1] + this.fontSize, indeces.first);
-            });
-            return indeces;
-        }
-        const textWidth = this.ctx.measureText(text).width;
-        const canvasWidth = this.canvas.width;
-        const rows = Math.ceil(textWidth / (canvasWidth - (20 + x)));
-        const charsPerRow = Math.floor(text.length / rows);
-        const cursor = this.cursor - cursorOffset;
-        let charIndex = 0;
-        let i = 0;
-        for (; i < rows - 1; i++) {
-            const yPos = i * this.fontSize + y;
-            if (cursor >= charIndex && cursor <= charIndex + charsPerRow) {
-                this.cursorPos[1] = yPos;
-                const substrWidth = this.ctx.measureText(text.substring(charIndex, cursor)).width;
-                this.cursorPos[0] = substrWidth + x;
-            }
-            const substr = text.substring(charIndex, charIndex + charsPerRow);
-            this.rows.push(new TextRow(substr, x, yPos, this.width() - x, 0));
-            charIndex += charsPerRow;
-        }
-        const yPos = i * this.fontSize + y;
-        const substring = text.substring(charIndex, text.length);
-        const substrWidth = this.ctx.measureText(substring).width;
-        if (substrWidth > this.width() - x)
-            this.refreshMetaData_old(substring, x, i * this.fontSize + y, cursorOffset + charIndex);
-        else if (substring.length > 0) {
-            if (cursor >= charIndex) {
-                this.cursorPos[1] = yPos;
-                const substrWidth = this.ctx.measureText(text.substring(charIndex, cursor)).width;
-                this.cursorPos[0] = substrWidth + x;
-            }
-            this.rows.push(new TextRow(substring, x, yPos, this.width() - x, 0));
-        }
-        return new Pair(cursorOffset + charIndex, [x, i * this.fontSize + y]);
-    }
     cursorRowIndex() {
         let index = 0;
         for (let i = 0; i < this.rows.length; i++) {
@@ -1802,10 +1771,17 @@ export class GuiTextBox {
         }
         deltaX -= 5;
         const newRows = [];
-        this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, 0)));
+        this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, row.source_start_index)));
         this.scaledCursorPos[1] = this.cursorPos[1] - deltaY;
         this.scaledCursorPos[0] = this.cursorPos[0] - deltaX;
         return newRows;
+    }
+    sum_widths(start, length) {
+        let sum = 0;
+        for (let i = start; i < length + start && i < this.text.length; i++) {
+            sum += this.text_widths[i];
+        }
+        return sum;
     }
     drawRows(rows) {
         //todo render highlighted selection
@@ -1818,6 +1794,17 @@ export class GuiTextBox {
             else {
                 this.ctx.strokeText(row.text, row.x, row.y, row.width);
                 this.ctx.fillText(row.text, row.x, row.y, row.width);
+            }
+            if (this.highlight_active()) {
+                const min_bound = this.min_selection_bound();
+                const max_bound = this.max_selection_bound();
+                this.ctx.fillStyle = new RGB(50, 140, 220, 100).htmlRBGA();
+                {
+                    const min_bound_in_row = Math.max(min_bound, row.source_start_index);
+                    const highlighted_x = this.sum_widths(row.source_start_index, min_bound_in_row - row.source_start_index);
+                    const highlighted_width = this.sum_widths(min_bound_in_row, Math.min(max_bound, row.source_start_index + row.text.length) - min_bound_in_row);
+                    this.ctx.fillRect(row.x + highlighted_x, row.y - this.fontSize, highlighted_width, this.fontSize);
+                }
             }
         });
     }
