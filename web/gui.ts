@@ -820,8 +820,8 @@ export class GuiListItem extends HorizontalLayoutManager {
             this.sliderX = -1;
         }
     }
-    handleTouchEvents(type: string, e: any): void {
-        super.handleTouchEvents(type, e);
+    handleTouchEvents(type: string, e: any, from_layout_man:boolean): void {
+        super.handleTouchEvents(type, e, from_layout_man);
         
         if(this.active() && type === this.callBackType)
         {
@@ -1054,14 +1054,7 @@ export class GuiCheckList implements GuiElement {
         
         if(element)
         {
-            (<GuiListItem> element.element).elementsPositions.forEach(el => {
-                if(e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[0] > this.pos[0] + el.x)
-                {
-                    e.touchPos[0] -= this.list[0].checkBox.width();
-                    el.element.handleTouchEvents(type, e);
-                    e.touchPos[0] += this.list[0].checkBox.width();
-                }
-            });
+            (<GuiListItem> <Object> element.element).handleTouchEvents(type, e, true);
         }
         this.layoutManager.deactivate();
         switch(type)
@@ -1496,7 +1489,6 @@ export class GuiButtonFileOpener extends GuiButton {
             input.type="file";
             input.addEventListener('change', (event) => {
                 const fileList:FileList = (<FilesHaver> <Object> event.target).files;
-                const reader = new FileReader();
                 fileList[0].arrayBuffer().then((buffer) =>
                   {
                       const binary:Int32Array = new Int32Array(buffer);
@@ -1960,12 +1952,23 @@ export class GuiTextBox implements GuiElement {
                         {
                             this.delete_selection();
                         }
+                        else
+                        {
                             this.text_widths.splice(this.cursor, 1);
                             this.text = this.text.substring(0, this.cursor-1) + this.text.substring(this.cursor, this.text.length);
                             this.cursor -= +(this.cursor>0);
+                        }
                         break;
                         case("Delete"):
+                        if(this.highlight_active())
+                        {
+                            this.delete_selection();
+                        }
+                        else
+                        {
+                            this.text_widths.splice(this.cursor, 1);
                             this.text = this.text.substring(0, this.cursor) + this.text.substring(this.cursor+1, this.text.length);
+                        }
                         break;
                         case("ArrowLeft"):
                             this.cursor -= +(this.cursor > 0);
@@ -2188,7 +2191,7 @@ export class GuiTextBox implements GuiElement {
             row_index++;
         }
         let column_index = 0;
-        while(rows[row_index].text[column_index] && rows[row_index].x + this.ctx.measureText(rows[row_index].text.substring(0, column_index + 1)).width < x)
+        while(rows[row_index].text[column_index] && rows[row_index].x + this.sum_widths(letters_in_previous_rows, column_index + 1) < x)
         {
             column_index++;
         }
@@ -2198,7 +2201,17 @@ export class GuiTextBox implements GuiElement {
     {
         let deltaY:number = 0;
         let deltaX:number = 0;
-        if(this.top())
+
+        if(this.cursorPos[1] > this.height() - 3)
+        {
+            deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
+        }
+        else if(this.cursorPos[1] < this.height() - 3)
+        {
+
+            deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
+        }
+        /*if(this.top())
         {   
             if(this.cursorPos[1] > this.height() - this.fontSize)
             {
@@ -2231,7 +2244,8 @@ export class GuiTextBox implements GuiElement {
 
                 deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
             }
-        }
+        }*/
+
         if(this.rows.length)
         {
             let freeSpace:number = this.width();// - this.rows[0].width;
@@ -2262,6 +2276,7 @@ export class GuiTextBox implements GuiElement {
         this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, row.source_start_index)));
         this.scaledCursorPos[1] = this.cursorPos[1] - deltaY;
         this.scaledCursorPos[0] = this.cursorPos[0] - deltaX;
+        //this.scroll[1] += this.scaledCursorPos[1];
         return newRows;
     }
     sum_widths(start:number, length:number):number
@@ -2285,14 +2300,15 @@ export class GuiTextBox implements GuiElement {
             }
             else
             {
-                this.ctx.strokeText(row.text, row.x, row.y, row.width);
-                this.ctx.fillText(row.text, row.x, row.y, row.width);
+                this.ctx.strokeText(row.text, row.x, row.y, row.width - 5);
+                this.ctx.fillText(row.text, row.x, row.y, row.width - 5);
             }
 
             if(this.highlight_active())
             {
                 const min_bound = this.min_selection_bound();
                 const max_bound = this.max_selection_bound();
+                const old_style = this.ctx.fillStyle;
                 this.ctx.fillStyle = new RGB(50, 140, 220, 100).htmlRBGA();
                 {
                     const min_bound_in_row = Math.max(min_bound, row.source_start_index);
@@ -2301,6 +2317,7 @@ export class GuiTextBox implements GuiElement {
                         Math.min(max_bound, row.source_start_index + row.text.length) - min_bound_in_row);
                     this.ctx.fillRect(row.x + highlighted_x, row.y - this.fontSize, highlighted_width, this.fontSize);
                 }
+                this.ctx.fillStyle = old_style;
             }
         });
     }
@@ -2610,7 +2627,7 @@ export class ToolBarItem {
         }
     }
 };
-export abstract class Tool extends ToolBarItem{
+export abstract class Tool extends ToolBarItem {
     constructor(toolName:string, toolImagePath:string[])
     {
         super(toolName, toolImagePath);

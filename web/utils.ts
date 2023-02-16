@@ -6,9 +6,17 @@ export function sign(val:number):number
 {
     return val < 0 ? -1 : 1;
 }
-export function clamp(num:number, min:number, max:number):number 
+function min(a:number, b:number):number
+{
+    return a < b ? a : b;
+}
+function max(a:number, b:number):number
+{
+    return a > b ? a : b;
+}
+export function clamp(num:number, min_val:number, max_val:number):number 
 { 
-    return Math.min(Math.max(num, min), max);
+    return min(max(num, min_val), max_val);
 }
 export function round_with_precision(value:number, precision:number):number
 {

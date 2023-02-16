@@ -2,8 +2,14 @@
 export function sign(val) {
     return val < 0 ? -1 : 1;
 }
-export function clamp(num, min, max) {
-    return Math.min(Math.max(num, min), max);
+function min(a, b) {
+    return a < b ? a : b;
+}
+function max(a, b) {
+    return a > b ? a : b;
+}
+export function clamp(num, min_val, max_val) {
+    return min(max(num, min_val), max_val);
 }
 export function round_with_precision(value, precision) {
     if (Math.abs(value) < Math.pow(2, -35))

@@ -644,8 +644,8 @@ export class GuiListItem extends HorizontalLayoutManager {
             this.sliderX = -1;
         }
     }
-    handleTouchEvents(type, e) {
-        super.handleTouchEvents(type, e);
+    handleTouchEvents(type, e, from_layout_man) {
+        super.handleTouchEvents(type, e, from_layout_man);
         if (this.active() && type === this.callBackType) {
             e.item = this;
             if (this.callBack)
@@ -826,13 +826,7 @@ export class GuiCheckList {
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         if (element) {
-            element.element.elementsPositions.forEach(el => {
-                if (e.touchPos[0] < this.pos[0] + el.element.width() && e.touchPos[0] > this.pos[0] + el.x) {
-                    e.touchPos[0] -= this.list[0].checkBox.width();
-                    el.element.handleTouchEvents(type, e);
-                    e.touchPos[0] += this.list[0].checkBox.width();
-                }
-            });
+            element.element.handleTouchEvents(type, e, true);
         }
         this.layoutManager.deactivate();
         switch (type) {
@@ -1175,7 +1169,6 @@ export class GuiButtonFileOpener extends GuiButton {
             input.type = "file";
             input.addEventListener('change', (event) => {
                 const fileList = event.target.files;
-                const reader = new FileReader();
                 fileList[0].arrayBuffer().then((buffer) => {
                     const binary = new Int32Array(buffer);
                     callback(binary);
@@ -1527,12 +1520,20 @@ export class GuiTextBox {
                                 if (this.highlight_active()) {
                                     this.delete_selection();
                                 }
-                                this.text_widths.splice(this.cursor, 1);
-                                this.text = this.text.substring(0, this.cursor - 1) + this.text.substring(this.cursor, this.text.length);
-                                this.cursor -= +(this.cursor > 0);
+                                else {
+                                    this.text_widths.splice(this.cursor, 1);
+                                    this.text = this.text.substring(0, this.cursor - 1) + this.text.substring(this.cursor, this.text.length);
+                                    this.cursor -= +(this.cursor > 0);
+                                }
                                 break;
                             case ("Delete"):
-                                this.text = this.text.substring(0, this.cursor) + this.text.substring(this.cursor + 1, this.text.length);
+                                if (this.highlight_active()) {
+                                    this.delete_selection();
+                                }
+                                else {
+                                    this.text_widths.splice(this.cursor, 1);
+                                    this.text = this.text.substring(0, this.cursor) + this.text.substring(this.cursor + 1, this.text.length);
+                                }
                                 break;
                             case ("ArrowLeft"):
                                 this.cursor -= +(this.cursor > 0);
@@ -1717,7 +1718,7 @@ export class GuiTextBox {
             row_index++;
         }
         let column_index = 0;
-        while (rows[row_index].text[column_index] && rows[row_index].x + this.ctx.measureText(rows[row_index].text.substring(0, column_index + 1)).width < x) {
+        while (rows[row_index].text[column_index] && rows[row_index].x + this.sum_widths(letters_in_previous_rows, column_index + 1) < x) {
             column_index++;
         }
         return letters_in_previous_rows + column_index;
@@ -1725,30 +1726,46 @@ export class GuiTextBox {
     adjustScrollToCursor() {
         let deltaY = 0;
         let deltaX = 0;
-        if (this.top()) {
-            if (this.cursorPos[1] > this.height() - this.fontSize) {
+        if (this.cursorPos[1] > this.height() - 3) {
+            deltaY += this.cursorPos[1] - this.height() + this.fontSize / 3;
+        }
+        else if (this.cursorPos[1] < this.height() - 3) {
+            deltaY += this.cursorPos[1] - this.height() + this.fontSize / 3;
+        }
+        /*if(this.top())
+        {
+            if(this.cursorPos[1] > this.height() - this.fontSize)
+            {
                 deltaY += this.cursorPos[1] - this.fontSize;
             }
-            else if (this.cursorPos[1] < this.fontSize) {
+            else if(this.cursorPos[1] < this.fontSize)
+            {
                 deltaY -= this.cursorPos[1] + this.fontSize;
             }
         }
-        else if (this.center()) {
-            if (this.cursorPos[1] > this.height() / 2 + this.fontSize / 2) {
-                deltaY += this.cursorPos[1] - this.height() + this.height() / 2;
+        else if(this.center())
+        {
+            if(this.cursorPos[1] > this.height()/2 + this.fontSize/2)
+            {
+                deltaY += this.cursorPos[1] - this.height() + this.height()/2;
             }
-            else if (this.cursorPos[1] < this.height() / 2 + this.fontSize / 2) {
-                deltaY += this.cursorPos[1] - (this.height() / 2);
-            }
-        }
-        else {
-            if (this.cursorPos[1] > this.height() - 3) {
-                deltaY += this.cursorPos[1] - this.height() + this.fontSize / 3;
-            }
-            else if (this.cursorPos[1] < this.height() - 3) {
-                deltaY += this.cursorPos[1] - this.height() + this.fontSize / 3;
+            else if(this.cursorPos[1] < this.height()/2 + this.fontSize/2)
+            {
+                deltaY += this.cursorPos[1] - (this.height()/2);
             }
         }
+        else
+        {
+            if(this.cursorPos[1] > this.height() - 3)
+            {
+                deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
+            }
+            else if(this.cursorPos[1] < this.height() - 3)
+            {
+
+                deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
+            }
+        }*/
         if (this.rows.length) {
             let freeSpace = this.width(); // - this.rows[0].width;
             let maxWidth = 0;
@@ -1774,6 +1791,7 @@ export class GuiTextBox {
         this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, row.source_start_index)));
         this.scaledCursorPos[1] = this.cursorPos[1] - deltaY;
         this.scaledCursorPos[0] = this.cursorPos[0] - deltaX;
+        //this.scroll[1] += this.scaledCursorPos[1];
         return newRows;
     }
     sum_widths(start, length) {
@@ -1792,12 +1810,13 @@ export class GuiTextBox {
                 this.ctx.fillText(row.text, 0, row.y, this.width());
             }
             else {
-                this.ctx.strokeText(row.text, row.x, row.y, row.width);
-                this.ctx.fillText(row.text, row.x, row.y, row.width);
+                this.ctx.strokeText(row.text, row.x, row.y, row.width - 5);
+                this.ctx.fillText(row.text, row.x, row.y, row.width - 5);
             }
             if (this.highlight_active()) {
                 const min_bound = this.min_selection_bound();
                 const max_bound = this.max_selection_bound();
+                const old_style = this.ctx.fillStyle;
                 this.ctx.fillStyle = new RGB(50, 140, 220, 100).htmlRBGA();
                 {
                     const min_bound_in_row = Math.max(min_bound, row.source_start_index);
@@ -1805,6 +1824,7 @@ export class GuiTextBox {
                     const highlighted_width = this.sum_widths(min_bound_in_row, Math.min(max_bound, row.source_start_index + row.text.length) - min_bound_in_row);
                     this.ctx.fillRect(row.x + highlighted_x, row.y - this.fontSize, highlighted_width, this.fontSize);
                 }
+                this.ctx.fillStyle = old_style;
             }
         });
     }

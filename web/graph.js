@@ -280,7 +280,10 @@ class Function {
         }
         return false;
     }
-    calc_for(x_min, x_max, dx, calc_minmax, calc_zeros, calc_poi) {
+    x_to_index(x) {
+        return Math.floor((x - this.x_min) / (this.x_max - this.x_min) * this.table.length);
+    }
+    setup_calc_for(x_min, x_max, dx, iterations) {
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
@@ -290,22 +293,12 @@ class Function {
         this.discontinuities.length = 0;
         this.local_maxima.length = 0;
         this.local_minima.length = 0;
-        if (this.error_message !== null)
-            return this.table;
-        try {
-            const iterations = (this.x_max - this.x_min) / this.dx;
-            if (iterations > this.table.data.length) {
-                this.table.reserve(iterations);
-            }
-            for (let j = 0; j < iterations; j++) {
-                const x = this.x_min + j * dx;
-                this.table.push(this.compiled(x, this.dx));
-            }
+        if (iterations > this.table.data.length) {
+            this.table.reserve(iterations);
         }
-        catch (error) {
-            console.log(error.message);
-            this.error_message = error.message;
-        }
+        this.call(this.x_min);
+    }
+    perform_post_generation_precomputations(dx, calc_minmax, calc_zeros, calc_poi) {
         for (let i = 1; i < this.table.length - 1; i++) {
             const prev_y = this.table.data[i - 1];
             const x = this.index_to_x(i);
@@ -339,6 +332,25 @@ class Function {
                 }
             }
         }
+    }
+    calc_next(index, dx) {
+        const x = this.x_min + index * dx;
+        this.table.push(this.compiled(x, this.dx));
+        return this.table[index];
+    }
+    calc_for(x_min, x_max, dx, calc_minmax, calc_zeros, calc_poi) {
+        const iterations = (this.x_max - this.x_min) / this.dx;
+        this.setup_calc_for(x_min, x_max, dx, iterations);
+        try {
+            for (let j = 0; j < iterations; j++) {
+                this.calc_next(j, dx);
+            }
+        }
+        catch (error) {
+            console.log(error.message);
+            this.error_message = error.message;
+        }
+        this.perform_post_generation_precomputations(dx, calc_minmax, calc_zeros, calc_poi);
         return this.table;
     }
     check_for_point_minmax(calc_minmax, x, y, is_minima, is_maxima) {
@@ -1255,6 +1267,24 @@ class Game extends SquareAABBCollidable {
             else
                 functions[index].compile(text);
         });
+        const dx = (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2);
+        //this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked
+        const iterations = (target_bounds.x_max - target_bounds.x_min) / dx;
+        //setup for table function curve generation
+        for (let i = 0; i < this.functions.length; i++) {
+            this.functions[i].setup_calc_for(target_bounds.x_min, target_bounds.x_max, dx, iterations);
+        }
+        const valid_functions = this.functions.filter((foo) => foo.error_message === null);
+        //table calculations
+        for (let j = 0; j < iterations; j++) {
+            for (let i = 0; i < valid_functions.length; i++) {
+                valid_functions[i].calc_next(j, dx);
+            }
+        }
+        //setup table metadata
+        for (let i = 0; i < valid_functions.length; i++) {
+            valid_functions[i].perform_post_generation_precomputations(dx, this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
+        }
         const view = new Int32Array(main_buf.imageData.data.buffer);
         main_buf.ctx.imageSmoothingEnabled = false;
         main_buf.ctx.lineJoin = "round";
@@ -1263,7 +1293,8 @@ class Game extends SquareAABBCollidable {
             if (this.layer_manager.list.list[index] && this.layer_manager.list.list[index].checkBox.checked) {
                 main_buf.ctx.lineWidth = foo.line_width;
                 //build table of points, intersections, zeros, min/maxima inflections to be rendered
-                foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
+                //foo.calc_for(target_bounds.x_min, target_bounds.x_max, (target_bounds.x_max - target_bounds.x_min) / this.cell_dim[0] / 10 * Math.ceil(this.functions.length / 2), 
+                //    this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked);
                 let start_time = Date.now();
                 //render table to main buffer
                 let last_x = 0;
@@ -1278,10 +1309,10 @@ class Game extends SquareAABBCollidable {
                 main_buf.ctx.moveTo(this.world_x_to_screen(foo.x_min, target_bounds), this.world_y_to_screen(foo.table.data[0], target_bounds));
                 for (let i = 1, j = 0; i < foo.table.length; i++) {
                     const x = target_bounds.x_min + foo.dx * i;
-                    const y = -foo.table.data[i];
+                    const y = foo.table.data[i];
                     //transform worldspace coordinates to screen space for rendering
-                    const sy = clamp(((y - target_bounds.y_min) / target_bounds.deltaY) * this.cell_dim[1], -50, main_buf.height + 50);
-                    const sx = clamp(((x - target_bounds.x_min) / target_bounds.deltaX) * this.cell_dim[0], -50, main_buf.width + 50);
+                    const sy = this.world_y_to_screen(y);
+                    const sx = this.world_x_to_screen(x);
                     //render functions as lines between points in table to buffers
                     if (sx > last_x || sy !== last_y) {
                         if (foo.discontinuities[j] < x) {
@@ -1308,7 +1339,7 @@ class Game extends SquareAABBCollidable {
                         last_x = sx;
                         last_y = sy;
                     }
-                    if (i % 250 === 0) {
+                    if ((i % 256) === 0) {
                         main_buf.ctx.stroke();
                         main_buf.ctx.beginPath();
                         main_buf.ctx.moveTo(last_x, last_y);
@@ -1514,7 +1545,7 @@ class Game extends SquareAABBCollidable {
             return x;
         }, (lower_bound, upper_bound, iterations) => {
             const x = (lower_bound + upper_bound) / 2;
-            return [x, selected_function.call(x)];
+            return [x, selected_function.table.get(selected_function.x_to_index(x))];
         });
     }
     render_labels_zeros(ctx) {
@@ -1541,9 +1572,7 @@ class Game extends SquareAABBCollidable {
             const closest = closest_in_array(touch_world_x);
             if (closest !== -1) {
                 world_x = closest;
-                const optimized_point = optimization_function(world_x - selected_function.dx, world_x + selected_function.dx, 10024);
-                world_x = optimized_point[0];
-                world_y = optimized_point[1];
+                [world_x, world_y] = optimization_function(world_x - 2 * selected_function.dx, world_x + 2 * selected_function.dx, 2 << 10);
             }
             if (closest !== -1) {
                 this.render_formatted_point(ctx, world_x, world_y, this.world_x_to_screen(world_x), this.world_y_to_screen(world_y), 2, -1 * +ctx.font.split("px")[0] + offset_y);
