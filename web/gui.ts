@@ -2273,7 +2273,7 @@ export class GuiTextBox implements GuiElement {
                 //deltaX -= freeSpace + this.ctx.measureText("0").width / 3;
             }
         }
-        deltaX -= 5;
+        deltaX -= 1;
         const newRows:TextRow[] = [];
         this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, row.source_start_index)));
         this.scaledCursorPos[1] = this.cursorPos[1] - deltaY;
@@ -2302,8 +2302,8 @@ export class GuiTextBox implements GuiElement {
             }
             else
             {
-                this.ctx.strokeText(row.text, row.x, row.y, row.width - 5);
-                this.ctx.fillText(row.text, row.x, row.y, row.width - 5);
+                this.ctx.strokeText(row.text, row.x, row.y, row.width - 1);
+                this.ctx.fillText(row.text, row.x, row.y, row.width - 1);
             }
 
             if(this.highlight_active())
