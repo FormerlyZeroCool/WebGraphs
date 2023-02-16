@@ -1054,7 +1054,9 @@ export class GuiCheckList implements GuiElement {
         
         if(element)
         {
+            e.touchPos[1] -= clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
             (<GuiListItem> <Object> element.element).handleTouchEvents(type, e, true);
+            e.touchPos[1] += clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
         }
         this.layoutManager.deactivate();
         switch(type)

@@ -826,7 +826,9 @@ export class GuiCheckList {
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         if (element) {
+            e.touchPos[1] -= clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
             element.element.handleTouchEvents(type, e, true);
+            e.touchPos[1] += clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
         }
         this.layoutManager.deactivate();
         switch (type) {
