@@ -1806,7 +1806,7 @@ export class GuiTextBox implements GuiElement {
             this.text_widths.push(this.ctx.measureText(this.text[i]).width);
         }
     }
-    insert_char(char:string, e:KeyboardEvent):void
+    insert_char(char:string, e:KeyboardEvent, refresh:boolean = true):void
     {
         if(this.text_widths === undefined || this.text.length !== this.text_widths.length)
         {
@@ -1839,6 +1839,10 @@ export class GuiTextBox implements GuiElement {
         }
         this.drawInternalAndClear();
     }
+    selected_text():string
+    {
+        return this.text.substring(this.min_selection_bound(), this.max_selection_bound());
+    }
     handleKeyBoardEvents(type:string, e:any):void
     {
         let preventDefault:boolean = false;
@@ -1847,7 +1851,75 @@ export class GuiTextBox implements GuiElement {
             const oldText:string = this.text;
             const oldCursor:number = this.cursor;
             console.log(e.code)
-            if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
+            if(e.keysHeld["MetaLeft"] || e.keysHeld["MetaRight"] ||
+                e.keysHeld["ControlLeft"] || e.keysHeld["ControlRight"])
+            {
+                if(e.code === "KeyA")
+                {
+                    this.cursor = 0;
+                    this.highlighted_delta = this.text.length;
+                }
+                if(e.code === "KeyC")
+                {
+                    navigator.clipboard.writeText(this.selected_text());
+                }
+                else if(e.code === "KeyX")
+                {
+                    navigator.clipboard.writeText(this.selected_text());
+                    this.delete_selection();
+                }
+                else if(e.code === "KeyV")
+                {
+                    navigator.clipboard.readText().then((text:string) => {
+                        for(let i = 0; i < text.length; i++)
+                            this.insert_char(text[i], e, false);
+                        this.drawInternalAndClear();
+                    });
+                }
+            }
+            else if(e.keysHeld["AltLeft"] || e.keysHeld["AltRight"])
+            {
+                if(type == "keydown")
+                switch(e.code)
+                {
+                    case("Delete"):
+                        if(this.highlight_active())
+                        {
+                            this.delete_selection();
+                        }
+                        else
+                        {
+                            this.text_widths.splice(this.cursor - 1, 1);
+                            this.text = this.text.substring(0, this.cursor - 1) + this.text.substring(this.cursor, this.text.length);
+                        }
+                        break;
+                        case("ArrowLeft"):
+                        if(this.cursor > 0)
+                        {
+                            this.highlighted_delta++;
+                            clamp(this.highlighted_delta, -this.cursor, this.text.length - this.cursor);
+                            this.cursor--;
+                        }
+                        break;
+                        case("ArrowRight"):
+                        if(this.cursor < this.text.length)
+                        {
+                            this.highlighted_delta--;
+                            clamp(this.highlighted_delta, -this.cursor, this.text.length - this.cursor);
+                            this.cursor++;
+                        }
+                        break;
+                        case("ArrowUp"):
+                            this.highlighted_delta = -this.cursor;
+                            this.cursor = 0;
+                        break;
+                        case("ArrowDown"):
+                            this.cursor = (this.text.length);
+                            this.highlighted_delta = this.text.length - this.cursor;
+                            break;
+                }
+            }
+            else if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
             {
                 if(type === "keydown")
                 switch(e.code)
@@ -1979,10 +2051,16 @@ export class GuiTextBox implements GuiElement {
                             this.cursor += +(this.cursor < this.text.length);
                         break;
                         case("ArrowUp"):
-                            this.cursor = 0;
+                            if(!this.highlight_active())
+                                this.cursor = 0;
+                            else
+                                this.highlighted_delta = 0;
                         break;
                         case("ArrowDown"):
-                            this.cursor = (this.text.length);
+                        if(!this.highlight_active())
+                            this.cursor = this.text.length;
+                        else
+                            this.highlighted_delta = 0;
                         break;
                         case("Period"):
                         this.insert_char('.', e);
@@ -2010,26 +2088,18 @@ export class GuiTextBox implements GuiElement {
     
                         }
                     }
-                    this.calcNumber();
-                    if(this.validationCallback)
-                    {
-                        if(!this.validationCallback({textbox:this, event:e, oldCursor:oldCursor, oldText:oldText}))
-                        {
-                            this.text = oldText;
-                            this.cursor = oldCursor;
-                        }
-                        else 
-                        {
-                            this.drawInternalAndClear();
-                        }
-                    }
-                    else
-                    {
-                        this.drawInternalAndClear();
-                    }
-                        
                 }
             }
+            this.calcNumber();
+            if(this.validationCallback)
+            {
+                if(!this.validationCallback({textbox:this, event:e, oldCursor:oldCursor, oldText:oldText}))
+                {
+                    this.text = oldText;
+                    this.cursor = oldCursor;
+                }
+            }
+            this.drawInternalAndClear();
         }
         if(preventDefault)
             e.preventDefault();
@@ -2056,7 +2126,7 @@ export class GuiTextBox implements GuiElement {
     }
     handleTouchEvents(type:string, e:TouchMoveEvent):void
     {
-        if(this.active()&& this.handleKeyEvents)
+        if(this.active() && this.handleKeyEvents)
         {
             const touch_text_index = this.screenToTextIndex(e.touchPos);
             if(type === "touchstart")
@@ -2072,6 +2142,7 @@ export class GuiTextBox implements GuiElement {
             { 
                 this.highlighted_delta = this.cursor - touch_text_index;
                 this.cursor = touch_text_index;
+                this.drawInternalAndClear();
             }
             if(type === "touchend" && isTouchSupported())
             {
@@ -2087,8 +2158,8 @@ export class GuiTextBox implements GuiElement {
                         this.submissionButton!.callback!();
                     }
                 }
+                this.drawInternalAndClear();
             }
-            this.drawInternalAndClear();
         }
     }
     static initGlobalText():void
