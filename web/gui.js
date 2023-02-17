@@ -1430,6 +1430,8 @@ export class GuiTextBox {
             console.log(e.code);
             if (e.keysHeld["MetaLeft"] || e.keysHeld["MetaRight"] ||
                 e.keysHeld["ControlLeft"] || e.keysHeld["ControlRight"]) {
+                if (type !== "keydown")
+                    return;
                 if (e.code === "KeyA") {
                     this.cursor = 0;
                     this.highlighted_delta = this.text.length;

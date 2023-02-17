@@ -1854,6 +1854,8 @@ export class GuiTextBox implements GuiElement {
             if(e.keysHeld["MetaLeft"] || e.keysHeld["MetaRight"] ||
                 e.keysHeld["ControlLeft"] || e.keysHeld["ControlRight"])
             {
+                if(type !== "keydown")
+                    return;
                 if(e.code === "KeyA")
                 {
                     this.cursor = 0;
