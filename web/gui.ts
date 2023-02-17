@@ -2056,21 +2056,24 @@ export class GuiTextBox implements GuiElement {
     }
     handleTouchEvents(type:string, e:TouchMoveEvent):void
     {
-        if(this.active())
+        if(this.active()&& this.handleKeyEvents)
         {
             const touch_text_index = this.screenToTextIndex(e.touchPos);
-            this.highlighted_delta = -this.cursor + touch_text_index;
-            if(type === "touchstart" && this.handleKeyEvents)
+            if(type === "touchstart")
             {
                 this.highlighted_delta = 0;
                 this.cursor = touch_text_index;
             }
-            else if(type === "touchend" && this.handleKeyEvents)
+            else if(type === "touchmove")
+            {
+                this.highlighted_delta = -this.cursor + touch_text_index;
+            }
+            else if(type === "touchend")
             { 
                 this.highlighted_delta = this.cursor - touch_text_index;
                 this.cursor = touch_text_index;
             }
-            if(type === "touchend" && isTouchSupported() && this.handleKeyEvents)
+            if(type === "touchend" && isTouchSupported())
             {
                 const value = prompt(this.promptText, this.text);
                 if(value)
@@ -2154,7 +2157,7 @@ export class GuiTextBox implements GuiElement {
             {
                 this.cursorPos = [x, y];
             }
-            if(x > this.width() || char === '\n')
+            if(x > this.width() - 10 || char === '\n')
             {
                 this.rows.push(new TextRow(this.text.substring(start, i), 0, y, this.width(), start));
                 start = i;
@@ -2182,8 +2185,8 @@ export class GuiTextBox implements GuiElement {
     }
     screenToTextIndex(pos:number[]):number
     {
-        const x = pos[0] + this.scroll[0];
-        const y = pos[1] + this.scroll[1];
+        const x = pos[0];
+        const y = pos[1] + this.fontSize;
         const rows:TextRow[] = this.rows;
         let letters_in_previous_rows = 0;
         let row_index = 0;
@@ -2213,40 +2216,6 @@ export class GuiTextBox implements GuiElement {
 
             deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
         }
-        /*if(this.top())
-        {   
-            if(this.cursorPos[1] > this.height() - this.fontSize)
-            {
-                deltaY += this.cursorPos[1] - this.fontSize;
-            }
-            else if(this.cursorPos[1] < this.fontSize)
-            {
-                deltaY -= this.cursorPos[1] + this.fontSize;
-            }
-        } 
-        else if(this.center())
-        {
-            if(this.cursorPos[1] > this.height()/2 + this.fontSize/2)
-            {
-                deltaY += this.cursorPos[1] - this.height() + this.height()/2;
-            }
-            else if(this.cursorPos[1] < this.height()/2 + this.fontSize/2)
-            {
-                deltaY += this.cursorPos[1] - (this.height()/2);
-            }
-        }
-        else
-        {
-            if(this.cursorPos[1] > this.height() - 3)
-            {
-                deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
-            }
-            else if(this.cursorPos[1] < this.height() - 3)
-            {
-
-                deltaY += this.cursorPos[1] - this.height() + this.fontSize/3;
-            }
-        }*/
 
         if(this.rows.length)
         {
@@ -2278,7 +2247,7 @@ export class GuiTextBox implements GuiElement {
         this.rows.forEach(row => newRows.push(new TextRow(row.text, row.x - deltaX, row.y - deltaY, row.width, row.source_start_index)));
         this.scaledCursorPos[1] = this.cursorPos[1] - deltaY;
         this.scaledCursorPos[0] = this.cursorPos[0] - deltaX;
-        //this.scroll[1] += this.scaledCursorPos[1];
+        this.scroll[1] = -deltaY;
         return newRows;
     }
     sum_widths(start:number, length:number):number
@@ -2302,8 +2271,8 @@ export class GuiTextBox implements GuiElement {
             }
             else
             {
-                this.ctx.strokeText(row.text, row.x, row.y, row.width - 1);
-                this.ctx.fillText(row.text, row.x, row.y, row.width - 1);
+                this.ctx.strokeText(row.text, row.x, row.y, row.width);
+                this.ctx.fillText(row.text, row.x, row.y, row.width);
             }
 
             if(this.highlight_active())
@@ -2348,7 +2317,8 @@ export class GuiTextBox implements GuiElement {
         this.rows.splice(0,this.rows.length);
         this.refreshMetaData();
         this.ctx.strokeStyle = "#FFFFFF";
-        this.drawRows(this.adjustScrollToCursor());
+        this.rows = this.adjustScrollToCursor();
+        this.drawRows(this.rows);
         this.drawCursor();
         if(this.outlineTextBox)
         {
