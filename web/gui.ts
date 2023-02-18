@@ -1707,6 +1707,7 @@ export class GuiTextBox implements GuiElement {
     fontName:string;
     handleKeyEvents:boolean;
     outlineTextBox:boolean;
+    
     validationCallback:((tb:TextBoxEvent) => boolean) | null;
     constructor(key_listener:boolean, width:number, submit:GuiButton | null = null, fontSize:number = 16, height:number = 2*fontSize, flags:number = GuiTextBox.default,
         validationCallback:((event:TextBoxEvent) => boolean) | null = null, selectedColor:RGB = new RGB(80, 80, 220), unSelectedColor:RGB = new RGB(100, 100, 100), outline:boolean = true, fontName = "courier", customFontFace:FontFace | null = null)

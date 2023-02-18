@@ -377,7 +377,7 @@ class Function {
     }
     setup_calc_for(x_min:number, x_max:number, dx:number, iterations:number):void
     {
-
+        this.error_message = null;
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
