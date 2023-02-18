@@ -1625,7 +1625,8 @@ class Game extends SquareAABBCollidable {
                     //this.chkbx_render_min_max.checked, this.chkbx_render_zeros.checked, this.chkbx_render_inflections.checked
         const iterations = (target_bounds.x_max - target_bounds.x_min) / dx;
 
-        //setup for table function curve generation
+        //setup for table function curve generation run twice to ensure all functions can see global values declared
+        for(let j = 0; j < 2; j++)
         for(let i = 0; i < this.functions.length; i++)
         {
             this.functions[i].setup_calc_for(target_bounds.x_min, target_bounds.x_max, dx, iterations);
@@ -1815,7 +1816,7 @@ class Game extends SquareAABBCollidable {
         let i = closest_start_x - delta_x;
         let last_render_x:number = -1;
         let last_render_text_width = 0;
-        ctx.font = `${font_size}px Helvetica`;
+        ctx.font = `${font_size}px Courier`;
         ctx.fillStyle = "#B4B4B4";
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 3;
