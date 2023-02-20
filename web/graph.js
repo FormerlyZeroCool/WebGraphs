@@ -232,6 +232,7 @@ window.addEventListener('load', function () {
 class Function {
     constructor(source) {
         this.source = source;
+        this.not_function = false;
         this.error_message = null;
         this.line_width = 2;
         try {
@@ -298,7 +299,8 @@ class Function {
         if (iterations > this.table.data.length) {
             this.table.reserve(iterations);
         }
-        this.call(this.x_min);
+        const result = this.call(this.x_min);
+        this.not_function = (result === null || this.source.indexOf("=>") !== -1);
     }
     perform_post_generation_precomputations(dx, calc_minmax, calc_zeros, calc_poi) {
         for (let i = 1; i < this.table.length - 1; i++) {
@@ -1277,7 +1279,7 @@ class Game extends SquareAABBCollidable {
             for (let i = 0; i < this.functions.length; i++) {
                 this.functions[i].setup_calc_for(target_bounds.x_min, target_bounds.x_max, dx, iterations);
             }
-        const valid_functions = this.functions.filter((foo) => foo.error_message === null);
+        const valid_functions = this.functions.filter((foo) => foo.error_message === null && !foo.not_function);
         //table calculations
         for (let j = 0; j < iterations; j++) {
             for (let i = 0; i < valid_functions.length; i++) {
@@ -1833,14 +1835,15 @@ class Game extends SquareAABBCollidable {
         }
     }
     make_closest_curve_selected(coords) {
+        const functions = this.functions.filter(foo => foo.error_message === null && !foo.not_function);
         const index = this.x_to_index(coords[0]);
-        let min_dist = Math.abs(this.functions[0].table.data[index] - -coords[1]);
+        let min_dist = Math.abs(functions[0].table.data[index] + coords[1]);
         let min_dist_function_index = 0;
-        this.functions.forEach((foo, arr_index) => {
-            const dist = Math.abs(foo.table.data[index] - -coords[1]);
-            if (dist < min_dist) {
+        functions.forEach((foo, arr_index) => {
+            const dist = Math.abs(foo.table.data[index] + coords[1]);
+            if (dist < min_dist && foo.table.data[index] !== undefined) {
                 min_dist = dist;
-                min_dist_function_index = arr_index;
+                min_dist_function_index = this.functions.indexOf(foo);
             }
         });
         this.change_selected(min_dist_function_index);
