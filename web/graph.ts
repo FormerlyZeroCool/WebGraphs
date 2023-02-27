@@ -944,7 +944,7 @@ class UIViewState implements GridUIState {
     }
     burger_x():number
     {
-        return this.grid.options_gui_manager.x + this.grid.options_gui_manager.width();
+        return this.grid.guiManager.x + this.grid.guiManager.width();
     }
     burger_y():number
     {
@@ -977,11 +977,11 @@ class UIViewState implements GridUIState {
     }
     screen_to_burger_x(a:number):number
     {
-        return a - (this.grid.guiManager.width() + this.grid.options_gui_manager.width() + this.burger_width / 2);
+        return a - (this.grid.guiManager.width() + this.burger_width / 2);
     }
     width():number
     {
-        return (this.grid.guiManager.width() + this.grid.options_gui_manager.width());
+        return (this.grid.guiManager.width());
     }
     height():number
     {
@@ -989,7 +989,7 @@ class UIViewState implements GridUIState {
     }
     move(delta_time:number):void
     {
-        this.grid.set_gui_position(clamp(this.grid.guiManager.x + this.velocity_x * delta_time, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+        this.grid.set_gui_position(clamp(this.grid.guiManager.x + this.velocity_x * delta_time, -(this.grid.guiManager.width()), 1));
         this.velocity_x *= (1 - this.coefficient_of_friction);
         if(Math.abs(this.velocity_x) < .01)
             this.velocity_x = 0;
@@ -999,9 +999,9 @@ class UIViewState implements GridUIState {
         this.hamburger_activated = (!this.grid.options_gui_manager.elementTouched && this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated;
         if(!this.hamburger_activated)
         {
-            if(this.grid.guiManager.collision(touchPos))
+            //if(this.grid.guiManager.collision(touchPos))
                 this.grid.guiManager.handleTouchEvents(type, event);
-            this.grid.options_gui_manager.handleTouchEvents(type, event);
+            //this.grid.options_gui_manager.handleTouchEvents(type, event);
         }
         switch(type)
         {
@@ -1009,7 +1009,7 @@ class UIViewState implements GridUIState {
             this.velocity_x = 0;
             if(touchPos[0] > this.burger_x() + this.burger_width ||
                 (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() && 
-                 touchPos[1] > this.grid.options_gui_manager.y + this.grid.options_gui_manager.max_element_y_bounds()))
+                 touchPos[1] > this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds()))
             {
                 const new_state = new UIViewStateTransitioningUI(this.grid);
                 new_state.closing = true;
@@ -1034,7 +1034,7 @@ class UIViewState implements GridUIState {
     transition(delta_time: number): UIState {
         if(this.hamburger_activated)
         {
-            const new_position = clamp(this.screen_to_burger_x(this.grid.multi_touchListener.single_touch_listener.touchPos[0]), -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1);
+            const new_position = clamp(this.screen_to_burger_x(this.grid.multi_touchListener.single_touch_listener.touchPos[0]), -(this.grid.guiManager.width()), 1);
             const delta = -this.grid.guiManager.x + new_position;
             const current_vel = -delta / (Date.now() - this.last_touch_event);
 
@@ -1055,20 +1055,14 @@ class UIViewStateShowUI extends UIViewState
         ctx.fillStyle = document.body.style.backgroundColor;
         ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.grid.guiManager.width(), 
                 this.grid.guiManager.max_element_y_bounds());
-        ctx.fillRect(this.grid.options_gui_manager.x, this.grid.options_gui_manager.y, this.grid.options_gui_manager.width(), 
-                this.grid.options_gui_manager.max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
         {
             this.grid.guiManager.draw(ctx);
-            this.grid.layer_manager.list.pos[0] = this.grid.guiManager.x;
-            this.grid.layer_manager.list.pos[1] = this.grid.guiManager.y;
-            this.grid.options_gui_manager.draw(ctx);
         }
     }
     handleKeyboardEvents(type: string, event: KeyboardEvent): void {
         this.grid.guiManager.handleKeyBoardEvents(type, event);
-        this.grid.options_gui_manager.handleKeyBoardEvents(type, event);
         this.grid.repaint = true;
     }
     collision_predicate(type: string, event: TouchMoveEvent):boolean
@@ -1135,7 +1129,7 @@ class UIViewStateNoUI extends UIViewState {
             new_state.opening = true;
             return new_state;
         }
-        if(-this.grid.guiManager.x + 1 < this.grid.guiManager.width() + this.grid.options_gui_manager.width())
+        if(-this.grid.guiManager.x + 1 < this.grid.guiManager.width())
         {
             const new_state = new UIViewStateTransitioningUI(this.grid);
             new_state.hamburger_activated = this.hamburger_activated;
@@ -1165,9 +1159,9 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI
                 this.opening = true;
         }
         if(this.opening)
-            this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+            this.grid.set_gui_position(clamp(this.grid.guiManager.x + delta_time * 3, -(this.grid.guiManager.width()), 1));
         else if(this.closing)
-            this.grid.set_gui_position(clamp(this.grid.guiManager.x - delta_time * 5, -(this.grid.guiManager.width() + this.grid.options_gui_manager.width()), 1));
+            this.grid.set_gui_position(clamp(this.grid.guiManager.x - delta_time * 5, -(this.grid.guiManager.width()), 1));
         else
             super.transition(delta_time);
         
@@ -1178,9 +1172,9 @@ class UIViewStateTransitioningUI extends UIViewStateShowUI
             new_state.hamburger_activated = this.hamburger_activated;
             return new_state;
         }
-        else if(-this.grid.guiManager.x + 1 > this.grid.guiManager.width() + this.grid.options_gui_manager.width())
+        else if(-this.grid.guiManager.x + 1 > this.grid.guiManager.width())
         {
-            this.grid.set_gui_position(-(this.grid.guiManager.width() + this.grid.options_gui_manager.width()));
+            this.grid.set_gui_position(-(this.grid.guiManager.width()));
             const new_state = new UIViewStateNoUI(this.grid);
             new_state.hamburger_activated = this.hamburger_activated && !this.closing;
             return new_state;
@@ -1472,8 +1466,9 @@ class Game extends SquareAABBCollidable {
 
         this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
         this.options_gui_manager.activate();
-        this.guiManager.trimDim();
         this.options_gui_manager.trimDim();
+        this.guiManager = horizontal_group([this.guiManager, this.options_gui_manager]);
+        this.guiManager.trimDim();
         this.repaint = true;
     }
     init(width:number, height:number, cell_width:number, cell_height:number):void
@@ -1513,9 +1508,7 @@ class Game extends SquareAABBCollidable {
     set_gui_position(x:number = this.guiManager.x, y:number = this.guiManager.y):void
     {
         this.guiManager.x = x;
-        this.options_gui_manager.x = x + this.guiManager.width();
         this.guiManager.y = y;
-        this.options_gui_manager.y = this.guiManager.y;
     }
     calc_bounds():void
     {

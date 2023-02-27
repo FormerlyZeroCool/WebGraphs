@@ -877,7 +877,8 @@ export class ContextMenu extends VerticalLayoutManager {
 
     add_option(option:() => void, text:string):void
     {
-        this.addElement(new GuiButton(option, text, this.width(), this.height()));
+        const grey = new RGB(125, 125, 125, 255);
+        this.addElement(new GuiButton(option, text, this.width(), this.height(), 16, grey, grey));
         (<GuiButton[]> <any> this.elements).forEach((el:GuiButton) => el.dimensions[1] = this.height() / this.elements.length);
         this.refreshMetaData();
     }
@@ -1544,7 +1545,7 @@ export class GuiButton implements GuiElement {
         //ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
-        ctx.fillStyle = new RGB(255,255,255, 135).htmlRBGA();
+        //ctx.fillStyle = new RGB(255,255,255, 135).htmlRBGA();
         ctx.fillRect(x, y, this.width(), this.height());
         
         ctx.fillStyle = "#000000";
@@ -1972,9 +1973,10 @@ export class GuiTextBox implements GuiElement {
             this.undone_actions.push(action);
             this.cursor = action.cursor;
             if(action.deletion)
-                this.insert_char(action.new_text, true, false);
+                this.insert_char(action.new_text, false, false);
             else
                 this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+            this.drawInternalAndClear();
         }
     }
     redo():void
@@ -1985,9 +1987,10 @@ export class GuiTextBox implements GuiElement {
             this.completed_actions.push(action);
             this.cursor = action.cursor;
             if(!action.deletion)
-                this.insert_char(action.new_text, true, false);
+                this.insert_char(action.new_text, false, false);
             else
                 this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+            this.drawInternalAndClear();
         }
     }
     selected_text():string
@@ -2248,7 +2251,7 @@ export class GuiTextBox implements GuiElement {
             {
                 if(!isTouchSupported() && (<any> e).button > 0)
                 {
-                    const menu = new ContextMenu([200, 80], 0, 0);
+                    const menu = new ContextMenu([120, 140], 0, 0);
                     menu.add_option(() => {
                         this.paste();
                     }, "Paste");
