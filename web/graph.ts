@@ -1053,8 +1053,10 @@ class UIViewStateShowUI extends UIViewState
     }
     draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
         ctx.fillStyle = document.body.style.backgroundColor;
-        ctx.fillRect(this.grid.guiManager.x, this.grid.guiManager.y, this.grid.guiManager.width(), 
-                this.grid.guiManager.max_element_y_bounds());
+        ctx.fillRect(this.grid.guiManager.elements[0].x, this.grid.guiManager.elements[0].y, this.grid.guiManager.elements[0].width(), 
+                this.grid.guiManager.elements[0].max_element_y_bounds());
+            ctx.fillRect(this.grid.guiManager.elements[1].x, this.grid.guiManager.elements[1].y, this.grid.guiManager.elements[1].width(), 
+                    this.grid.guiManager.elements[1].max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
         {
