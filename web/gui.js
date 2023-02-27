@@ -1730,20 +1730,18 @@ export class GuiTextBox {
         navigator.clipboard.readText().then((text) => {
             //despite the name it is capable of inserting multi-char strings
             this.insert_char(text);
-            console.log("pasting");
         });
     }
     cut() {
         navigator.clipboard.readText().then((text) => {
             navigator.clipboard.writeText(this.selected_text());
             this.delete_selection();
-            console.log("cutting");
+            this.drawInternalAndClear();
         });
     }
     copy() {
         navigator.clipboard.readText().then((text) => {
             navigator.clipboard.writeText(this.selected_text());
-            console.log("copying");
         });
     }
     handleTouchEvents(type, e) {

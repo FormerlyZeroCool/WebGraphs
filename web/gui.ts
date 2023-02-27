@@ -2223,7 +2223,6 @@ export class GuiTextBox implements GuiElement {
         navigator.clipboard.readText().then((text:string) => {
             //despite the name it is capable of inserting multi-char strings
             this.insert_char(text);
-            console.log("pasting")
         });
     }
     cut():void
@@ -2231,14 +2230,13 @@ export class GuiTextBox implements GuiElement {
         navigator.clipboard.readText().then((text:string) => {
             navigator.clipboard.writeText(this.selected_text());
             this.delete_selection();
-            console.log("cutting")
+            this.drawInternalAndClear();
         });
     }
     copy():void
     {
         navigator.clipboard.readText().then((text:string) => {
             navigator.clipboard.writeText(this.selected_text());
-            console.log("copying")
         });
     }
     handleTouchEvents(type:string, e:TouchMoveEvent):void
