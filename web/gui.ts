@@ -2082,7 +2082,7 @@ export class GuiTextBox implements GuiElement {
             }
             else if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
             {
-                if((<any> GuiTextBox.textUpperCaseLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
+                if((<any> GuiTextBox.textUpperCaseLookup)[e.code])
                 {
                     this.insert_char(GuiTextBox.textUpperCaseLookup[e.code], e);
                 }
@@ -2095,7 +2095,7 @@ export class GuiTextBox implements GuiElement {
                     break;
                     default:
                         let letter:string = e.code.substring(e.code.length - 1);
-                        if((<any> GuiTextBox.textLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
+                        if((<any> GuiTextBox.textLookup)[e.code])
                             {
                                 this.insert_char(letter, e);
                             }
@@ -2168,17 +2168,20 @@ export class GuiTextBox implements GuiElement {
                         default:
                         {
                             let letter:string = e.code.substring(e.code.length - 1);
-                            if(!e.keysHeld["ShiftRight"] && !e.keysHeld["ShiftLeft"])
-                                letter = letter.toLowerCase();
-                            if((<any> GuiTextBox.textLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
+                            letter = letter.toLowerCase();
+                            if((<any> GuiTextBox.textLookup)[e.code])
                             {
                                 this.insert_char(GuiTextBox.textLookup[e.code]);
+                            }
+                            else if((<any> GuiTextBox.numbers)[e.code])
+                            {
+                                this.insert_char((<any> GuiTextBox.numbers)[e.code]);
                             }
                             else if((<any> GuiTextBox.specialChars)[e.code] && e.code.substring(0,"Numpad".length) === "Numpad" && e.code["Numpad".length])
                             {
                                 this.insert_char((<any> GuiTextBox.specialChars)[e.code]);
                             }
-                            else if(e.code.substring(0,"Numpad".length) === "Numpad")
+                            else if(e.code.substring(0,"Numpad".length) === "Numpad" || e.code.substring(0,"Digit".length) === "Digit")
                             {
                                 this.insert_char(letter);
                             }
