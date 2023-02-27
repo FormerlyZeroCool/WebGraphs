@@ -1053,9 +1053,9 @@ class UIViewStateShowUI extends UIViewState
     }
     draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
         ctx.fillStyle = document.body.style.backgroundColor;
-        ctx.fillRect(this.grid.guiManager.elements[0].x + this.grid.guiManager.x, this.grid.guiManager.elements[0].y, this.grid.guiManager.elements[0].width(), 
+        ctx.fillRect(this.grid.guiManager.elements[0].x + this.grid.guiManager.x, this.grid.guiManager.elements[0].y + this.grid.guiManager.y, this.grid.guiManager.elements[0].width(), 
                 this.grid.guiManager.elements[0].max_element_y_bounds());
-        ctx.fillRect(this.grid.guiManager.elements[1].x + this.grid.guiManager.x, this.grid.guiManager.elements[1].y, this.grid.guiManager.elements[1].width(), 
+        ctx.fillRect(this.grid.guiManager.elements[1].x + this.grid.guiManager.x, this.grid.guiManager.elements[1].y + this.grid.guiManager.y, this.grid.guiManager.elements[1].width(), 
                 this.grid.guiManager.elements[1].max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
@@ -1560,10 +1560,6 @@ class Game extends SquareAABBCollidable {
         }
         return false;
     }
-    restart_game():void
-    {
-        this.init(this.width, this.height, this.cell_dim[0], this.cell_dim[1]);
-    }
     new_sprite():Sprite
     {   
         const pixels = (new Array<RGB>(this.cell_dim[1] * this.cell_dim[0])).fill(this.background_color, 0, this.cell_dim[1] * this.cell_dim[0]);
@@ -1574,6 +1570,7 @@ class Game extends SquareAABBCollidable {
     {
         this.width = width;
         this.height = height;
+        this.cell_dim = [width, height];
         this.calc_bounds();
         if(this.options_gui_manager)
             this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
@@ -2430,7 +2427,7 @@ async function main()
 
             canvas.width = width;
             canvas.height = height;
-            game.init(width, height, width, height - 10);
+            game.init(width, height, width, height);
         }
         dt = Date.now() - start;
         time_queue.push(dt);

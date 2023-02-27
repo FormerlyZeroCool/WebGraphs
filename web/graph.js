@@ -849,8 +849,8 @@ class UIViewStateShowUI extends UIViewState {
     }
     draw(ctx, canvas, x, y, width, height) {
         ctx.fillStyle = document.body.style.backgroundColor;
-        ctx.fillRect(this.grid.guiManager.elements[0].x + this.grid.guiManager.x, this.grid.guiManager.elements[0].y, this.grid.guiManager.elements[0].width(), this.grid.guiManager.elements[0].max_element_y_bounds());
-        ctx.fillRect(this.grid.guiManager.elements[1].x + this.grid.guiManager.x, this.grid.guiManager.elements[1].y, this.grid.guiManager.elements[1].width(), this.grid.guiManager.elements[1].max_element_y_bounds());
+        ctx.fillRect(this.grid.guiManager.elements[0].x + this.grid.guiManager.x, this.grid.guiManager.elements[0].y + this.grid.guiManager.y, this.grid.guiManager.elements[0].width(), this.grid.guiManager.elements[0].max_element_y_bounds());
+        ctx.fillRect(this.grid.guiManager.elements[1].x + this.grid.guiManager.x, this.grid.guiManager.elements[1].y + this.grid.guiManager.y, this.grid.guiManager.elements[1].width(), this.grid.guiManager.elements[1].max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if (!this.grid.multi_touchListener.registeredMultiTouchEvent) {
             this.grid.guiManager.draw(ctx);
@@ -1226,9 +1226,6 @@ class Game extends SquareAABBCollidable {
         }
         return false;
     }
-    restart_game() {
-        this.init(this.width, this.height, this.cell_dim[0], this.cell_dim[1]);
-    }
     new_sprite() {
         const pixels = (new Array(this.cell_dim[1] * this.cell_dim[0])).fill(this.background_color, 0, this.cell_dim[1] * this.cell_dim[0]);
         return new Sprite(pixels, this.cell_dim[0], this.cell_dim[1], false);
@@ -1236,6 +1233,7 @@ class Game extends SquareAABBCollidable {
     resize(width, height) {
         this.width = width;
         this.height = height;
+        this.cell_dim = [width, height];
         this.calc_bounds();
         if (this.options_gui_manager)
             this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
@@ -1955,7 +1953,7 @@ async function main() {
             height = getHeight();
             canvas.width = width;
             canvas.height = height;
-            game.init(width, height, width, height - 10);
+            game.init(width, height, width, height);
         }
         dt = Date.now() - start;
         time_queue.push(dt);
