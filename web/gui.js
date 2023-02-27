@@ -318,6 +318,7 @@ export class StateManagedUIElement {
 ;
 export class SimpleGridLayoutManager {
     constructor(matrixDim, pixelDim, x = 0, y = 0) {
+        this.contextMenu = null;
         this.lastTouched = 0;
         this.matrixDim = matrixDim;
         this.pixelDim = pixelDim;
@@ -378,8 +379,46 @@ export class SimpleGridLayoutManager {
             this.refreshCanvas();
         }
     }
+    handleElementTouchEvents(record, type, e) {
+        if (record.element.isLayoutManager())
+            record.element.handleTouchEvents(type, e, true);
+        else
+            record.element.handleTouchEvents(type, e);
+    }
+    handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler) {
+        if (!from_parent_handler) {
+            try {
+                this.handleElementTouchEvents(record, type, e);
+            }
+            catch (maybe_context_menu) {
+                console.log(maybe_context_menu);
+                if ("draw" in maybe_context_menu &&
+                    "handleTouchEvents" in maybe_context_menu &&
+                    "width" in maybe_context_menu &&
+                    "height" in maybe_context_menu) {
+                    const element = maybe_context_menu;
+                    this.contextMenu = new RowRecord(original_touch_pos[0], original_touch_pos[1], element.width(), element.height(), element);
+                    element.x = original_touch_pos[0];
+                    element.y = original_touch_pos[1];
+                }
+                else
+                    throw maybe_context_menu;
+            }
+        }
+        else
+            this.handleElementTouchEvents(record, type, e);
+    }
     handleTouchEvents(type, e, from_parent_handler = false) {
-        if (!this.elementTouched && (from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+        const original_touch_pos = [e.touchPos[0], e.touchPos[1]];
+        const context = this.contextMenu;
+        if (context && type === "touchstart") {
+            context.element.handleTouchEvents("touchstart", e);
+            context.element.handleTouchEvents("touchend", e);
+        }
+        if (type === "touchstart") {
+            this.contextMenu = null;
+        }
+        if ((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height()) {
             let record = null;
             let index = 0;
@@ -406,10 +445,9 @@ export class SimpleGridLayoutManager {
                 e.translateEvent(e, -dx, -dy);
                 if (type !== "touchmove")
                     record.element.activate();
-                if (record.element.isLayoutManager())
-                    record.element.handleTouchEvents(type, e, true);
                 else
-                    record.element.handleTouchEvents(type, e);
+                    this.elementTouched?.element.activate();
+                this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
                 e.translateEvent(e, dx, dy);
                 record.element.refresh();
                 this.elementTouched = record;
@@ -424,10 +462,7 @@ export class SimpleGridLayoutManager {
             const dx = record.x + (from_parent_handler ? 0 : this.x);
             const dy = record.y + (from_parent_handler ? 0 : this.y);
             e.translateEvent(e, -dx, -dy);
-            if (record.element.isLayoutManager())
-                record.element.handleTouchEvents(type, e, true);
-            else
-                record.element.handleTouchEvents(type, e);
+            this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
             e.translateEvent(e, dx, dy);
         }
         if (type === "touchend")
@@ -570,6 +605,10 @@ export class SimpleGridLayoutManager {
     draw(ctx, xPos = this.x, yPos = this.y, offsetX = 0, offsetY = 0) {
         //this.refreshCanvas();
         this.elementsPositions.forEach(el => el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0));
+        if (this.contextMenu) {
+            const el = this.contextMenu;
+            el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0);
+        }
         //ctx.drawImage(this.canvas, xPos + offsetX, yPos + offsetY);
     }
 }
@@ -620,6 +659,49 @@ export class ScrollingGridLayoutManager extends SimpleGridLayoutManager {
     }
     refreshCanvas() {
         super.refreshCanvas();
+    }
+}
+;
+export class ContextMenuOption {
+    constructor(callback, text, width, height, font_size) {
+        this.button = new GuiButton(callback, text, width, height, font_size);
+    }
+    active() {
+        return true;
+    }
+    deactivate() { }
+    activate() { }
+    width() {
+        return this.button.width();
+    }
+    height() {
+        return this.button.height();
+    }
+    refresh() {
+        this.button.refresh();
+    }
+    draw(ctx, x, y, offsetX, offsetY) {
+        this.button.draw(ctx, x, y, offsetX, offsetY);
+    }
+    handleKeyBoardEvents(type, e) {
+        this.button.handleKeyBoardEvents(type, e);
+    }
+    handleTouchEvents(type, e) {
+        this.button.handleTouchEvents(type, e);
+    }
+    isLayoutManager() {
+        return this.button.isLayoutManager();
+    }
+}
+;
+export class ContextMenu extends VerticalLayoutManager {
+    add_option(option, text) {
+        this.addElement(new GuiButton(option, text, this.width(), this.height()));
+        this.elements.forEach((el) => el.dimensions[1] = this.height() / this.elements.length);
+        this.refreshMetaData();
+    }
+    options() {
+        return this.elements;
     }
 }
 ;
@@ -1307,8 +1389,19 @@ export class Optional {
 }
 ;
 ;
+class TextBoxChangeRecord {
+    constructor(text, cursor, deletion) {
+        this.new_text = text;
+        this.cursor = cursor;
+        this.deletion = deletion;
+    }
+}
+;
 export class GuiTextBox {
     constructor(key_listener, width, submit = null, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.default, validationCallback = null, selectedColor = new RGB(80, 80, 220), unSelectedColor = new RGB(100, 100, 100), outline = true, fontName = "courier", customFontFace = null) {
+        this.completed_actions = [];
+        this.undone_actions = [];
+        this.ignore_touch_event = false;
         this.highlighted_delta = 0;
         this.handleKeyEvents = key_listener;
         this.outlineTextBox = outline;
@@ -1378,15 +1471,19 @@ export class GuiTextBox {
     max_selection_bound() {
         return this.highlighted_delta > 0 ? this.cursor + this.highlighted_delta : this.cursor;
     }
-    delete_selection() {
-        const min_bound = this.min_selection_bound();
-        const max_bound = this.max_selection_bound();
+    delete_range(min_bound, max_bound, update_actions_record = true) {
+        const deleted_text = this.text.substring(min_bound, max_bound);
         this.text = this.text.substring(0, min_bound) + this.text.substring(max_bound, this.text.length);
         this.text_widths.splice(min_bound, max_bound - min_bound);
         if (this.highlighted_delta < 0)
             this.cursor += this.highlighted_delta;
         this.highlighted_delta = 0;
         this.cursor = clamp(this.cursor, 0, this.text.length);
+        if (update_actions_record)
+            this.completed_actions.push(new TextBoxChangeRecord(deleted_text, this.cursor, true));
+    }
+    delete_selection() {
+        this.delete_range(this.min_selection_bound(), this.max_selection_bound());
     }
     rebuild_text_widths() {
         this.text_widths = [];
@@ -1394,7 +1491,7 @@ export class GuiTextBox {
             this.text_widths.push(this.ctx.measureText(this.text[i]).width);
         }
     }
-    insert_char(char, e, refresh = true) {
+    insert_char(char, refresh = true, update_actions_record = true) {
         if (this.text_widths === undefined || this.text.length !== this.text_widths.length) {
             this.rebuild_text_widths();
         }
@@ -1402,53 +1499,79 @@ export class GuiTextBox {
         if (this.highlight_active()) {
             this.delete_selection();
         }
-        //keep text_widths metadata up to date
-        const char_width = this.ctx.measureText(char).width;
-        this.text_widths.splice(this.cursor, 0, char_width);
-        const oldText = this.text;
-        const oldCursor = this.cursor;
-        this.text = this.text.substring(0, this.cursor) + char + this.text.substring(this.cursor, this.text.length);
-        this.cursor++;
-        this.calcNumber();
-        if (this.validationCallback) {
-            if (!this.validationCallback({ textbox: this, event: e, oldCursor: oldCursor, oldText: oldText })) {
-                this.text = oldText;
-                this.cursor = oldCursor;
-            }
+        if (update_actions_record) {
+            this.undone_actions.length = 0;
+            this.completed_actions.push(new TextBoxChangeRecord(char, this.cursor, false));
         }
-        this.drawInternalAndClear();
+        //keep text_widths metadata up to date
+        const char_width = [];
+        for (let i = 0; i < char.length; i++) {
+            char_width.push(this.ctx.measureText(char[i]).width);
+        }
+        this.text_widths.splice(this.cursor, 0, ...char_width);
+        this.text = this.text.substring(0, this.cursor) + char + this.text.substring(this.cursor, this.text.length);
+        this.cursor += char.length;
+        this.calcNumber();
+        if (refresh)
+            this.drawInternalAndClear();
+    }
+    undo() {
+        const action = this.completed_actions.pop();
+        if (action !== undefined) {
+            this.undone_actions.push(action);
+            this.cursor = action.cursor;
+            if (action.deletion)
+                this.insert_char(action.new_text, true, false);
+            else
+                this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+        }
+    }
+    redo() {
+        const action = this.undone_actions.pop();
+        if (action !== undefined) {
+            this.completed_actions.push(action);
+            this.cursor = action.cursor;
+            if (!action.deletion)
+                this.insert_char(action.new_text, true, false);
+            else
+                this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+        }
     }
     selected_text() {
         return this.text.substring(this.min_selection_bound(), this.max_selection_bound());
     }
     handleKeyBoardEvents(type, e) {
         let preventDefault = false;
-        if (this.active() && this.handleKeyEvents) {
+        if (this.active() && this.handleKeyEvents && type === "keydown") {
             preventDefault = true;
             const oldText = this.text;
             const oldCursor = this.cursor;
             console.log(e.code);
             if (e.keysHeld["MetaLeft"] || e.keysHeld["MetaRight"] ||
                 e.keysHeld["ControlLeft"] || e.keysHeld["ControlRight"]) {
-                if (type !== "keydown")
-                    return;
                 if (e.code === "KeyA") {
                     this.cursor = 0;
                     this.highlighted_delta = this.text.length;
                 }
-                if (e.code === "KeyC") {
-                    navigator.clipboard.writeText(this.selected_text());
+                else if (e.code === "KeyC") {
+                    this.copy();
                 }
                 else if (e.code === "KeyX") {
-                    navigator.clipboard.writeText(this.selected_text());
-                    this.delete_selection();
+                    this.cut();
                 }
                 else if (e.code === "KeyV") {
-                    navigator.clipboard.readText().then((text) => {
-                        for (let i = 0; i < text.length; i++)
-                            this.insert_char(text[i], e, false);
-                        this.drawInternalAndClear();
-                    });
+                    this.paste();
+                }
+                else if ((e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"]) && e.code === "KeyZ") {
+                    this.redo();
+                }
+                else if (e.code === "KeyZ") {
+                    console.log("hi");
+                    this.undo();
+                }
+                else if (e.code === "KeyY") {
+                    console.log("hi");
+                    this.redo();
                 }
             }
             else if (e.keysHeld["AltLeft"] || e.keysHeld["AltRight"]) {
@@ -1488,47 +1611,14 @@ export class GuiTextBox {
                     }
             }
             else if (e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"]) {
-                if (type === "keydown")
+                if (GuiTextBox.textUpperCaseLookup[e.code] || GuiTextBox.numbers[e.code]) {
+                    this.insert_char(GuiTextBox.textUpperCaseLookup[e.code], e);
+                }
+                else
                     switch (e.code) {
                         case ("Backspace"):
                             e.keysHeld["ShiftLeft"] = null;
                             e.keysHeld["ShiftRight"] = null;
-                            break;
-                        case ("Equal"):
-                            this.insert_char("+", e);
-                            break;
-                        case ("Digit5"):
-                            this.insert_char("%", e);
-                            break;
-                        case ("Digit6"):
-                            this.insert_char("^", e);
-                            break;
-                        case ("Digit7"):
-                            this.insert_char("&", e);
-                            break;
-                        case ("Digit8"):
-                            this.insert_char("*", e);
-                            break;
-                        case ("Digit9"):
-                            this.insert_char("(", e);
-                            break;
-                        case ("Digit0"):
-                            this.insert_char(")", e);
-                            break;
-                        case ("BracketLeft"):
-                            this.insert_char("{", e);
-                            break;
-                        case ("BracketRight"):
-                            this.insert_char("}", e);
-                            break;
-                        case ("Comma"):
-                            this.insert_char("<", e);
-                            break;
-                        case ("Period"):
-                            this.insert_char(">", e);
-                            break;
-                        case ("Digit1"):
-                            this.insert_char("!", e);
                             break;
                         default:
                             let letter = e.code.substring(e.code.length - 1);
@@ -1542,15 +1632,6 @@ export class GuiTextBox {
                 switch (type) {
                     case ("keydown"):
                         switch (e.code) {
-                            case ("Minus"):
-                                this.insert_char("-", e);
-                                break;
-                            case ("Slash"):
-                                this.insert_char("/", e);
-                                break;
-                            case ("Equal"):
-                                this.insert_char("=", e);
-                                break;
                             case ("NumpadEnter"):
                             case ("Enter"):
                                 //if highlight active delete highlighted first
@@ -1562,22 +1643,6 @@ export class GuiTextBox {
                                     this.submissionButton.activate();
                                     this.submissionButton.handleKeyBoardEvents(type, e);
                                 }
-                                break;
-                            case ("BracketLeft"):
-                                this.insert_char("[", e);
-                                break;
-                            case ("BracketRight"):
-                                this.insert_char("]", e);
-                                break;
-                            case ("Semicolon"):
-                                this.insert_char(";", e);
-                                break;
-                            case ("Space"):
-                                //if highlight active delete highlighted first
-                                if (this.highlight_active()) {
-                                    this.delete_selection();
-                                }
-                                this.insert_char(' ', e);
                                 break;
                             case ("Backspace"):
                                 //if highlight active delete highlighted first
@@ -1617,25 +1682,19 @@ export class GuiTextBox {
                                 else
                                     this.highlighted_delta = 0;
                                 break;
-                            case ("Period"):
-                                this.insert_char('.', e);
-                                break;
-                            case ("Comma"):
-                                this.insert_char(',', e);
-                                break;
                             default:
                                 {
                                     let letter = e.code.substring(e.code.length - 1);
                                     if (!e.keysHeld["ShiftRight"] && !e.keysHeld["ShiftLeft"])
                                         letter = letter.toLowerCase();
                                     if (GuiTextBox.textLookup[e.code] || GuiTextBox.numbers[e.code]) {
-                                        this.insert_char(letter, e);
+                                        this.insert_char(GuiTextBox.textLookup[e.code]);
                                     }
                                     else if (GuiTextBox.specialChars[e.code] && e.code.substring(0, "Numpad".length) === "Numpad" && e.code["Numpad".length]) {
-                                        this.insert_char(GuiTextBox.specialChars[e.code], e);
+                                        this.insert_char(GuiTextBox.specialChars[e.code]);
                                     }
                                     else if (e.code.substring(0, "Numpad".length) === "Numpad") {
-                                        this.insert_char(letter, e);
+                                        this.insert_char(letter);
                                     }
                                 }
                         }
@@ -1669,13 +1728,49 @@ export class GuiTextBox {
     highlight_active() {
         return this.highlighted_delta !== 0;
     }
+    paste() {
+        navigator.clipboard.readText().then((text) => {
+            //despite the name it is capable of inserting multi-char strings
+            this.insert_char(text);
+            console.log("pasting");
+        });
+    }
+    cut() {
+        navigator.clipboard.readText().then((text) => {
+            navigator.clipboard.writeText(this.selected_text());
+            this.delete_selection();
+            console.log("cutting");
+        });
+    }
+    copy() {
+        navigator.clipboard.readText().then((text) => {
+            navigator.clipboard.writeText(this.selected_text());
+            console.log("copying");
+        });
+    }
     handleTouchEvents(type, e) {
         if (this.active() && this.handleKeyEvents) {
             const touch_text_index = this.screenToTextIndex(e.touchPos);
             if (type === "touchstart") {
+                if (!isTouchSupported() && e.button > 0) {
+                    const menu = new ContextMenu([200, 80], 0, 0);
+                    menu.add_option(() => {
+                        this.paste();
+                    }, "Paste");
+                    menu.add_option(() => {
+                        this.cut();
+                    }, "Cut");
+                    menu.add_option(() => {
+                        this.copy();
+                    }, "Copy");
+                    this.ignore_touch_event = true;
+                    throw menu;
+                }
+                this.ignore_touch_event = false;
                 this.highlighted_delta = 0;
                 this.cursor = touch_text_index;
             }
+            else if (this.ignore_touch_event) { }
             else if (type === "touchmove") {
                 this.highlighted_delta = -this.cursor + touch_text_index;
             }
@@ -1701,12 +1796,12 @@ export class GuiTextBox {
     }
     static initGlobalText() {
         for (let i = 65; i < 65 + 26; i++)
-            GuiTextBox.textLookup["Key" + String.fromCharCode(i)] = true;
+            GuiTextBox.textLookup["Key" + String.fromCharCode(i)] = String.fromCharCode(i).toLowerCase();
     }
     ;
     static initGlobalNumbers() {
         for (let i = 48; i < 48 + 10; i++) {
-            GuiTextBox.numbers["Digit" + String.fromCharCode(i)] = true;
+            GuiTextBox.numbers["Digit" + String.fromCharCode(i)] = String.fromCharCode(i);
         }
     }
     ;
@@ -1907,7 +2002,11 @@ GuiTextBox.right = (2 << 2);
 GuiTextBox.farleft = (3 << 2);
 GuiTextBox.horizontalAlignmentFlagsMask = 0b1100;
 GuiTextBox.default = GuiTextBox.center | GuiTextBox.left;
-GuiTextBox.textLookup = {};
+GuiTextBox.action_lookup = {};
+GuiTextBox.textLookup = { Minus: "-", Period: ".", Comma: ",", Equal: "=", Slash: "/", BracketLeft: "[", BracketRight: "]",
+    Space: " ", Semicolon: ";", Quote: "'", Backslash: "\\" };
+GuiTextBox.textUpperCaseLookup = { Minus: "_", Period: ">", Comma: "<", Equal: "+", Slash: "?", BracketLeft: "{", BracketRight: "}", Quote: '"', Backslash: "|",
+    Space: " ", Semicolon: ":", Digit1: "!", Digit2: "@", Digit3: "#", Digit4: "$", Digit5: "%", Digit6: "^", Digit7: "&", Digit8: "*", Digit9: "(", Digit0: ")" };
 GuiTextBox.numbers = {};
 GuiTextBox.specialChars = { NumpadAdd: '+', NumpadMultiply: '*', NumpadDivide: '/', NumpadSubtract: '-',
     NumpadDecimal: "." };
@@ -1960,6 +2059,7 @@ export class GuiRadioGroup {
         return false;
     }
 }
+;
 GuiTextBox.initGlobalText();
 GuiTextBox.initGlobalNumbers();
 GuiTextBox.initGlobalSpecialChars();

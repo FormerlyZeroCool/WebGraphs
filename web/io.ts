@@ -552,7 +552,7 @@ export class MultiTouchListener {
     {
         this.registerCallBackPredicate(listenerType, () => true, callBack);
     }
-    callHandler(type:string, event:MultiTouchEvent):void
+    callHandler(type:string, event:MultiTouchEvent):any
     {
         const handlers:MultiTouchHandler[] = (<any>this.listener_type_map)[type];
         handlers.forEach((handler:MultiTouchHandler) => {

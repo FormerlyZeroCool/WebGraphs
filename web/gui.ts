@@ -410,6 +410,7 @@ export class StateManagedUIElement implements UIState {
 export class SimpleGridLayoutManager implements GuiElement {
     
     elements:GuiElement[];
+    contextMenu:RowRecord | null;
     x:number;
     y:number;
     refreshRate:number;
@@ -423,6 +424,7 @@ export class SimpleGridLayoutManager implements GuiElement {
     
     constructor(matrixDim:number[], pixelDim:number[], x:number = 0, y:number = 0)
     {
+        this.contextMenu = null;
         this.lastTouched = 0;
         this.matrixDim = matrixDim;
         this.pixelDim = pixelDim;
@@ -500,9 +502,54 @@ export class SimpleGridLayoutManager implements GuiElement {
             this.refreshCanvas();
         }
     }
+    handleElementTouchEvents(record:RowRecord, type:string, e:any):void
+    {
+        if(record.element.isLayoutManager())
+            (<SimpleGridLayoutManager> record.element).handleTouchEvents(type, e, true);
+        else
+            record.element.handleTouchEvents(type, e);
+    }
+    handleElementTouchEventsHigh(record:RowRecord, type:string, e:any, original_touch_pos:number[], from_parent_handler:boolean):void
+    {
+        if(!from_parent_handler)
+                {
+                    try {
+                        this.handleElementTouchEvents(record, type, e);
+                    } catch(maybe_context_menu:unknown)
+                    {
+                        console.log(maybe_context_menu)
+                        if("draw" in (maybe_context_menu as any) &&
+                            "handleTouchEvents" in (maybe_context_menu as any) &&
+                            "width" in (maybe_context_menu as any) &&
+                            "height" in (maybe_context_menu as any))
+                        {
+
+                            const element = <GuiElement> maybe_context_menu;
+                            this.contextMenu = new RowRecord(original_touch_pos[0], original_touch_pos[1], element.width(), element.height(), element);
+                            element.x = original_touch_pos[0];
+                            element.y = original_touch_pos[1];
+                        }
+                        else 
+                            throw maybe_context_menu;
+                    }
+                }
+                else 
+                    this.handleElementTouchEvents(record, type, e);
+    }
     handleTouchEvents(type:string, e:any, from_parent_handler:boolean = false):void
     {
-        if(!this.elementTouched && (from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+        const original_touch_pos = [e.touchPos[0], e.touchPos[1]];
+        const context = this.contextMenu;
+        if(context && type === "touchstart")
+        {
+            context.element.handleTouchEvents("touchstart", e);
+            context.element.handleTouchEvents("touchend", e);
+        }
+        if(type === "touchstart")
+        {
+            this.contextMenu = null;
+        }
+        if((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height())
         {
             let record:RowRecord = <any> null;
@@ -532,10 +579,10 @@ export class SimpleGridLayoutManager implements GuiElement {
                 e.translateEvent(e, -dx, -dy);
                 if(type !== "touchmove")
                     record.element.activate();
-                if(record.element.isLayoutManager())
-                    (<SimpleGridLayoutManager> record.element).handleTouchEvents(type, e, true);
                 else
-                    record.element.handleTouchEvents(type, e);
+                    this.elementTouched?.element.activate();
+                this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
+
                 e.translateEvent(e, dx, dy);
                 record.element.refresh();
                 this.elementTouched = record;
@@ -553,10 +600,7 @@ export class SimpleGridLayoutManager implements GuiElement {
             const dx = record.x + (from_parent_handler?0:this.x);
             const dy = record.y + (from_parent_handler?0:this.y); 
             e.translateEvent(e, -dx, -dy);
-            if(record.element.isLayoutManager())
-                (<SimpleGridLayoutManager> record.element).handleTouchEvents(type, e, true);
-            else
-                record.element.handleTouchEvents(type, e);
+            this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
             e.translateEvent(e, dx, dy);
         }
         if(type === "touchend")
@@ -727,6 +771,11 @@ export class SimpleGridLayoutManager implements GuiElement {
 
         this.elementsPositions.forEach(el => 
             el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0));
+        if(this.contextMenu)
+        {
+            const el = this.contextMenu;
+            el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0);
+        }
         //ctx.drawImage(this.canvas, xPos + offsetX, yPos + offsetY);
     }
 };
@@ -789,6 +838,53 @@ export class ScrollingGridLayoutManager extends SimpleGridLayoutManager {
         super.refreshCanvas();
     }
 
+};
+export class ContextMenuOption implements GuiElement {
+    button:GuiButton;
+    constructor(callback:() => void, text:string, width:number, height:number, font_size:number)
+    {
+        this.button = new GuiButton(callback, text, width, height, font_size);
+    }
+    active(): boolean {
+        return true;
+    }
+    deactivate(): void {}
+    activate(): void {}
+    width(): number {
+        return this.button.width();
+    }
+    height(): number {
+        return this.button.height();
+    }
+    refresh(): void {
+        this.button.refresh();
+    }
+    draw(ctx: CanvasRenderingContext2D, x: number, y: number, offsetX: number, offsetY: number): void {
+        this.button.draw(ctx, x, y, offsetX, offsetY);
+    }
+    handleKeyBoardEvents(type: string, e: any): void {
+        this.button.handleKeyBoardEvents(type, e);
+    }
+    handleTouchEvents(type: string, e: any): void {
+        this.button.handleTouchEvents(type, e);
+    }
+    isLayoutManager(): boolean {
+        return this.button.isLayoutManager();
+    }
+
+};
+export class ContextMenu extends VerticalLayoutManager {
+
+    add_option(option:() => void, text:string):void
+    {
+        this.addElement(new GuiButton(option, text, this.width(), this.height()));
+        (<GuiButton[]> <any> this.elements).forEach((el:GuiButton) => el.dimensions[1] = this.height() / this.elements.length);
+        this.refreshMetaData();
+    }
+    options():ContextMenuOption
+    {
+        return <ContextMenuOption> <Object> this.elements;
+    }
 };
 export class GuiListItem extends HorizontalLayoutManager {
     textBox:GuiTextBox;
@@ -1480,7 +1576,7 @@ export class GuiButton implements GuiElement {
     }
 };
 
-interface FilesHaver{
+interface FilesHaver {
     files:FileList;
 };
 export class GuiButtonFileOpener extends GuiButton {
@@ -1666,6 +1762,18 @@ export interface TextBoxEvent {
     oldCursor:number;
     oldText:string;
 };
+class TextBoxChangeRecord {
+    new_text:string;
+    cursor:number;
+    deletion:boolean;
+
+    constructor(text:string, cursor:number, deletion:boolean) 
+    {
+        this.new_text = text;
+        this.cursor = cursor;
+        this.deletion = deletion;
+    }
+};
 export class GuiTextBox implements GuiElement {
     text:string;
     text_widths:number[];
@@ -1694,7 +1802,11 @@ export class GuiTextBox implements GuiElement {
     static horizontalAlignmentFlagsMask:number = 0b1100;
     static default:number =  GuiTextBox.center | GuiTextBox.left;
 
-    static textLookup = {};
+    static action_lookup = {}
+    static textLookup = { Minus:"-", Period:".", Comma:",", Equal:"=", Slash:"/", BracketLeft:"[", BracketRight:"]",
+            Space:" ", Semicolon:";", Quote:"'", Backslash:"\\" };
+    static textUpperCaseLookup = { Minus:"_", Period:">", Comma:"<", Equal:"+", Slash:"?", BracketLeft:"{", BracketRight:"}", Quote:'"', Backslash:"|", 
+            Space:" ", Semicolon:":", Digit1:"!", Digit2:"@", Digit3:"#", Digit4:"$", Digit5:"%", Digit6:"^", Digit7:"&", Digit8:"*", Digit9:"(", Digit0:")"  };
     static numbers = {};
     static specialChars = {NumpadAdd:'+', NumpadMultiply:'*', NumpadDivide:'/', NumpadSubtract:'-', 
             NumpadDecimal:"."};
@@ -1707,11 +1819,18 @@ export class GuiTextBox implements GuiElement {
     fontName:string;
     handleKeyEvents:boolean;
     outlineTextBox:boolean;
+    ignore_touch_event:boolean;
+
+    completed_actions:TextBoxChangeRecord[];
+    undone_actions:TextBoxChangeRecord[];
     
     validationCallback:((tb:TextBoxEvent) => boolean) | null;
     constructor(key_listener:boolean, width:number, submit:GuiButton | null = null, fontSize:number = 16, height:number = 2*fontSize, flags:number = GuiTextBox.default,
         validationCallback:((event:TextBoxEvent) => boolean) | null = null, selectedColor:RGB = new RGB(80, 80, 220), unSelectedColor:RGB = new RGB(100, 100, 100), outline:boolean = true, fontName = "courier", customFontFace:FontFace | null = null)
     {
+        this.completed_actions = [];
+        this.undone_actions = [];
+        this.ignore_touch_event = false;
         this.highlighted_delta = 0;
         this.handleKeyEvents = key_listener;
         this.outlineTextBox = outline;
@@ -1787,10 +1906,9 @@ export class GuiTextBox implements GuiElement {
     {
         return this.highlighted_delta > 0 ? this.cursor + this.highlighted_delta : this.cursor;
     }
-    delete_selection():void
+    delete_range(min_bound:number, max_bound:number, update_actions_record:boolean = true):void
     {
-        const min_bound = this.min_selection_bound();
-        const max_bound = this.max_selection_bound();
+        const deleted_text = this.text.substring(min_bound, max_bound);
         this.text = this.text.substring(0, min_bound) + this.text.substring(max_bound, this.text.length);
         this.text_widths.splice(min_bound, max_bound - min_bound);
         if(this.highlighted_delta < 0)
@@ -1798,6 +1916,12 @@ export class GuiTextBox implements GuiElement {
 
         this.highlighted_delta = 0;
         this.cursor = clamp(this.cursor, 0, this.text.length);
+        if(update_actions_record)
+            this.completed_actions.push(new TextBoxChangeRecord(deleted_text, this.cursor, true));
+    }
+    delete_selection():void
+    {
+        this.delete_range(this.min_selection_bound(), this.max_selection_bound());
     }
     rebuild_text_widths():void
     {
@@ -1807,7 +1931,7 @@ export class GuiTextBox implements GuiElement {
             this.text_widths.push(this.ctx.measureText(this.text[i]).width);
         }
     }
-    insert_char(char:string, e:KeyboardEvent, refresh:boolean = true):void
+    insert_char(char:string, refresh:boolean = true, update_actions_record:boolean = true):void
     {
         if(this.text_widths === undefined || this.text.length !== this.text_widths.length)
         {
@@ -1819,26 +1943,52 @@ export class GuiTextBox implements GuiElement {
             this.delete_selection();
         }
 
+        if(update_actions_record)
+        {
+            this.undone_actions.length = 0;
+            this.completed_actions.push(new TextBoxChangeRecord(char, this.cursor, false));
+        }
         //keep text_widths metadata up to date
-        const char_width = this.ctx.measureText(char).width;
-        this.text_widths.splice(this.cursor, 0, char_width);
+        const char_width:number[] = [];
+        for(let i = 0; i < char.length; i++)
+        {
+            char_width.push(this.ctx.measureText(char[i]).width);
+        }
+        this.text_widths.splice(this.cursor, 0, ...char_width);
 
-        const oldText = this.text;
-        const oldCursor = this.cursor;
         
 
         this.text = this.text.substring(0, this.cursor) + char + this.text.substring(this.cursor, this.text.length);
-        this.cursor++;
+        this.cursor += char.length;
         this.calcNumber();
-        if(this.validationCallback)
+        if(refresh)
+            this.drawInternalAndClear();
+    }
+    undo():void
+    {
+        const action = this.completed_actions.pop();
+        if(action !== undefined)
         {
-            if(!this.validationCallback({textbox:this, event:e, oldCursor:oldCursor, oldText:oldText}))
-            {
-                this.text = oldText;
-                this.cursor = oldCursor;
-            }
+            this.undone_actions.push(action);
+            this.cursor = action.cursor;
+            if(action.deletion)
+                this.insert_char(action.new_text, true, false);
+            else
+                this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
         }
-        this.drawInternalAndClear();
+    }
+    redo():void
+    {
+        const action = this.undone_actions.pop();
+        if(action !== undefined)
+        {
+            this.completed_actions.push(action);
+            this.cursor = action.cursor;
+            if(!action.deletion)
+                this.insert_char(action.new_text, true, false);
+            else
+                this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+        }
     }
     selected_text():string
     {
@@ -1847,7 +1997,7 @@ export class GuiTextBox implements GuiElement {
     handleKeyBoardEvents(type:string, e:any):void
     {
         let preventDefault:boolean = false;
-        if(this.active() && this.handleKeyEvents) {
+        if(this.active() && this.handleKeyEvents && type === "keydown") {
             preventDefault = true;
             const oldText:string = this.text;
             const oldCursor:number = this.cursor;
@@ -1855,29 +2005,36 @@ export class GuiTextBox implements GuiElement {
             if(e.keysHeld["MetaLeft"] || e.keysHeld["MetaRight"] ||
                 e.keysHeld["ControlLeft"] || e.keysHeld["ControlRight"])
             {
-                if(type !== "keydown")
-                    return;
                 if(e.code === "KeyA")
                 {
                     this.cursor = 0;
                     this.highlighted_delta = this.text.length;
                 }
-                if(e.code === "KeyC")
+                else if(e.code === "KeyC")
                 {
-                    navigator.clipboard.writeText(this.selected_text());
+                    this.copy();
                 }
                 else if(e.code === "KeyX")
                 {
-                    navigator.clipboard.writeText(this.selected_text());
-                    this.delete_selection();
+                    this.cut();
                 }
                 else if(e.code === "KeyV")
                 {
-                    navigator.clipboard.readText().then((text:string) => {
-                        for(let i = 0; i < text.length; i++)
-                            this.insert_char(text[i], e, false);
-                        this.drawInternalAndClear();
-                    });
+                    this.paste();
+                }
+                else if((e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"]) && e.code === "KeyZ")
+                {
+                    this.redo();
+                }
+                else if(e.code === "KeyZ")
+                {
+                    console.log("hi")
+                    this.undo();
+                }
+                else if(e.code === "KeyY")
+                {
+                    console.log("hi")
+                    this.redo();
                 }
             }
             else if(e.keysHeld["AltLeft"] || e.keysHeld["AltRight"])
@@ -1924,48 +2081,16 @@ export class GuiTextBox implements GuiElement {
             }
             else if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
             {
-                if(type === "keydown")
+                if((<any> GuiTextBox.textUpperCaseLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
+                {
+                    this.insert_char(GuiTextBox.textUpperCaseLookup[e.code], e);
+                }
+                else
                 switch(e.code)
                 {
                     case("Backspace"):
                     e.keysHeld["ShiftLeft"] = null;
                     e.keysHeld["ShiftRight"] = null;
-                    break;
-                    case("Equal"):
-                    this.insert_char("+", e);
-                    break;
-                    case("Digit5"):
-                    this.insert_char("%", e);
-                    break;
-                    case("Digit6"):
-                    this.insert_char("^", e);
-                    break;
-                    case("Digit7"):
-                    this.insert_char("&", e);
-                    break;
-                    case("Digit8"):
-                    this.insert_char("*", e);
-                    break;
-                    case("Digit9"):
-                    this.insert_char("(", e);
-                    break;
-                    case("Digit0"):
-                    this.insert_char(")", e);
-                    break;
-                    case("BracketLeft"):
-                    this.insert_char("{", e);
-                    break;
-                    case("BracketRight"):
-                    this.insert_char("}", e);
-                    break;
-                    case("Comma"):
-                    this.insert_char("<", e);
-                    break;
-                    case("Period"):
-                    this.insert_char(">", e);
-                    break;
-                    case("Digit1"):
-                    this.insert_char("!", e);
                     break;
                     default:
                         let letter:string = e.code.substring(e.code.length - 1);
@@ -1983,15 +2108,6 @@ export class GuiTextBox implements GuiElement {
                     case("keydown"):
                     switch(e.code)
                     {
-                        case("Minus"):
-                        this.insert_char("-", e);
-                        break;
-                        case("Slash"):
-                        this.insert_char("/", e);
-                        break;
-                        case("Equal"):
-                        this.insert_char("=", e);
-                        break;
                         case("NumpadEnter"):
                         case("Enter"):
                         //if highlight active delete highlighted first
@@ -2005,23 +2121,6 @@ export class GuiTextBox implements GuiElement {
                             this.submissionButton.activate();
                             this.submissionButton.handleKeyBoardEvents(type, e);
                         }
-                        break;
-                        case("BracketLeft"):
-                        this.insert_char("[", e);
-                        break;
-                        case("BracketRight"):
-                        this.insert_char("]", e);
-                        break;
-                        case("Semicolon"):
-                            this.insert_char(";", e);
-                        break;
-                        case("Space"):
-                        //if highlight active delete highlighted first
-                        if(this.highlight_active())
-                        {
-                            this.delete_selection();
-                        }
-                            this.insert_char(' ', e);
                         break;
                         case("Backspace"):
                         //if highlight active delete highlighted first
@@ -2065,12 +2164,6 @@ export class GuiTextBox implements GuiElement {
                         else
                             this.highlighted_delta = 0;
                         break;
-                        case("Period"):
-                        this.insert_char('.', e);
-                        break;
-                        case("Comma"):
-                        this.insert_char(',', e);
-                        break;
                         default:
                         {
                             let letter:string = e.code.substring(e.code.length - 1);
@@ -2078,15 +2171,15 @@ export class GuiTextBox implements GuiElement {
                                 letter = letter.toLowerCase();
                             if((<any> GuiTextBox.textLookup)[e.code] || (<any> GuiTextBox.numbers)[e.code])
                             {
-                                this.insert_char(letter, e);
+                                this.insert_char(GuiTextBox.textLookup[e.code]);
                             }
                             else if((<any> GuiTextBox.specialChars)[e.code] && e.code.substring(0,"Numpad".length) === "Numpad" && e.code["Numpad".length])
                             {
-                                this.insert_char((<any> GuiTextBox.specialChars)[e.code], e);
+                                this.insert_char((<any> GuiTextBox.specialChars)[e.code]);
                             }
                             else if(e.code.substring(0,"Numpad".length) === "Numpad")
                             {
-                                this.insert_char(letter, e);
+                                this.insert_char(letter);
                             }
     
                         }
@@ -2127,6 +2220,29 @@ export class GuiTextBox implements GuiElement {
     {
         return this.highlighted_delta !== 0;
     }
+    paste():void
+    {
+        navigator.clipboard.readText().then((text:string) => {
+            //despite the name it is capable of inserting multi-char strings
+            this.insert_char(text);
+            console.log("pasting")
+        });
+    }
+    cut():void
+    {
+        navigator.clipboard.readText().then((text:string) => {
+            navigator.clipboard.writeText(this.selected_text());
+            this.delete_selection();
+            console.log("cutting")
+        });
+    }
+    copy():void
+    {
+        navigator.clipboard.readText().then((text:string) => {
+            navigator.clipboard.writeText(this.selected_text());
+            console.log("copying")
+        });
+    }
     handleTouchEvents(type:string, e:TouchMoveEvent):void
     {
         if(this.active() && this.handleKeyEvents)
@@ -2134,9 +2250,27 @@ export class GuiTextBox implements GuiElement {
             const touch_text_index = this.screenToTextIndex(e.touchPos);
             if(type === "touchstart")
             {
+                if(!isTouchSupported() && (<any> e).button > 0)
+                {
+                    const menu = new ContextMenu([200, 80], 0, 0);
+                    menu.add_option(() => {
+                        this.paste();
+                    }, "Paste");
+                    menu.add_option(() => {
+                        this.cut();
+                    }, "Cut");
+                    menu.add_option(() => {
+                        this.copy()
+                    }, "Copy");
+                    this.ignore_touch_event = true;
+                    throw menu;
+                }
+                this.ignore_touch_event = false;
                 this.highlighted_delta = 0;
                 this.cursor = touch_text_index;
             }
+            else if(this.ignore_touch_event)
+            {}
             else if(type === "touchmove")
             {
                 this.highlighted_delta = -this.cursor + touch_text_index;
@@ -2168,12 +2302,12 @@ export class GuiTextBox implements GuiElement {
     static initGlobalText():void
     {
         for(let i = 65; i < 65+26; i++)
-            (<any> GuiTextBox.textLookup)["Key" + String.fromCharCode(i)] = true;
+            (<any> GuiTextBox.textLookup)["Key" + String.fromCharCode(i)] = String.fromCharCode(i).toLowerCase();
     };
     static initGlobalNumbers():void
     {
         for(let i = 48; i < 48+10; i++){
-            (<any> GuiTextBox.numbers)["Digit" + String.fromCharCode(i)] = true;
+            (<any> GuiTextBox.numbers)["Digit" + String.fromCharCode(i)] = String.fromCharCode(i);
         }
     };
     static initGlobalSpecialChars():void
@@ -2464,7 +2598,7 @@ export class GuiRadioGroup implements GuiElement {
     {
         return false;
     }
-}
+};
 GuiTextBox.initGlobalText();
 GuiTextBox.initGlobalNumbers();
 GuiTextBox.initGlobalSpecialChars();

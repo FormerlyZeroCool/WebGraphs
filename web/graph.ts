@@ -1369,7 +1369,7 @@ class Game extends SquareAABBCollidable {
             if(this.chkbx_sync_curve_width.checked)
                 this.functions.forEach(foo => foo.line_width = line_width)
 
-            this.functions[this.layer_manager.list.selected()].line_width = line_width;
+            this.functions[this.selected_item].line_width = line_width;
             this.repaint = true;
         });
         const width_label = new GuiLabel("Width", 75, 18, this.slider_line_width.height());
@@ -2331,7 +2331,7 @@ async function main()
 {
     const canvas:HTMLCanvasElement = <HTMLCanvasElement> document.getElementById("screen");
     const touchListener = new SingleTouchListener(canvas, false, true, false);
-    const multi_touch_listener = new MultiTouchListener(canvas, isTouchSupported(), true, false);
+    const multi_touch_listener = new MultiTouchListener(canvas, isTouchSupported(), true, true);
 
     canvas.onmousemove = (event:MouseEvent) => {
     };
