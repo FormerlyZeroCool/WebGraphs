@@ -2267,6 +2267,10 @@ export class GuiTextBox implements GuiElement {
                     menu.add_option(() => {
                         this.redo()
                     }, "Redo");
+                    menu.add_option(() => {
+                        this.cursor = 0;
+                        this.highlighted_delta = this.text.length;
+                    }, "Select All");
                     this.ignore_touch_event = true;
                     throw menu;
                 }
@@ -2276,11 +2280,28 @@ export class GuiTextBox implements GuiElement {
             }
             else if(this.ignore_touch_event)
             {}
+            else if(type === "doubletap")
+            {
+                let start = this.cursor;
+                while(start > 0  && this.text[start] !== ' ')
+                {
+                    start--;
+                }
+                start += +(this.text[start] === ' ');
+                let end = this.cursor;
+                while(end < this.text.length && this.text[end] !== ' ')
+                {
+                    end++;
+                }
+                end -= +(this.text[end] === ' ');
+                this.cursor = start;
+                this.highlighted_delta = end - start;
+            }
             else if(type === "touchmove")
             {
                 this.highlighted_delta = -this.cursor + touch_text_index;
             }
-            else if(type === "touchend")
+            else if(type === "tap")
             { 
                 this.highlighted_delta = this.cursor - touch_text_index;
                 this.cursor = touch_text_index;

@@ -1907,6 +1907,12 @@ async function main() {
     multi_touch_listener.registerCallBackPredicate("touchend", (event) => true, (event) => {
         game.ui_state_manager.handleTouchEvents("touchend", event);
     });
+    multi_touch_listener.registerCallBackPredicate("doubletap", (event) => true, (event) => {
+        game.ui_state_manager.handleTouchEvents("doubletap", event);
+    });
+    multi_touch_listener.registerCallBackPredicate("tap", (event) => true, (event) => {
+        game.ui_state_manager.handleTouchEvents("tap", event);
+    });
     multi_touch_listener.registerCallBackPredicate("touchmove", (event) => true, (event) => {
         game.ui_state_manager.state.handleTouchEvents("touchmove", event);
         game.repaint = true;

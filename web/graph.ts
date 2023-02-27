@@ -1055,8 +1055,8 @@ class UIViewStateShowUI extends UIViewState
         ctx.fillStyle = document.body.style.backgroundColor;
         ctx.fillRect(this.grid.guiManager.elements[0].x, this.grid.guiManager.elements[0].y, this.grid.guiManager.elements[0].width(), 
                 this.grid.guiManager.elements[0].max_element_y_bounds());
-            ctx.fillRect(this.grid.guiManager.elements[1].x, this.grid.guiManager.elements[1].y, this.grid.guiManager.elements[1].width(), 
-                    this.grid.guiManager.elements[1].max_element_y_bounds());
+        ctx.fillRect(this.grid.guiManager.elements[1].x, this.grid.guiManager.elements[1].y, this.grid.guiManager.elements[1].width(), 
+                this.grid.guiManager.elements[1].max_element_y_bounds());
         super.draw(ctx, canvas, x, y, width, height);
         if(!this.grid.multi_touchListener.registeredMultiTouchEvent)
         {
@@ -2376,6 +2376,12 @@ async function main()
     });
     multi_touch_listener.registerCallBackPredicate("touchend", (event:any) => true, (event:TouchMoveEvent) => {
         game.ui_state_manager.handleTouchEvents("touchend", event);
+    });
+    multi_touch_listener.registerCallBackPredicate("doubletap", (event:any) => true, (event:TouchMoveEvent) => {
+        game.ui_state_manager.handleTouchEvents("doubletap", event);
+    });
+    multi_touch_listener.registerCallBackPredicate("tap", (event:any) => true, (event:TouchMoveEvent) => {
+        game.ui_state_manager.handleTouchEvents("tap", event);
     });
     multi_touch_listener.registerCallBackPredicate("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
         game.ui_state_manager.state.handleTouchEvents("touchmove", event);
