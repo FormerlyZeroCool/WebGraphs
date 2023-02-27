@@ -2028,12 +2028,10 @@ export class GuiTextBox implements GuiElement {
                 }
                 else if(e.code === "KeyZ")
                 {
-                    console.log("hi")
                     this.undo();
                 }
                 else if(e.code === "KeyY")
                 {
-                    console.log("hi")
                     this.redo();
                 }
             }
@@ -2262,6 +2260,12 @@ export class GuiTextBox implements GuiElement {
                     menu.add_option(() => {
                         this.copy()
                     }, "Copy");
+                    menu.add_option(() => {
+                        this.undo()
+                    }, "Undo");
+                    menu.add_option(() => {
+                        this.redo()
+                    }, "Redo");
                     this.ignore_touch_event = true;
                     throw menu;
                 }
