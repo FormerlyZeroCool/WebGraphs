@@ -591,8 +591,6 @@ export class SimpleGridLayoutManager implements GuiElement {
         else if(context && type === "hover")
         {
             context.element.handleTouchEvents("hover", e);
-
-            this.handleElementTouchEventsHigh(context, "hover", e, original_touch_pos, from_parent_handler);
         }
 
         if(type === "touchstart")

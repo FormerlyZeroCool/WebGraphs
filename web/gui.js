@@ -453,7 +453,6 @@ export class SimpleGridLayoutManager {
         }
         else if (context && type === "hover") {
             context.element.handleTouchEvents("hover", e);
-            this.handleElementTouchEventsHigh(context, "hover", e, original_touch_pos, from_parent_handler);
         }
         if (type === "touchstart") {
             this.contextMenu = null;
