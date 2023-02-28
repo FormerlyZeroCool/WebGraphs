@@ -600,6 +600,7 @@ export class SimpleGridLayoutManager {
         else {
             this.elements.splice(position, 0, element);
         }
+        element.parent = this;
         this.refreshMetaData();
         this.refreshCanvas();
         return inserted;

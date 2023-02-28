@@ -302,6 +302,7 @@ export class ImageContainer {
     }
 };
 export interface GuiElement {
+    parent:GuiElement | undefined;
     active():boolean;
     deactivate():void;
     activate():void;
@@ -421,6 +422,7 @@ export class SimpleGridLayoutManager implements GuiElement {
     focused:boolean;
     lastTouched:number;
     elementTouched:RowRecord | null;
+    parent: GuiElement | undefined;
     
     constructor(matrixDim:number[], pixelDim:number[], x:number = 0, y:number = 0)
     {
@@ -770,6 +772,7 @@ export class SimpleGridLayoutManager implements GuiElement {
         {
             this.elements.splice(position, 0, element);
         }
+        element.parent = this;
         this.refreshMetaData();
         this.refreshCanvas();
         return inserted;
@@ -870,6 +873,7 @@ export class ScrollingGridLayoutManager extends SimpleGridLayoutManager {
 
 };
 export class ContextMenuOption implements GuiElement {
+    parent: GuiElement | undefined;
     button:GuiButton;
     constructor(callback:() => void, text:string, width:number, height:number, font_size:number)
     {
@@ -1000,6 +1004,7 @@ export class GuiCheckListError {
 
 };
 export class GuiCheckList implements GuiElement {
+    parent: GuiElement | undefined;
     limit:number;
     pos:number[]
     list:GuiListItem[];
@@ -1277,6 +1282,7 @@ export class GuiCheckList implements GuiElement {
     }
 };
 export class GuiSlider implements GuiElement {
+    parent: GuiElement | undefined;
     state:number;//between 0.0, and 1.0
     focused:boolean;
     dim:number[];
@@ -1399,6 +1405,7 @@ export class CustomBackgroundSlider extends GuiSlider {
     }
 };
 export class GuiSpacer implements GuiElement {
+    parent: GuiElement | undefined;
     dim:number[];
     constructor(dim:number[]){
         this.dim = [dim[0], dim[1]];
@@ -1434,6 +1441,7 @@ export class GuiSpacer implements GuiElement {
     }
 };
 export class GuiColoredSpacer implements GuiElement {
+    parent: GuiElement | undefined;
     dim:number[];
     color:RGB;
     onclicked:((type:string, e:TouchMoveEvent) => void) | null;
@@ -1500,6 +1508,7 @@ export class GuiColoredSpacer implements GuiElement {
 };
 export class GuiButton implements GuiElement {
 
+    parent: GuiElement | undefined;
     text:string;
     dimensions:number[];//[width, height]
     fontSize:number;
@@ -1653,6 +1662,7 @@ export class GuiButtonFileOpener extends GuiButton {
     }
 }
 export class GuiCheckBox implements GuiElement {
+    parent: GuiElement | undefined;
 
     checked:boolean;
     canvas:HTMLCanvasElement;
@@ -1830,6 +1840,7 @@ class TextBoxChangeRecord {
     }
 };
 export class GuiTextBox implements GuiElement {
+    parent: GuiElement | undefined;
     text:string;
     text_widths:number[];
     asNumber:Optional<number>;
@@ -2645,6 +2656,7 @@ export class GuiLabel extends GuiButton {
     }
 };
 export class GuiRadioGroup implements GuiElement {
+    parent: GuiElement | undefined;
     layout:SimpleGridLayoutManager;
     constructor(pixelDim:number[], matrixDim:number[])
     {
@@ -2695,6 +2707,7 @@ GuiTextBox.initGlobalText();
 GuiTextBox.initGlobalNumbers();
 GuiTextBox.initGlobalSpecialChars();
 export class GuiToolBar implements GuiElement {
+    parent: GuiElement | undefined;
     tools:ToolBarItem[];
     focused:boolean;
     toolRenderDim:number[];
