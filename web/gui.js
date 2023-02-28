@@ -370,8 +370,8 @@ export class SimpleGridLayoutManager {
         return true;
     }
     collision(touchPos) {
-        return touchPos[0] >= this.x && touchPos[0] < this.x + this.width() &&
-            touchPos[1] >= this.y && touchPos[1] < this.y + this.height();
+        return touchPos[0] >= this.x && touchPos[0] <= this.x + this.width() &&
+            touchPos[1] >= this.y && touchPos[1] <= this.y + this.height();
     }
     collision_shifted(touchPos) {
         return touchPos[0] >= 0 && touchPos[0] < 0 + this.width() &&
@@ -1523,8 +1523,9 @@ export class GuiTextBox {
         if (update_actions_record)
             this.completed_actions.push(new TextBoxChangeRecord(deleted_text, this.cursor, true));
     }
-    delete_selection() {
-        this.delete_range(this.min_selection_bound(), this.max_selection_bound());
+    delete_selection(update_actions_record = true) {
+        if (this.highlight_active())
+            this.delete_range(this.min_selection_bound(), this.max_selection_bound(), update_actions_record);
     }
     rebuild_text_widths() {
         this.text_widths = [];
@@ -1538,7 +1539,7 @@ export class GuiTextBox {
         }
         //if highlight active delete highlighted first
         if (this.highlight_active()) {
-            this.delete_selection();
+            this.delete_selection(update_actions_record);
         }
         if (update_actions_record) {
             this.undone_actions.length = 0;

@@ -491,8 +491,8 @@ export class SimpleGridLayoutManager implements GuiElement {
     } 
     collision(touchPos:number[]):boolean
     {
-        return touchPos[0] >= this.x && touchPos[0] < this.x + this.width() &&
-                        touchPos[1] >= this.y && touchPos[1] < this.y + this.height()
+        return touchPos[0] >= this.x && touchPos[0] <= this.x + this.width() &&
+                        touchPos[1] >= this.y && touchPos[1] <= this.y + this.height()
     }
     collision_shifted(touchPos:number[]):boolean
     {
@@ -1976,9 +1976,10 @@ export class GuiTextBox implements GuiElement {
         if(update_actions_record)
             this.completed_actions.push(new TextBoxChangeRecord(deleted_text, this.cursor, true));
     }
-    delete_selection():void
+    delete_selection(update_actions_record:boolean = true):void
     {
-        this.delete_range(this.min_selection_bound(), this.max_selection_bound());
+        if(this.highlight_active())
+            this.delete_range(this.min_selection_bound(), this.max_selection_bound(), update_actions_record);
     }
     rebuild_text_widths():void
     {
@@ -1997,7 +1998,7 @@ export class GuiTextBox implements GuiElement {
         //if highlight active delete highlighted first
         if(this.highlight_active())
         {
-            this.delete_selection();
+            this.delete_selection(update_actions_record);
         }
 
         if(update_actions_record)
@@ -2032,6 +2033,7 @@ export class GuiTextBox implements GuiElement {
                 this.insert_char(action.new_text, false, false);
             else
                 this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+            
             this.drawInternalAndClear();
         }
     }
@@ -2046,6 +2048,7 @@ export class GuiTextBox implements GuiElement {
                 this.insert_char(action.new_text, false, false);
             else
                 this.delete_range(action.cursor, action.cursor + action.new_text.length, false);
+            
             this.drawInternalAndClear();
         }
     }
