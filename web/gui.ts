@@ -494,6 +494,11 @@ export class SimpleGridLayoutManager implements GuiElement {
         return touchPos[0] >= this.x && touchPos[0] < this.x + this.width() &&
                         touchPos[1] >= this.y && touchPos[1] < this.y + this.height()
     }
+    collision_shifted(touchPos:number[]):boolean
+    {
+        return touchPos[0] >= 0 && touchPos[0] < 0 + this.width() &&
+                        touchPos[1] >= 0 && touchPos[1] < 0 + this.height()
+    }
     handleKeyBoardEvents(type:string, e:any):void
     {
         this.elements.forEach(el => el.handleKeyBoardEvents(type, e));
@@ -511,30 +516,68 @@ export class SimpleGridLayoutManager implements GuiElement {
     }
     handleElementTouchEventsHigh(record:RowRecord, type:string, e:any, original_touch_pos:number[], from_parent_handler:boolean):void
     {
-        if(!from_parent_handler)
-                {
-                    try {
-                        this.handleElementTouchEvents(record, type, e);
-                    } catch(maybe_context_menu:unknown)
-                    {
-                        console.log(maybe_context_menu)
-                        if("draw" in (maybe_context_menu as any) &&
-                            "handleTouchEvents" in (maybe_context_menu as any) &&
-                            "width" in (maybe_context_menu as any) &&
-                            "height" in (maybe_context_menu as any))
-                        {
 
-                            const element = <GuiElement> maybe_context_menu;
-                            this.contextMenu = new RowRecord(original_touch_pos[0], original_touch_pos[1], element.width(), element.height(), element);
-                            element.x = original_touch_pos[0];
-                            element.y = original_touch_pos[1];
-                        }
-                        else 
-                            throw maybe_context_menu;
-                    }
+        //only adjust with x and y is this is root layout manager
+        const dx = record.x + (from_parent_handler?0:this.x);
+        const dy = record.y + (from_parent_handler?0:this.y); 
+        e.translateEvent(e, -dx, -dy);
+        if(type !== "hover")
+        {
+            if(type !== "touchmove")
+                record.element.activate();
+            else if(this.elementTouched !== null)
+                this.elementTouched!.element.activate();
+        }
+        if(!from_parent_handler)
+        {
+            try {
+                this.handleElementTouchEvents(record, type, e);
+            } catch(maybe_context_menu:unknown)
+            {
+                if("draw" in (maybe_context_menu as any) &&
+                    "handleTouchEvents" in (maybe_context_menu as any) &&
+                    "width" in (maybe_context_menu as any) &&
+                    "height" in (maybe_context_menu as any))
+                {
+                    const element = <GuiElement> maybe_context_menu;
+                    this.contextMenu = new RowRecord(original_touch_pos[0], original_touch_pos[1], element.width(), element.height(), element);
+                    element.x = original_touch_pos[0];
+                    element.y = original_touch_pos[1];
                 }
                 else 
-                    this.handleElementTouchEvents(record, type, e);
+                    throw maybe_context_menu;
+            }
+        }
+        else 
+           this.handleElementTouchEvents(record, type, e);
+            
+
+        e.translateEvent(e, dx, dy);
+    }
+    getRecord(e:any, from_parent_handler:boolean, manage_activation:boolean = true):RowRecord | null
+    {
+        let record:RowRecord = <any> null;
+        let index:number = 0;
+        if(!from_parent_handler)
+            e.translateEvent(e,  -this.x, -this.y);
+        let runningNumber:number = 0;
+        this.elementsPositions.forEach(el => {
+                if(manage_activation)
+                {
+                    el.element.deactivate();
+                    el.element.refresh();
+                }
+                if(e.touchPos[0] >= el.x && e.touchPos[0] < el.x + el.element.width() &&
+                    e.touchPos[1] >= el.y && e.touchPos[1] < el.y + el.element.height())
+                {
+                    record = el;
+                    index = runningNumber;
+                }
+                runningNumber++;
+        });
+        if(!from_parent_handler)
+            e.translateEvent(e, this.x, this.y);
+        return record;
     }
     handleTouchEvents(type:string, e:any, from_parent_handler:boolean = false):void
     {
@@ -545,63 +588,52 @@ export class SimpleGridLayoutManager implements GuiElement {
             context.element.handleTouchEvents("touchstart", e);
             context.element.handleTouchEvents("touchend", e);
         }
+        else if(context && type === "hover")
+        {
+            context.element.handleTouchEvents("hover", e);
+
+            this.handleElementTouchEventsHigh(context, "hover", e, original_touch_pos, from_parent_handler);
+        }
+
         if(type === "touchstart")
         {
             this.contextMenu = null;
         }
-        if((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+
+
+        if(type === "hover")
+        {
+            if((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+            e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height())
+            {
+                const record = this.getRecord(e, from_parent_handler, false);
+                if(record)
+                    this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
+            }
+        }
+        else if((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height())
         {
-            let record:RowRecord = <any> null;
-            let index:number = 0;
-            if(!from_parent_handler)
-                e.translateEvent(e,  -this.x, -this.y);
-            let runningNumber:number = 0;
-            this.elementsPositions.forEach(el => {
-                    el.element.deactivate();
-                    el.element.refresh();
-                    if(e.touchPos[0] >= el.x && e.touchPos[0] < el.x + el.element.width() &&
-                        e.touchPos[1] >= el.y && e.touchPos[1] < el.y + el.element.height())
-                    {
-                        record = el;
-                        index = runningNumber;
-                    }
-                    runningNumber++;
-            });
-            if(!from_parent_handler)
-                e.translateEvent(e, this.x, this.y);
+            const record = this.getRecord(e, from_parent_handler);
+            //console.log(record)
             if(record)
             {
                 e.preventDefault();
-                //only adjust with x and y is this is root layout manager
-                const dx = record.x + (from_parent_handler?0:this.x);
-                const dy = record.y + (from_parent_handler?0:this.y); 
-                e.translateEvent(e, -dx, -dy);
-                if(type !== "touchmove")
-                    record.element.activate();
-                else
-                    this.elementTouched?.element.activate();
                 this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
-
-                e.translateEvent(e, dx, dy);
                 record.element.refresh();
                 this.elementTouched = record;
                 if(e.repaint)
                 {
                     this.refreshCanvas();
                 }
-                this.lastTouched = index;
+                this.lastTouched = this.elements.indexOf(record.element);
             }
             
         }
         else if(this.elementTouched)
         {
             const record = this.elementTouched;
-            const dx = record.x + (from_parent_handler?0:this.x);
-            const dy = record.y + (from_parent_handler?0:this.y); 
-            e.translateEvent(e, -dx, -dy);
             this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
-            e.translateEvent(e, dx, dy);
         }
         if(type === "touchend")
             this.elementTouched = null;
@@ -874,13 +906,30 @@ export class ContextMenuOption implements GuiElement {
 
 };
 export class ContextMenu extends VerticalLayoutManager {
-
-    add_option(option:() => void, text:string):void
+    highlighted_element:RowRecord | null;
+    add_option(option:() => void, text:string, font_name:string = "Courier"):void
     {
         const grey = new RGB(125, 125, 125, 255);
-        this.addElement(new GuiButton(option, text, this.width(), this.height(), 16, grey, grey));
+        this.addElement(new GuiButton(option, text, this.width(), this.height(), 16, grey, grey, font_name, new RGB(0, 0, 0, 0), GuiButton.default_text_color));
         (<GuiButton[]> <any> this.elements).forEach((el:GuiButton) => el.dimensions[1] = this.height() / this.elements.length);
         this.refreshMetaData();
+    }
+    handleTouchEvents(type: string, e: any): void {
+        super.handleTouchEvents(type, e, false);
+        if(type === "hover" && this.collision(e.touchPos))
+        {
+            const rec = this.getRecord(e, false, false);
+            if(rec)
+                this.highlighted_element = rec;
+        }
+    }
+    draw(ctx: CanvasRenderingContext2D, xPos?: number, yPos?: number, offsetX?: number, offsetY?: number): void {
+        super.draw(ctx, xPos, yPos, offsetX, offsetY);
+        if(this.highlighted_element)
+        {
+            ctx.fillStyle = new RGB(255, 255, 255, 50).htmlRBGA();
+            ctx.fillRect(this.highlighted_element.x + this.x, this.highlighted_element.y + this.y, this.highlighted_element.width, this.highlighted_element.height);
+        }
     }
     options():ContextMenuOption
     {
@@ -1144,12 +1193,14 @@ export class GuiCheckList implements GuiElement {
     }
     handleTouchEvents(type:string, e:TouchMoveEvent):void
     {
+        if(type === "hover")
+            return;
         this.layoutManager.activate();
         const clicked:number = Math.floor(((e.touchPos[1]) / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element:RowRecord = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         
-        if(element)
+        if(element && this.layoutManager.elementsPositions[clicked])
         {
             e.touchPos[1] -= clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
             (<GuiListItem> <Object> element.element).handleTouchEvents(type, e, true);
@@ -1306,7 +1357,7 @@ export class GuiSlider implements GuiElement {
             this.state = 1;
         else if(this.state < 0)
             this.state = 0;
-        if(this.callBack)
+        if(this.callBack && type !== "hover")
             this.callBack({value:this.state, element:this});
         this.refresh();
     }
@@ -1441,7 +1492,7 @@ export class GuiColoredSpacer implements GuiElement {
     {}
     handleTouchEvents(type:string, e:any):void
     {
-        if(this.onclicked)
+        if(this.onclicked && type !== "hover")
             this.onclicked(type, e);
     }
     isLayoutManager():boolean
@@ -1456,12 +1507,20 @@ export class GuiButton implements GuiElement {
     fontSize:number;
     pressedColor:RGB;
     unPressedColor:RGB;
+    outline_color:RGB;
+    text_color:RGB;
+    static default_pressedColor:RGB = new RGB(150, 150, 200, 255);
+    static default_unPressedColor:RGB = new RGB(255, 255, 255, 195);
+    static default_outline_color:RGB = new RGB(0, 0, 0, 255);
+    static default_text_color:RGB = new RGB(0, 0, 0, 255);
     pressed:boolean;
     focused:boolean;
     fontName:string
     callback:(() => void) | null;
-    constructor(callBack:() => void | null, text:string, width:number = 200, height:number = 50, fontSize:number = 12, pressedColor:RGB = new RGB(150, 150, 200, 255), unPressedColor:RGB = new RGB(255, 255, 255, 195), fontName:string = "courier")
+    constructor(callBack:() => void | null, text:string, width:number = 200, height:number = 50, fontSize:number = 12, pressedColor:RGB = GuiButton.default_pressedColor, unPressedColor:RGB = GuiButton.default_unPressedColor, fontName:string = "courier", outline_color:RGB = GuiButton.default_outline_color, text_color:RGB = GuiButton.default_text_color)
     {
+        this.outline_color = outline_color;
+        this.text_color = text_color;
         this.text = text;
         this.fontSize = fontSize;
         this.dimensions = [width, height];
@@ -1504,6 +1563,8 @@ export class GuiButton implements GuiElement {
                     this.callback();
                     this.pressed = false;
                 break;
+                case("hover"):
+                break;
             }
             
     }
@@ -1542,16 +1603,14 @@ export class GuiButton implements GuiElement {
     }
     drawInternal(ctx:CanvasRenderingContext2D, x:number, y:number):void
     {
-        //ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
-        //ctx.fillStyle = new RGB(255,255,255, 135).htmlRBGA();
         ctx.fillRect(x, y, this.width(), this.height());
         
-        ctx.fillStyle = "#000000";
+        ctx.fillStyle = this.text_color.htmlRBGA();
         const textWidth:number = ctx.measureText(this.text).width;
         const textHeight:number = this.fontSize;
-        //ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = this.outline_color.htmlRBGA();
         ctx.lineCap = "round";
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, this.width(), this.height());
@@ -1566,9 +1625,6 @@ export class GuiButton implements GuiElement {
             ctx.fillText(this.text, x + 10, y + this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#000000";
-        ctx.strokeRect(x, y, this.width(), this.height());
     } 
     draw(ctx:CanvasRenderingContext2D, x:number, y:number, offsetX:number = 0, offsetY:number = 0):void
     {
@@ -2275,6 +2331,8 @@ export class GuiTextBox implements GuiElement {
                         this.highlighted_delta = this.text.length;
                     }, "Select All");
                     this.ignore_touch_event = true;
+                    //menu.event_type = type;
+                    menu.trimDim();
                     throw menu;
                 }
                 this.ignore_touch_event = false;

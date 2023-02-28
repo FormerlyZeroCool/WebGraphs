@@ -801,31 +801,33 @@ class UIViewState {
     }
     handleTouchEvents(type, event) {
         const touchPos = event.touchPos;
-        this.hamburger_activated = (!this.grid.options_gui_manager.elementTouched && this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated;
         if (!this.hamburger_activated) {
             //if(this.grid.guiManager.collision(touchPos))
             this.grid.guiManager.handleTouchEvents(type, event);
             //this.grid.options_gui_manager.handleTouchEvents(type, event);
         }
-        switch (type) {
-            case ("touchstart"):
-                this.velocity_x = 0;
-                if (touchPos[0] > this.burger_x() + this.burger_width ||
-                    (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() &&
-                        touchPos[1] > this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds())) {
-                    const new_state = new UIViewStateTransitioningUI(this.grid);
-                    new_state.closing = true;
-                    this.grid.ui_state_manager.state = new_state;
-                }
-                break;
-            case ("touchend"):
-                if (Date.now() - event.startTouchTime < 250) {
-                    this.tapped = this.hamburger_activated || (this.burger_collision(touchPos[0], touchPos[1]) && !this.collision_predicate(type, event));
-                }
-                this.hamburger_activated = false;
-                break;
+        if (type !== "hover") {
+            this.hamburger_activated = ((!this.grid.options_gui_manager.elementTouched && this.burger_collision(touchPos[0], touchPos[1]) && this.collision_predicate(type, event)) || this.hamburger_activated);
+            switch (type) {
+                case ("touchstart"):
+                    this.velocity_x = 0;
+                    if (touchPos[0] > this.burger_x() + this.burger_width ||
+                        (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() &&
+                            touchPos[1] > this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds())) {
+                        const new_state = new UIViewStateTransitioningUI(this.grid);
+                        new_state.closing = true;
+                        this.grid.ui_state_manager.state = new_state;
+                    }
+                    break;
+                case ("touchend"):
+                    if (Date.now() - event.startTouchTime < 250) {
+                        this.tapped = this.hamburger_activated || (this.burger_collision(touchPos[0], touchPos[1]) && !this.collision_predicate(type, event));
+                    }
+                    this.hamburger_activated = false;
+                    break;
+            }
+            this.last_touch_event = Date.now();
         }
-        this.last_touch_event = Date.now();
     }
     burger_collision(x, y) {
         return x >= this.burger_x() && x < this.burger_x() + this.burger_width;
@@ -1901,6 +1903,9 @@ async function main() {
         game.ui_state_manager.handleTouchEvents("touchstart", event);
         if (event.touchPos[0] > (game.width - fps_text_width - 10) && event.touchPos[1] < +ctx.font.split('px')[0] * 1.2)
             render_fps = !render_fps;
+    });
+    multi_touch_listener.registerCallBackPredicate("hover", (event) => true, (event) => {
+        game.ui_state_manager.handleTouchEvents("hover", event);
     });
     multi_touch_listener.registerCallBackPredicate("touchend", (event) => true, (event) => {
         game.ui_state_manager.handleTouchEvents("touchend", event);

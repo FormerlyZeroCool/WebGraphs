@@ -58,6 +58,7 @@ export class ListenerTypes {
         this.touchstart = new Array();
         this.touchmove = new Array();
         this.touchend = new Array();
+        this.hover = new Array();
         this.doubletap = new Array();
         this.tap = new Array();
         this.swipe = new Array();
@@ -107,14 +108,7 @@ export class SingleTouchListener {
         this.touchMoveCount = 0;
         this.double_tapped = false;
         this.deltaTouchPos = 0;
-        this.listener_type_map = {
-            touchstart: [],
-            touchmove: [],
-            touchend: [],
-            tap: [],
-            doubletap: [],
-            swipe: []
-        };
+        this.listener_type_map = new ListenerTypes();
         this.mouseOverElement = false;
         if (component) {
             if (isTouchSupported()) {
@@ -203,8 +197,6 @@ export class SingleTouchListener {
             const deltaX = touchMove["offsetX"] - this.touchPos[0];
             this.touchPos[1] += deltaY;
             this.touchPos[0] += deltaX;
-            if (!this.registeredTouch)
-                return false;
             ++this.moveCount;
             const mag = this.mag([deltaX, deltaY]);
             this.touchMoveCount++;
@@ -223,6 +215,9 @@ export class SingleTouchListener {
             event.moveCount = this.moveCount;
             event.translateEvent = this.translateEvent;
             event.scaleEvent = this.scaleEvent;
+            this.callHandler("hover", event);
+            if (!this.registeredTouch)
+                return false;
             this.touchMoveEvents.push(event);
             this.callHandler("touchmove", event);
         }

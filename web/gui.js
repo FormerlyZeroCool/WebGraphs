@@ -373,6 +373,10 @@ export class SimpleGridLayoutManager {
         return touchPos[0] >= this.x && touchPos[0] < this.x + this.width() &&
             touchPos[1] >= this.y && touchPos[1] < this.y + this.height();
     }
+    collision_shifted(touchPos) {
+        return touchPos[0] >= 0 && touchPos[0] < 0 + this.width() &&
+            touchPos[1] >= 0 && touchPos[1] < 0 + this.height();
+    }
     handleKeyBoardEvents(type, e) {
         this.elements.forEach(el => el.handleKeyBoardEvents(type, e));
         if (e.repaint) {
@@ -386,12 +390,21 @@ export class SimpleGridLayoutManager {
             record.element.handleTouchEvents(type, e);
     }
     handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler) {
+        //only adjust with x and y is this is root layout manager
+        const dx = record.x + (from_parent_handler ? 0 : this.x);
+        const dy = record.y + (from_parent_handler ? 0 : this.y);
+        e.translateEvent(e, -dx, -dy);
+        if (type !== "hover") {
+            if (type !== "touchmove")
+                record.element.activate();
+            else if (this.elementTouched !== null)
+                this.elementTouched.element.activate();
+        }
         if (!from_parent_handler) {
             try {
                 this.handleElementTouchEvents(record, type, e);
             }
             catch (maybe_context_menu) {
-                console.log(maybe_context_menu);
                 if ("draw" in maybe_context_menu &&
                     "handleTouchEvents" in maybe_context_menu &&
                     "width" in maybe_context_menu &&
@@ -407,6 +420,29 @@ export class SimpleGridLayoutManager {
         }
         else
             this.handleElementTouchEvents(record, type, e);
+        e.translateEvent(e, dx, dy);
+    }
+    getRecord(e, from_parent_handler, manage_activation = true) {
+        let record = null;
+        let index = 0;
+        if (!from_parent_handler)
+            e.translateEvent(e, -this.x, -this.y);
+        let runningNumber = 0;
+        this.elementsPositions.forEach(el => {
+            if (manage_activation) {
+                el.element.deactivate();
+                el.element.refresh();
+            }
+            if (e.touchPos[0] >= el.x && e.touchPos[0] < el.x + el.element.width() &&
+                e.touchPos[1] >= el.y && e.touchPos[1] < el.y + el.element.height()) {
+                record = el;
+                index = runningNumber;
+            }
+            runningNumber++;
+        });
+        if (!from_parent_handler)
+            e.translateEvent(e, this.x, this.y);
+        return record;
     }
     handleTouchEvents(type, e, from_parent_handler = false) {
         const original_touch_pos = [e.touchPos[0], e.touchPos[1]];
@@ -415,55 +451,39 @@ export class SimpleGridLayoutManager {
             context.element.handleTouchEvents("touchstart", e);
             context.element.handleTouchEvents("touchend", e);
         }
+        else if (context && type === "hover") {
+            context.element.handleTouchEvents("hover", e);
+            this.handleElementTouchEventsHigh(context, "hover", e, original_touch_pos, from_parent_handler);
+        }
         if (type === "touchstart") {
             this.contextMenu = null;
         }
-        if ((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+        if (type === "hover") {
+            if ((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
+                e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height()) {
+                const record = this.getRecord(e, from_parent_handler, false);
+                if (record)
+                    this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
+            }
+        }
+        else if ((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
             e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height()) {
-            let record = null;
-            let index = 0;
-            if (!from_parent_handler)
-                e.translateEvent(e, -this.x, -this.y);
-            let runningNumber = 0;
-            this.elementsPositions.forEach(el => {
-                el.element.deactivate();
-                el.element.refresh();
-                if (e.touchPos[0] >= el.x && e.touchPos[0] < el.x + el.element.width() &&
-                    e.touchPos[1] >= el.y && e.touchPos[1] < el.y + el.element.height()) {
-                    record = el;
-                    index = runningNumber;
-                }
-                runningNumber++;
-            });
-            if (!from_parent_handler)
-                e.translateEvent(e, this.x, this.y);
+            const record = this.getRecord(e, from_parent_handler);
+            //console.log(record)
             if (record) {
                 e.preventDefault();
-                //only adjust with x and y is this is root layout manager
-                const dx = record.x + (from_parent_handler ? 0 : this.x);
-                const dy = record.y + (from_parent_handler ? 0 : this.y);
-                e.translateEvent(e, -dx, -dy);
-                if (type !== "touchmove")
-                    record.element.activate();
-                else
-                    this.elementTouched?.element.activate();
                 this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
-                e.translateEvent(e, dx, dy);
                 record.element.refresh();
                 this.elementTouched = record;
                 if (e.repaint) {
                     this.refreshCanvas();
                 }
-                this.lastTouched = index;
+                this.lastTouched = this.elements.indexOf(record.element);
             }
         }
         else if (this.elementTouched) {
             const record = this.elementTouched;
-            const dx = record.x + (from_parent_handler ? 0 : this.x);
-            const dy = record.y + (from_parent_handler ? 0 : this.y);
-            e.translateEvent(e, -dx, -dy);
             this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
-            e.translateEvent(e, dx, dy);
         }
         if (type === "touchend")
             this.elementTouched = null;
@@ -695,11 +715,26 @@ export class ContextMenuOption {
 }
 ;
 export class ContextMenu extends VerticalLayoutManager {
-    add_option(option, text) {
+    add_option(option, text, font_name = "Courier") {
         const grey = new RGB(125, 125, 125, 255);
-        this.addElement(new GuiButton(option, text, this.width(), this.height(), 16, grey, grey));
+        this.addElement(new GuiButton(option, text, this.width(), this.height(), 16, grey, grey, font_name, new RGB(0, 0, 0, 0), GuiButton.default_text_color));
         this.elements.forEach((el) => el.dimensions[1] = this.height() / this.elements.length);
         this.refreshMetaData();
+    }
+    handleTouchEvents(type, e) {
+        super.handleTouchEvents(type, e, false);
+        if (type === "hover" && this.collision(e.touchPos)) {
+            const rec = this.getRecord(e, false, false);
+            if (rec)
+                this.highlighted_element = rec;
+        }
+    }
+    draw(ctx, xPos, yPos, offsetX, offsetY) {
+        super.draw(ctx, xPos, yPos, offsetX, offsetY);
+        if (this.highlighted_element) {
+            ctx.fillStyle = new RGB(255, 255, 255, 50).htmlRBGA();
+            ctx.fillRect(this.highlighted_element.x + this.x, this.highlighted_element.y + this.y, this.highlighted_element.width, this.highlighted_element.height);
+        }
     }
     options() {
         return this.elements;
@@ -904,11 +939,13 @@ export class GuiCheckList {
         this.layoutManager.handleKeyBoardEvents(type, e);
     }
     handleTouchEvents(type, e) {
+        if (type === "hover")
+            return;
         this.layoutManager.activate();
         const clicked = Math.floor(((e.touchPos[1]) / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
-        if (element) {
+        if (element && this.layoutManager.elementsPositions[clicked]) {
             e.touchPos[1] -= clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
             element.element.handleTouchEvents(type, e, true);
             e.touchPos[1] += clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
@@ -1034,7 +1071,7 @@ export class GuiSlider {
             this.state = 1;
         else if (this.state < 0)
             this.state = 0;
-        if (this.callBack)
+        if (this.callBack && type !== "hover")
             this.callBack({ value: this.state, element: this });
         this.refresh();
     }
@@ -1135,7 +1172,7 @@ export class GuiColoredSpacer {
     }
     handleKeyBoardEvents(type, e) { }
     handleTouchEvents(type, e) {
-        if (this.onclicked)
+        if (this.onclicked && type !== "hover")
             this.onclicked(type, e);
     }
     isLayoutManager() {
@@ -1144,7 +1181,9 @@ export class GuiColoredSpacer {
 }
 ;
 export class GuiButton {
-    constructor(callBack, text, width = 200, height = 50, fontSize = 12, pressedColor = new RGB(150, 150, 200, 255), unPressedColor = new RGB(255, 255, 255, 195), fontName = "courier") {
+    constructor(callBack, text, width = 200, height = 50, fontSize = 12, pressedColor = GuiButton.default_pressedColor, unPressedColor = GuiButton.default_unPressedColor, fontName = "courier", outline_color = GuiButton.default_outline_color, text_color = GuiButton.default_text_color) {
+        this.outline_color = outline_color;
+        this.text_color = text_color;
         this.text = text;
         this.fontSize = fontSize;
         this.dimensions = [width, height];
@@ -1183,6 +1222,8 @@ export class GuiButton {
                         this.callback();
                     this.pressed = false;
                     break;
+                case ("hover"):
+                    break;
             }
     }
     isLayoutManager() {
@@ -1215,15 +1256,13 @@ export class GuiButton {
     refresh() {
     }
     drawInternal(ctx, x, y) {
-        //ctx.clearRect(x, y, this.width(), this.height());
         const fs = ctx.fillStyle;
         this.setCtxState(ctx);
-        //ctx.fillStyle = new RGB(255,255,255, 135).htmlRBGA();
         ctx.fillRect(x, y, this.width(), this.height());
-        ctx.fillStyle = "#000000";
+        ctx.fillStyle = this.text_color.htmlRBGA();
         const textWidth = ctx.measureText(this.text).width;
         const textHeight = this.fontSize;
-        //ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = this.outline_color.htmlRBGA();
         ctx.lineCap = "round";
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, this.width(), this.height());
@@ -1236,15 +1275,16 @@ export class GuiButton {
             ctx.fillText(this.text, x + 10, y + this.height() / 2 + textHeight / 2, this.width() - 20);
         }
         ctx.fillStyle = fs;
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#000000";
-        ctx.strokeRect(x, y, this.width(), this.height());
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
         this.drawInternal(ctx, x, y);
         //ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 }
+GuiButton.default_pressedColor = new RGB(150, 150, 200, 255);
+GuiButton.default_unPressedColor = new RGB(255, 255, 255, 195);
+GuiButton.default_outline_color = new RGB(0, 0, 0, 255);
+GuiButton.default_text_color = new RGB(0, 0, 0, 255);
 ;
 ;
 export class GuiButtonFileOpener extends GuiButton {
@@ -1775,6 +1815,8 @@ export class GuiTextBox {
                         this.highlighted_delta = this.text.length;
                     }, "Select All");
                     this.ignore_touch_event = true;
+                    //menu.event_type = type;
+                    menu.trimDim();
                     throw menu;
                 }
                 this.ignore_touch_event = false;
