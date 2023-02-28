@@ -2282,6 +2282,7 @@ export class GuiTextBox implements GuiElement {
     }
     paste():void
     {
+        this.delete_selection();
         navigator.clipboard.readText().then((text:string) => {
             //despite the name it is capable of inserting multi-char strings
             this.insert_char(text);
@@ -2330,6 +2331,9 @@ export class GuiTextBox implements GuiElement {
                         this.cursor = 0;
                         this.highlighted_delta = this.text.length;
                     }, "Select All");
+                    menu.add_option(() => {
+                        this.delete_range(0, this.text.length);
+                    }, "Clear");
                     this.ignore_touch_event = true;
                     //menu.event_type = type;
                     menu.trimDim();

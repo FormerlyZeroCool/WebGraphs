@@ -1772,6 +1772,7 @@ export class GuiTextBox {
         return this.highlighted_delta !== 0;
     }
     paste() {
+        this.delete_selection();
         navigator.clipboard.readText().then((text) => {
             //despite the name it is capable of inserting multi-char strings
             this.insert_char(text);
@@ -1814,6 +1815,9 @@ export class GuiTextBox {
                         this.cursor = 0;
                         this.highlighted_delta = this.text.length;
                     }, "Select All");
+                    menu.add_option(() => {
+                        this.delete_range(0, this.text.length);
+                    }, "Clear");
                     this.ignore_touch_event = true;
                     //menu.event_type = type;
                     menu.trimDim();
