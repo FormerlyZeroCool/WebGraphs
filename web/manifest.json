@@ -5,5 +5,5 @@
     "background_color": "#3b3b3b",
     "display": "browser",
     "scope": "/",
-    "start_url": "/https://curvejs.com/web"
+    "start_url": "./web/index.html"
   }

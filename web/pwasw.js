@@ -8,7 +8,7 @@ self.addEventListener("install", (event) =>
     console.log("Installing web app");
     const cache = await caches.open("offline")
     console.log("caching index and important routes");
-    return cache.addAll([]);
+    return cache.addAll(["/"]);
   };
   
   self.addEventListener("fetch", (event) => 

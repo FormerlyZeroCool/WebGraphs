@@ -811,8 +811,9 @@ class UIViewState {
             switch (type) {
                 case ("touchstart"):
                     this.velocity_x = 0;
+                    console.log(this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds(), touchPos);
                     if (touchPos[0] > this.burger_x() + this.burger_width ||
-                        (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() &&
+                        (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() ||
                             touchPos[1] > this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds())) {
                         const new_state = new UIViewStateTransitioningUI(this.grid);
                         new_state.closing = true;
@@ -1163,6 +1164,7 @@ class Game extends SquareAABBCollidable {
         this.options_gui_manager.setWidth(this.options_gui_manager.max_element_x_bounds());
         this.options_gui_manager.activate();
         this.options_gui_manager.trimDim();
+        this.guiManager.trimDim();
         this.guiManager = horizontal_group([this.guiManager, this.options_gui_manager]);
         this.guiManager.trimDim();
         this.repaint = true;

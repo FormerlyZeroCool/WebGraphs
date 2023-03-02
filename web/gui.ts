@@ -464,7 +464,7 @@ export class SimpleGridLayoutManager implements GuiElement {
         let highest = 0;
         this.elementsPositions.forEach(el => {
             const y_bound = el.y + el.height;
-            if(y_bound)
+            if(y_bound > highest)
             {
                 highest = y_bound;
             }
