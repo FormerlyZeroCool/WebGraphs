@@ -883,7 +883,7 @@ class ScalingState implements UIState {
     {
         this.field = field;
     }
-    draw(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number): void {
         throw new Error('Method not implemented.');
     }
     
@@ -1010,7 +1010,6 @@ class UIViewState implements GridUIState {
             {
                 case("touchstart"):
                 this.velocity_x = 0;
-                console.log(this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds(), touchPos)
                 if(touchPos[0] > this.burger_x() + this.burger_width ||
                     (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() ||
                      touchPos[1] > this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds()))

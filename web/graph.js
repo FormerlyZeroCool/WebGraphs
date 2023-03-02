@@ -711,7 +711,7 @@ class ScalingState {
     constructor(field) {
         this.field = field;
     }
-    draw(ctx, x, y, width, height) {
+    draw(ctx, canvas, x, y, width, height) {
         throw new Error('Method not implemented.');
     }
     handleKeyboardEvents(type, event) {
@@ -811,7 +811,6 @@ class UIViewState {
             switch (type) {
                 case ("touchstart"):
                     this.velocity_x = 0;
-                    console.log(this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds(), touchPos);
                     if (touchPos[0] > this.burger_x() + this.burger_width ||
                         (touchPos[0] > this.grid.guiManager.x + this.grid.guiManager.width() ||
                             touchPos[1] > this.grid.guiManager.y + this.grid.guiManager.max_element_y_bounds())) {
