@@ -55,13 +55,14 @@ export class TouchHandler {
 ;
 export class ListenerTypes {
     constructor() {
-        this.touchstart = new Array();
-        this.touchmove = new Array();
-        this.touchend = new Array();
-        this.hover = new Array();
-        this.doubletap = new Array();
-        this.tap = new Array();
-        this.swipe = new Array();
+        this.touchstart = [];
+        this.touchmove = [];
+        this.touchend = [];
+        this.hover = [];
+        this.doubletap = [];
+        this.longtap = [];
+        this.tap = [];
+        this.swipe = [];
     }
 }
 ;
@@ -276,6 +277,8 @@ export class SingleTouchListener {
                         else //tap
                             this.callHandler("tap", event);
                     }
+                    else //tap
+                        this.callHandler("longtap", event);
                     this.double_tapped = false;
                     this.callHandler("touchend", event);
                 }
@@ -472,6 +475,22 @@ export class MultiTouchListener {
     get_theta(touch1, touch2) {
         const vec = normalize([touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY]);
         return get_angle(vec[0], vec[1]);
+    }
+}
+;
+export class GenericListener extends MultiTouchListener {
+    constructor(component, preventDefault, mouseEmulation, stopRightClick, tap_and_swipe_delay_limit) {
+        super(component, preventDefault, mouseEmulation, stopRightClick, tap_and_swipe_delay_limit);
+        this.keyboard_listener = new KeyboardHandler();
+    }
+    registerCallBackPredicate(listenerType, predicate, callBack) {
+        if (listenerType in this.listener_type_map || listenerType in this.single_touch_listener.listener_type_map)
+            this.registerCallBackPredicate(listenerType, predicate, callBack);
+        else
+            this.keyboard_listener.registerCallBack(listenerType, predicate, callBack);
+    }
+    registerCallBack(listenerType, callBack) {
+        this.registerCallBackPredicate(listenerType, () => true, callBack);
     }
 }
 ;

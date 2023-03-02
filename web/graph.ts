@@ -1360,7 +1360,8 @@ class Game extends SquareAABBCollidable {
         this.guiManager.activate();
         const touch_mod = isTouchSupported() ? 38 : 0;
         this.color_controller = new ColorPickerTool((color:RGB) => {
-            this.functions[this.selected_item].color.copy(color);
+            if(this.functions[this.selected_item])
+                this.functions[this.selected_item].color.copy(color);
             this.repaint = true;
         });
         this.slider_line_width = new GuiSlider(0, [125, 50 + touch_mod], (slide_event:SlideEvent) => {
@@ -1368,8 +1369,8 @@ class Game extends SquareAABBCollidable {
             const line_width = 2 + Math.floor(state * 30);
             if(this.chkbx_sync_curve_width.checked)
                 this.functions.forEach(foo => foo.line_width = line_width)
-
-            this.functions[this.selected_item].line_width = line_width;
+            if(this.functions[this.selected_item])
+                this.functions[this.selected_item].line_width = line_width;
             this.repaint = true;
         });
         const width_label = new GuiLabel("Width", 75, 18, this.slider_line_width.height());
@@ -2327,7 +2328,7 @@ async function main()
 {
     const canvas:HTMLCanvasElement = <HTMLCanvasElement> document.getElementById("screen");
     const touchListener = new SingleTouchListener(canvas, false, true, false);
-    const multi_touch_listener = new MultiTouchListener(canvas, isTouchSupported(), true, true);
+    const multi_touch_listener = new MultiTouchListener(canvas, isTouchSupported(), true, true, 250);
 
     canvas.onmousemove = (event:MouseEvent) => {
     };
@@ -2383,6 +2384,9 @@ async function main()
     });
     multi_touch_listener.registerCallBackPredicate("doubletap", (event:any) => true, (event:TouchMoveEvent) => {
         game.ui_state_manager.handleTouchEvents("doubletap", event);
+    });
+    multi_touch_listener.registerCallBackPredicate("longtap", (event:any) => true, (event:TouchMoveEvent) => {
+        game.ui_state_manager.handleTouchEvents("longtap", event);
     });
     multi_touch_listener.registerCallBackPredicate("tap", (event:any) => true, (event:TouchMoveEvent) => {
         game.ui_state_manager.handleTouchEvents("tap", event);

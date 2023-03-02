@@ -7,3 +7,7 @@ The app will run your functions plot them and report back errors in real time.<b
 <p>
 The error messages are straight from the js interpreter so you can familiarize yourself with them without needing to look through lots of code for a specific line number because it's all in that one line!
 </p>
+
+<h3>References</h3>
+Progressive web apps, and pwasw.js - https://blog.heroku.com/how-to-make-progressive-web-app
+Gifjs - gif.js 0.2.0 - https://github.com/jnordberg/gif.js

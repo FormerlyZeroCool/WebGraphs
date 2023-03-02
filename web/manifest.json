@@ -1,0 +1,9 @@
+{
+    "name": "curvejs",
+    "short_name": "curve",
+    "theme_color": "#1b2b3b",
+    "background_color": "#3b3b3b",
+    "display": "browser",
+    "scope": "/",
+    "start_url": "/https://curvejs.com/web"
+  }

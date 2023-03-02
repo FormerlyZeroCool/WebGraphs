@@ -1889,11 +1889,13 @@ export class GuiTextBox implements GuiElement {
 
     completed_actions:TextBoxChangeRecord[];
     undone_actions:TextBoxChangeRecord[];
+    keys_held:any;
     
     validationCallback:((tb:TextBoxEvent) => boolean) | null;
     constructor(key_listener:boolean, width:number, submit:GuiButton | null = null, fontSize:number = 16, height:number = 2*fontSize, flags:number = GuiTextBox.default,
         validationCallback:((event:TextBoxEvent) => boolean) | null = null, selectedColor:RGB = new RGB(80, 80, 220), unSelectedColor:RGB = new RGB(100, 100, 100), outline:boolean = true, fontName = "courier", customFontFace:FontFace | null = null)
     {
+        this.keys_held = null;
         this.completed_actions = [];
         this.undone_actions = [];
         this.ignore_touch_event = false;
@@ -2067,14 +2069,14 @@ export class GuiTextBox implements GuiElement {
     }
     handleKeyBoardEvents(type:string, e:any):void
     {
+        this.keys_held = e.keysHeld;
         let preventDefault:boolean = false;
         if(this.active() && this.handleKeyEvents && type === "keydown") {
             preventDefault = true;
             const oldText:string = this.text;
             const oldCursor:number = this.cursor;
             console.log(e.code)
-            if(e.keysHeld["MetaLeft"] || e.keysHeld["MetaRight"] ||
-                e.keysHeld["ControlLeft"] || e.keysHeld["ControlRight"])
+            if(this.control_held())
             {
                 if(e.code === "KeyA")
                 {
@@ -2106,7 +2108,7 @@ export class GuiTextBox implements GuiElement {
                     this.redo();
                 }
             }
-            else if(e.keysHeld["AltLeft"] || e.keysHeld["AltRight"])
+            else if(this.alt_held())
             {
                 if(type == "keydown")
                 switch(e.code)
@@ -2148,7 +2150,7 @@ export class GuiTextBox implements GuiElement {
                             break;
                 }
             }
-            else if(e.keysHeld["ShiftLeft"] || e.keysHeld["ShiftRight"])
+            else if(this.shift_held())
             {
                 if((<any> GuiTextBox.textUpperCaseLookup)[e.code])
                 {
@@ -2314,51 +2316,93 @@ export class GuiTextBox implements GuiElement {
             navigator.clipboard.writeText(this.selected_text());
         });
     }
+    alt_held():boolean
+    {
+        return this.keys_held["AltLeft"] || this.keys_held["AltRight"];
+    }
+    shift_held():boolean
+    {
+        return this.keys_held["ShiftLeft"] || this.keys_held["ShiftRight"];
+    }
+    control_held():boolean
+    {
+        return this.keys_held && (this.keys_held["ControlLeft"] || this.keys_held["ControlRight"] ||
+            this.keys_held["MetaLeft"] || this.keys_held["MetaRight"]);
+    }
+    create_menu():ContextMenu
+    {
+        const menu = new ContextMenu([120, 140 + (isTouchSupported() ? 100 : 0)], 0, 0);
+        menu.add_option(() => {
+            this.paste();
+        }, "Paste");
+        menu.add_option(() => {
+            this.cut();
+        }, "Cut");
+        menu.add_option(() => {
+            this.copy()
+        }, "Copy");
+        menu.add_option(() => {
+            this.undo()
+        }, "Undo");
+        menu.add_option(() => {
+            this.redo()
+        }, "Redo");
+        menu.add_option(() => {
+            this.cursor = 0;
+            this.highlighted_delta = this.text.length;
+        }, "Select All");
+        menu.add_option(() => {
+            this.delete_range(0, this.text.length);
+        }, "Clear");
+
+        return menu;
+    }
     handleTouchEvents(type:string, e:TouchMoveEvent):void
     {
         if(this.active() && this.handleKeyEvents)
         {
             const touch_text_index = this.screenToTextIndex(e.touchPos);
+            if(type === "longtap" && isTouchSupported())
+            {
+                this.ignore_touch_event = true;
+                throw this.create_menu();
+            }
             if(type === "touchstart")
             {
-                if(!isTouchSupported() && (<any> e).button > 0)
+                //create context menu on "right" click
+                if((!isTouchSupported() && ((<any> e).button > 0) || this.control_held()))
                 {
-                    const menu = new ContextMenu([120, 140], 0, 0);
-                    menu.add_option(() => {
-                        this.paste();
-                    }, "Paste");
-                    menu.add_option(() => {
-                        this.cut();
-                    }, "Cut");
-                    menu.add_option(() => {
-                        this.copy()
-                    }, "Copy");
-                    menu.add_option(() => {
-                        this.undo()
-                    }, "Undo");
-                    menu.add_option(() => {
-                        this.redo()
-                    }, "Redo");
-                    menu.add_option(() => {
-                        this.cursor = 0;
-                        this.highlighted_delta = this.text.length;
-                    }, "Select All");
-                    menu.add_option(() => {
-                        this.delete_range(0, this.text.length);
-                    }, "Clear");
                     this.ignore_touch_event = true;
-                    //menu.event_type = type;
-                    menu.trimDim();
-                    throw menu;
+                    throw this.create_menu();
                 }
                 this.ignore_touch_event = false;
-                this.highlighted_delta = 0;
-                this.cursor = touch_text_index;
             }
             else if(this.ignore_touch_event)
-            {}
+            //gives the opportunity to specify in a touchstart event to ignore the remainder
+            //of touch events that will be fired after touch start (used when right click menu fired to prevent updating cursor/ highlighted area)
+            {
+                return;
+            }
+            else if(type === "touchmove")
+            {
+                if(e.moveCount === 1)
+                    this.cursor = touch_text_index;
+                const delta = -this.cursor + touch_text_index;
+                if(delta)
+                    this.highlighted_delta = delta;
+            }
+            else if(type === "tap")
+            { 
+                this.highlighted_delta = 0;
+                this.cursor = touch_text_index;
+                //this.highlighted_delta = this.cursor - touch_text_index;
+                //this.cursor = touch_text_index;
+                this.drawInternalAndClear();
+            }
             else if(type === "doubletap")
             {
+                //should probably be refactored, but finds beginning and end of word delimited by spaces
+                //and makes that the highlighted area
                 let start = this.cursor;
                 while(start > 0  && this.text[start] !== ' ')
                 {
@@ -2374,16 +2418,7 @@ export class GuiTextBox implements GuiElement {
                 this.cursor = start;
                 this.highlighted_delta = end - start;
             }
-            else if(type === "touchmove")
-            {
-                this.highlighted_delta = -this.cursor + touch_text_index;
-            }
-            else if(type === "tap")
-            { 
-                this.highlighted_delta = this.cursor - touch_text_index;
-                this.cursor = touch_text_index;
-                this.drawInternalAndClear();
-            }
+            //just brings up prompt for mobile devices where I cannot bring up keyboard like a normal texbox
             if(type === "touchend" && isTouchSupported())
             {
                 const value = prompt(this.promptText, this.text);

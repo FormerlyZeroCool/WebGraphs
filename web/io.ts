@@ -83,22 +83,24 @@ export class TouchHandler {
     }
 };
 export class ListenerTypes {
-    touchstart:Array<TouchHandler>;
-    touchmove:Array<TouchHandler>;
-    touchend:Array<TouchHandler>;
-    hover:Array<TouchHandler>;
-    tap:Array<TouchHandler>;
-    doubletap:Array<TouchHandler>;
-    swipe:Array<TouchHandler>;
+    touchstart:TouchHandler[];
+    touchmove:TouchHandler[];
+    touchend:TouchHandler[];
+    hover:TouchHandler[];
+    tap:TouchHandler[];
+    doubletap:TouchHandler[];
+    longtap:TouchHandler[]
+    swipe:TouchHandler[];
     constructor()
     {
-        this.touchstart = new Array<TouchHandler>();
-        this.touchmove = new Array<TouchHandler>();
-        this.touchend = new Array<TouchHandler>();
-        this.hover = new Array<TouchHandler>();
-        this.doubletap = new Array<TouchHandler>();
-        this.tap = new Array<TouchHandler>();
-        this.swipe = new Array<TouchHandler>();
+        this.touchstart = [];
+        this.touchmove = [];
+        this.touchend = [];
+        this.hover = [];
+        this.doubletap = [];
+        this.longtap = [];
+        this.tap = [];
+        this.swipe = [];
     }
 };
 export interface TouchMoveEvent {
@@ -114,7 +116,6 @@ export interface TouchMoveEvent {
     eventTime:number;
     moveCount:number;
     defaultPrevented:boolean;
-
 };
 export function isTouchSupported():boolean {
     return (('ontouchstart' in window) ||
@@ -385,6 +386,8 @@ export class SingleTouchListener
                             this.callHandler("tap", event);
                         
                     }
+                    else//tap
+                        this.callHandler("longtap", event);
                     this.double_tapped = false;
                     this.callHandler("touchend", event);
                 } 
@@ -450,8 +453,6 @@ export class MultiTouchListenerTypes {
         this.swipe = new Array<TouchHandler>();
     }
 };
-
-
 export class MultiTouchListener {
     lastDistance:number;
     listener_type_map:MultiTouchListenerTypes;
@@ -644,7 +645,26 @@ export class MultiTouchListener {
         return get_angle(vec[0], vec[1]);
     }
 };
-
+export class GenericListener extends MultiTouchListener {
+    keyboard_listener:KeyboardHandler;
+    constructor(component:HTMLElement, preventDefault, mouseEmulation, stopRightClick, tap_and_swipe_delay_limit)
+    {
+        super(component, preventDefault, mouseEmulation, stopRightClick, tap_and_swipe_delay_limit);
+        this.keyboard_listener = new KeyboardHandler();
+    }
+    registerCallBackPredicate(listenerType:string, predicate:(event:any) => boolean, callBack:(event:any) => void):void
+    {
+        if(listenerType in this.listener_type_map || listenerType in this.single_touch_listener.listener_type_map)
+            this.registerCallBackPredicate(listenerType, predicate, callBack);
+        else
+            this.keyboard_listener.registerCallBack(listenerType, predicate, callBack);
+    }
+    registerCallBack(listenerType, callBack:(event:any) => void):void
+    {
+        this.registerCallBackPredicate(listenerType, () => true, callBack);
+    }
+    
+};
 function dist(x1:number, y1:number, x2:number, y2:number):number
 {
     const dx = x1 - x2;
