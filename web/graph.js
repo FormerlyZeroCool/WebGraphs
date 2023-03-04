@@ -830,8 +830,8 @@ class UIViewState {
         }
     }
     burger_collision(x, y) {
-        return x >= this.burger_x() && x < this.burger_x() + this.burger_width;
-        //&& y >= this.burger_y() && y < this.burger_y() + this.burger_height;
+        return x >= this.burger_x() && x < this.burger_x() + this.burger_width
+            && y >= this.burger_y() && y < this.burger_y() + this.burger_height * 2;
     }
     transition(delta_time) {
         if (this.hamburger_activated) {
@@ -878,7 +878,7 @@ class UIViewStateNoUI extends UIViewState {
         return true;
     }
     collision_predicate(type, event) {
-        return event.deltaX > 0;
+        return event.deltaX >= 0;
     }
     handleTouchEvents(type, event) {
         super.handleTouchEvents(type, event);

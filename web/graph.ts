@@ -1033,7 +1033,7 @@ class UIViewState implements GridUIState {
     burger_collision(x:number, y:number):boolean
     {
         return x >= this.burger_x() && x < this.burger_x() + this.burger_width 
-                //&& y >= this.burger_y() && y < this.burger_y() + this.burger_height;
+                && y >= this.burger_y() && y < this.burger_y() + this.burger_height * 2;
     }
     transition(delta_time: number): UIState {
         if(this.hamburger_activated)
@@ -1090,7 +1090,7 @@ class UIViewStateNoUI extends UIViewState {
     }
     collision_predicate(type: string, event: TouchMoveEvent):boolean
     {
-        return event.deltaX > 0;
+        return event.deltaX >= 0;
     }
     handleTouchEvents(type: string, event: TouchMoveEvent): void {
         super.handleTouchEvents(type, event);

@@ -448,21 +448,19 @@ export class SimpleGridLayoutManager {
         const original_touch_pos = [e.touchPos[0], e.touchPos[1]];
         const context = this.contextMenu;
         if (context && type === "touchstart") {
+            this.contextMenu = null;
             context.element.handleTouchEvents("touchstart", e);
             context.element.handleTouchEvents("touchend", e);
         }
         else if (context && type === "hover") {
             context.element.handleTouchEvents("hover", e);
         }
-        if (type === "touchstart") {
-            this.contextMenu = null;
-        }
         if (type === "hover") {
             if ((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
                 e.touchPos[1] >= this.y && e.touchPos[1] < this.y + this.height()) {
                 const record = this.getRecord(e, from_parent_handler, false);
                 if (record)
-                    this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
+                    record.element.handleTouchEvents(type, e);
             }
         }
         else if ((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
@@ -623,13 +621,11 @@ export class SimpleGridLayoutManager {
         return [elPos.x, elPos.y];
     }
     draw(ctx, xPos = this.x, yPos = this.y, offsetX = 0, offsetY = 0) {
-        //this.refreshCanvas();
         this.elementsPositions.forEach(el => el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0));
         if (this.contextMenu) {
             const el = this.contextMenu;
             el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0);
         }
-        //ctx.drawImage(this.canvas, xPos + offsetX, yPos + offsetY);
     }
 }
 ;
@@ -1514,6 +1510,7 @@ export class GuiTextBox {
         return this.highlighted_delta > 0 ? this.cursor + this.highlighted_delta : this.cursor;
     }
     delete_range(min_bound, max_bound, update_actions_record = true) {
+        //extract text to be deleted into another string for storage in transactions
         const deleted_text = this.text.substring(min_bound, max_bound);
         this.text = this.text.substring(0, min_bound) + this.text.substring(max_bound, this.text.length);
         this.text_widths.splice(min_bound, max_bound - min_bound);
@@ -1774,6 +1771,8 @@ export class GuiTextBox {
         return this.highlighted_delta !== 0;
     }
     paste() {
+        if (!navigator.clipboard)
+            return;
         this.delete_selection();
         navigator.clipboard.readText().then((text) => {
             //despite the name it is capable of inserting multi-char strings
@@ -1781,6 +1780,8 @@ export class GuiTextBox {
         });
     }
     cut() {
+        if (!navigator.clipboard)
+            return;
         navigator.clipboard.readText().then((text) => {
             navigator.clipboard.writeText(this.selected_text());
             this.delete_selection();
@@ -1788,6 +1789,8 @@ export class GuiTextBox {
         });
     }
     copy() {
+        if (!navigator.clipboard)
+            return;
         navigator.clipboard.readText().then((text) => {
             navigator.clipboard.writeText(this.selected_text());
         });

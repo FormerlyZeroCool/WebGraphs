@@ -587,6 +587,7 @@ export class SimpleGridLayoutManager implements GuiElement {
         const context = this.contextMenu;
         if(context && type === "touchstart")
         {
+            this.contextMenu = null;
             context.element.handleTouchEvents("touchstart", e);
             context.element.handleTouchEvents("touchend", e);
         }
@@ -595,10 +596,6 @@ export class SimpleGridLayoutManager implements GuiElement {
             context.element.handleTouchEvents("hover", e);
         }
 
-        if(type === "touchstart")
-        {
-            this.contextMenu = null;
-        }
 
 
         if(type === "hover")
@@ -608,7 +605,7 @@ export class SimpleGridLayoutManager implements GuiElement {
             {
                 const record = this.getRecord(e, from_parent_handler, false);
                 if(record)
-                    this.handleElementTouchEventsHigh(record, type, e, original_touch_pos, from_parent_handler);
+                    record.element.handleTouchEvents(type, e);
             }
         }
         else if((!this.elementTouched && from_parent_handler && e.touchPos[0] <= this.width() && e.touchPos[1] <= this.height()) || !this.elementTouched && e.touchPos[0] >= this.x && e.touchPos[0] < this.x + this.width() &&
@@ -800,8 +797,6 @@ export class SimpleGridLayoutManager implements GuiElement {
     }
     draw(ctx:CanvasRenderingContext2D, xPos:number = this.x, yPos:number = this.y, offsetX:number = 0, offsetY:number = 0)
     {
-        //this.refreshCanvas();
-
         this.elementsPositions.forEach(el => 
             el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0));
         if(this.contextMenu)
@@ -809,7 +804,6 @@ export class SimpleGridLayoutManager implements GuiElement {
             const el = this.contextMenu;
             el.element.draw(ctx, el.x + xPos, el.y + yPos, 0, 0);
         }
-        //ctx.drawImage(this.canvas, xPos + offsetX, yPos + offsetY);
     }
 };
 export class VerticalLayoutManager extends SimpleGridLayoutManager {
@@ -1976,6 +1970,7 @@ export class GuiTextBox implements GuiElement {
     }
     delete_range(min_bound:number, max_bound:number, update_actions_record:boolean = true):void
     {
+        //extract text to be deleted into another string for storage in transactions
         const deleted_text = this.text.substring(min_bound, max_bound);
         this.text = this.text.substring(0, min_bound) + this.text.substring(max_bound, this.text.length);
         this.text_widths.splice(min_bound, max_bound - min_bound);
@@ -2296,6 +2291,8 @@ export class GuiTextBox implements GuiElement {
     }
     paste():void
     {
+        if(!navigator.clipboard)
+            return;
         this.delete_selection();
         navigator.clipboard.readText().then((text:string) => {
             //despite the name it is capable of inserting multi-char strings
@@ -2304,6 +2301,8 @@ export class GuiTextBox implements GuiElement {
     }
     cut():void
     {
+        if(!navigator.clipboard)
+            return;
         navigator.clipboard.readText().then((text:string) => {
             navigator.clipboard.writeText(this.selected_text());
             this.delete_selection();
@@ -2312,6 +2311,8 @@ export class GuiTextBox implements GuiElement {
     }
     copy():void
     {
+        if(!navigator.clipboard)
+            return;
         navigator.clipboard.readText().then((text:string) => {
             navigator.clipboard.writeText(this.selected_text());
         });
