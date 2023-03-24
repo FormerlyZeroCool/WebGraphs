@@ -299,6 +299,8 @@ window.addEventListener('load', function() {
   });
 class Function {
     source:string;
+    dependencies:string[];
+    variable_name:string;
     color:RGB;
     line_width:number;
     compiled:(x:number, dx:number) => number;
@@ -317,6 +319,8 @@ class Function {
     constructor(source:string)
     {
         this.source = source;
+        this.dependencies = [];
+        this.variable_name = "";
         this.not_function = false;
         this.error_message = null;
         this.line_width = 2;
@@ -343,9 +347,21 @@ class Function {
         if(this.source !== source)
         {
             this.source = source;
+            this.dependencies.length = 0;
+            this.variable_name = "";
             this.error_message = null;
             try{
                 this.compiled = eval(`(x, dx) => ${source}`);
+                //find out if, and what variable is declared in this function
+                //also find out what variables we are dependent on
+                const gv_index = source.indexOf("gv.");
+                if(gv_index !== -1)
+                {
+                    if(source.indexOf("=>") === -1)//not declaring a lambda
+                    {
+                        
+                    }
+                }
             }catch(e:any)
             {
                 console.log(e.message);

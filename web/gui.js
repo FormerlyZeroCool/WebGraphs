@@ -1,5 +1,12 @@
 import { isTouchSupported, fetchImage } from './io.js';
 import { clamp, max_32_bit_signed } from './utils.js';
+{
+    const fontName = "Minecraft";
+    const font = new FontFace(`${fontName}`, 'url(/web/fonts/Minecraft.ttf)');
+    font.load().then((loaded_face) => {
+        document.fonts.add(loaded_face);
+    });
+}
 export function blendAlphaCopy(color0, color) {
     const alphant = color0.alphaNormal();
     const alphanc = color.alphaNormal();
@@ -22,10 +29,6 @@ export class RGB {
     }
     blendAlphaCopy(color) {
         blendAlphaCopy(this, color);
-        /*this.setRed  ((alphanc*color.red() +   alphant*this.red() * a ) *a1);
-        this.setBlue ((alphanc*color.blue() +  alphant*this.blue() * a) *a1);
-        this.setGreen((alphanc*color.green() + alphant*this.green() * a)*a1);
-        this.setAlpha(a0*255);*/
     }
     toHSL() {
         const normRed = this.red() / 255;
@@ -440,11 +443,15 @@ export class SimpleGridLayoutManager {
             }
             runningNumber++;
         });
+        if (record && manage_activation) {
+            record.element.activate();
+        }
         if (!from_parent_handler)
             e.translateEvent(e, this.x, this.y);
         return record;
     }
     handleTouchEvents(type, e, from_parent_handler = false) {
+        //console.log(type, this)
         const original_touch_pos = [e.touchPos[0], e.touchPos[1]];
         const context = this.contextMenu;
         if (context && type === "touchstart") {
@@ -497,7 +504,7 @@ export class SimpleGridLayoutManager {
     activate() {
         this.focused = true;
         this.elements.forEach(el => {
-            el.activate();
+            //el.activate();
         });
     }
     isCellFree(x, y) {
@@ -645,6 +652,7 @@ export class VerticalLayoutManager extends SimpleGridLayoutManager {
             this.elementsPositions.push(record);
             current_y += element.height();
         });
+        this.pixelDim[1] = current_y;
     }
 }
 export class HorizontalLayoutManager extends SimpleGridLayoutManager {
@@ -711,10 +719,11 @@ export class ContextMenuOption {
 }
 ;
 export class ContextMenu extends VerticalLayoutManager {
-    add_option(option, text, font_name = "Courier") {
+    add_option(option, text, font_name = "courier") {
         const grey = new RGB(125, 125, 125, 255);
+        const height = this.height();
         this.addElement(new GuiButton(option, text, this.width(), this.height(), 16, grey, grey, font_name, new RGB(0, 0, 0, 0), GuiButton.default_text_color));
-        this.elements.forEach((el) => el.dimensions[1] = this.height() / this.elements.length);
+        this.elements.forEach((el) => el.dimensions[1] = height / this.elements.length);
         this.refreshMetaData();
     }
     handleTouchEvents(type, e) {
@@ -1526,7 +1535,9 @@ export class GuiTextBox {
             this.delete_range(this.min_selection_bound(), this.max_selection_bound(), update_actions_record);
     }
     rebuild_text_widths() {
-        this.text_widths = [];
+        if (!this.text_widths)
+            this.text_widths = [];
+        this.text_widths.length = 0;
         for (let i = 0; i < this.text.length; i++) {
             this.text_widths.push(this.ctx.measureText(this.text[i]).width);
         }
@@ -1806,7 +1817,7 @@ export class GuiTextBox {
             this.keys_held["MetaLeft"] || this.keys_held["MetaRight"]);
     }
     create_menu() {
-        const menu = new ContextMenu([120, 140 + (isTouchSupported() ? 100 : 0)], 0, 0);
+        const menu = new ContextMenu([100, 140], 0, 0);
         menu.add_option(() => {
             this.paste();
         }, "Paste");
@@ -1833,6 +1844,7 @@ export class GuiTextBox {
     }
     handleTouchEvents(type, e) {
         if (this.active() && this.handleKeyEvents) {
+            this.rebuild_text_widths();
             const touch_text_index = this.screenToTextIndex(e.touchPos);
             if (type === "longtap" && isTouchSupported()) {
                 this.ignore_touch_event = true;
@@ -2093,6 +2105,7 @@ export class GuiTextBox {
         }
     }
     draw(ctx, x, y, offsetX = 0, offsetY = 0) {
+        this.drawInternalAndClear();
         ctx.drawImage(this.canvas, x + offsetX, y + offsetY);
     }
 }
@@ -2119,6 +2132,20 @@ GuiTextBox.textBoxRunningNumber = 0;
 export class GuiLabel extends GuiButton {
     constructor(text, width, fontSize = 16, height = 2 * fontSize) {
         super(() => { }, text, width, height, fontSize);
+        this.outline_color = new RGB(0, 0, 0, 255);
+    }
+    //override the textbox's handlers
+    handleKeyBoardEvents(type, e) { }
+    handleTouchEvents(type, e) { }
+    active() {
+        return false;
+    }
+}
+;
+export class GuiLabelComplex extends GuiTextBox {
+    constructor(text, width, fontSize = 16, height = 2 * fontSize, flags = GuiTextBox.bottom | GuiTextBox.left, backgroundColor = new RGB(255, 255, 255, 0)) {
+        super(false, width, null, fontSize, height, flags, null, backgroundColor, backgroundColor, false);
+        this.setText(text);
     }
     //override the textbox's handlers
     handleKeyBoardEvents(type, e) { }
@@ -2670,7 +2697,6 @@ function sum(elements) {
     return sum;
 }
 ;
-groupify({ v: { h: {}, v: [{ h: {}, v: {} }] } });
 export function groupify(layout, layout_manager = new HorizontalLayoutManager([0, 0])) {
     const build_group = (sub_layout, type) => {
         if (sub_layout) {
