@@ -464,7 +464,7 @@ export class ProcessPool {
         this.modules = modules;
         const stringified_code = modules.map((pm) => {
             return `import {${pm.fields.join(',')}} from '${pm.path}'\n`;
-        }).concat(library_code.map(foo => `const ${foo.name} = ${foo.toString()}`).concat(["\nconst main = ", main.toString(), ";\n", `self.onmessage = (event) => {const data = main(event.data.data); postMessage({process_id:event.data.process_id, data:data}${return_buffer_keys ? ", [" + return_buffer_keys.map(return_buffer_key => `data.${return_buffer_key}`).join() + "]" : ""}); }`]));
+        }).concat(library_code.map(foo => `const ${foo.name} = ${foo.toString()}`).concat(["\nconst main = ", main.toString(), ";\n", `self.onmessage = (event) => {const data = main(event.data.data); postMessage({process_id:event.data.process_id, data:data}${return_buffer_keys ? ", [" + return_buffer_keys.map(return_buffer_key => `data.${return_buffer_key}`).join(',') + "]" : ""}); }`]));
         console.log(stringified_code.join(''));
         this.code_url = window.URL.createObjectURL(new Blob(stringified_code, {
             type: "text/javascript"

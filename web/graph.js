@@ -298,7 +298,6 @@ class Function {
         return Math.floor((x - this.x_min) / (this.x_max - this.x_min) * this.table.length);
     }
     setup_calc_for(x_min, x_max, dx, iterations) {
-        this.error_message = null;
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
@@ -351,7 +350,9 @@ class Function {
     }
     calc_next(index, dx) {
         const x = this.x_min + index * dx;
-        this.table.push(this.compiled(x, this.dx));
+        const y = this.call(x);
+        if (y !== null)
+            this.table.push(y);
         return this.table[index];
     }
     calc_for(x_min, x_max, dx, calc_minmax, calc_zeros, calc_poi) {

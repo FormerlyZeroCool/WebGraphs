@@ -395,7 +395,6 @@ class Function {
     }
     setup_calc_for(x_min:number, x_max:number, dx:number, iterations:number):void
     {
-        this.error_message = null;
         this.x_max = x_max;
         this.x_min = x_min;
         this.dx = dx;
@@ -459,7 +458,9 @@ class Function {
     calc_next(index:number, dx:number):number
     {
         const x = this.x_min + index * dx;
-        this.table.push(this.compiled(x, this.dx));
+        const y = this.call(x);
+        if(y !== null)
+            this.table.push(y);
         return this.table[index];
     }
     calc_for(x_min:number, x_max:number, dx:number, calc_minmax:boolean, calc_zeros:boolean, calc_poi:boolean):DynamicFloat64Array
@@ -1327,6 +1328,7 @@ class Game extends SquareAABBCollidable {
     draw_axes:boolean;
     draw_axis_labels:boolean;
     functions:Function[];
+    multivariable_functions:Function[];
     rendering_functions:boolean;
     scaling_multiplier:number;
     graph_start_x:number;
