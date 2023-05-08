@@ -898,7 +898,6 @@ export class GuiCheckList {
             this.list[i].draw(ctx, x, y + offsetI * (this.height() / this.layoutManager.matrixDim[1]), offsetX, offsetY);
             offsetI++;
             const row_errors = this.get_error(i);
-            console.log("HI!", row_errors);
             if (row_errors) {
                 const font_size = 18;
                 ctx.fillStyle = new RGB(0, 0, 0, 200).htmlRBGA();
