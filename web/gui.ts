@@ -1240,7 +1240,7 @@ export class GuiCheckList implements GuiElement {
             break;
             case("touchmove"):
             const movesNeeded:number = isTouchSupported()?7:2;
-            if(!this.dragItem && this.selectedItem() && e.touchPos[0] < this.selectedItem()!.sliderX)
+            if(!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width())
             {
                 if(e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1)
                 {
@@ -1257,8 +1257,8 @@ export class GuiCheckList implements GuiElement {
             }
             else if(this.dragItem && e.moveCount > movesNeeded)
             {
-                this.dragItemLocation[0] += e.deltaX / 2;
-                this.dragItemLocation[1] += e.deltaY / 2;
+                this.dragItemLocation[0] += e.deltaX;
+                this.dragItemLocation[1] += e.deltaY;
             }
             break;
         }

@@ -978,7 +978,7 @@ export class GuiCheckList {
                 break;
             case ("touchmove"):
                 const movesNeeded = isTouchSupported() ? 7 : 2;
-                if (!this.dragItem && this.selectedItem() && e.touchPos[0] < this.selectedItem().sliderX) {
+                if (!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width()) {
                     if (e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1) {
                         this.dragItem = this.list.splice(this.selected(), 1)[0];
                         this.dragItemInitialIndex = this.selected();
@@ -991,8 +991,8 @@ export class GuiCheckList {
                     }
                 }
                 else if (this.dragItem && e.moveCount > movesNeeded) {
-                    this.dragItemLocation[0] += e.deltaX / 2;
-                    this.dragItemLocation[1] += e.deltaY / 2;
+                    this.dragItemLocation[0] += e.deltaX;
+                    this.dragItemLocation[1] += e.deltaY;
                 }
                 break;
         }
