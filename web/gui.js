@@ -887,7 +887,7 @@ export class GuiCheckList {
             if (this.dragItem && this.dragItemLocation[1] !== -1 && i === Math.floor((this.dragItemLocation[1] / this.height()) * this.layoutManager.matrixDim[1])) {
                 offsetI++;
             }
-            const background_color = this.callback_get_non_error_background_color(i);
+            const background_color = this.callback_get_non_error_background_color(i >= this.dragItemInitialIndex && this.dragItemInitialIndex !== -1 ? i + 1 : i);
             if (background_color) {
                 const alpha = background_color.alpha();
                 background_color.setAlpha(190);

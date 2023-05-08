@@ -1134,7 +1134,7 @@ export class GuiCheckList implements GuiElement {
             {
                 offsetI++;
             }
-            const background_color:RGB | null = this.callback_get_non_error_background_color(i);
+            const background_color:RGB | null = this.callback_get_non_error_background_color(i >= this.dragItemInitialIndex && this.dragItemInitialIndex !== -1 ? i + 1:i);
             if(background_color)
             {
                 const alpha = background_color.alpha();
