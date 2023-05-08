@@ -985,10 +985,6 @@ export class GuiCheckList {
                         this.dragItemLocation[0] = e.touchPos[0];
                         this.dragItemLocation[1] = e.touchPos[1];
                     }
-                    else if (e.moveCount > movesNeeded) {
-                        this.dragItemLocation[0] += e.deltaX;
-                        this.dragItemLocation[1] += e.deltaY;
-                    }
                 }
                 else if (this.dragItem && e.moveCount > movesNeeded) {
                     this.dragItemLocation[0] += e.deltaX;
