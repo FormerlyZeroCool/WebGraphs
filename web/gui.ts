@@ -1240,7 +1240,7 @@ export class GuiCheckList implements GuiElement {
                 this.selectedItem()!.callBack!(e);
             break;
             case("touchmove"):
-            const movesNeeded:number = isTouchSupported()?7:2;
+            const movesNeeded:number = isTouchSupported()?7:1;
             if(!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width() && distance2d_arr(e.startTouchPos, e.touchPos) > this.list[0].height())
             {
                 if(e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1)

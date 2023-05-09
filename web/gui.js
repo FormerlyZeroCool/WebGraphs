@@ -978,7 +978,7 @@ export class GuiCheckList {
                     this.selectedItem().callBack(e);
                 break;
             case ("touchmove"):
-                const movesNeeded = isTouchSupported() ? 7 : 2;
+                const movesNeeded = isTouchSupported() ? 7 : 1;
                 if (!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width() && distance2d_arr(e.startTouchPos, e.touchPos) > this.list[0].height()) {
                     if (e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1) {
                         this.dragItem = this.list.splice(this.selected(), 1)[0];
