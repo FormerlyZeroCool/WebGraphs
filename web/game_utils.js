@@ -4,7 +4,12 @@ export function menu_font_size() { return (isTouchSupported() ? 27 : 22) * (Math
 export function distance(a, b) {
     const dx = a.mid_x() - b.mid_x();
     const dy = a.mid_y() - b.mid_y();
-    return Math.sqrt(dx * dx + dy * dy);
+    return magnitude(dx, dy);
+}
+export function distance2d_arr(a, b) {
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    return magnitude(dx, dy);
 }
 export function get_normal_vector_aabb_rect_circle_collision(ball, brick) {
     let delta = [0, 0];

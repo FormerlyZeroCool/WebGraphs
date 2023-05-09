@@ -13,6 +13,11 @@ export class KeyListenerTypes {
         this.keyup = new Array<TouchHandler>();
     }
 };
+export interface KeyEvent extends KeyboardEvent {
+    control_held():boolean;
+    shift_held():boolean;
+    alt_held():boolean;
+}
 export class KeyboardHandler {
     keysHeld:any;
     listener_type_map:KeyListenerTypes;
@@ -24,17 +29,21 @@ export class KeyboardHandler {
         document.addEventListener("keydown", (e:any) => this.keyDown(e));
         document.addEventListener("keypressed", (e:any) => this.keyPressed(e));
     }
-    registerCallBack(listenerType:string, predicate:(event:any) => boolean, callBack:(event:any) => void):void
+    registerCallBack(listenerType:string, predicate:(event:KeyEvent) => boolean, callBack:(event:KeyEvent) => void):void
     {
         (<any> this.listener_type_map)[listenerType].push(new TouchHandler(predicate, callBack));
     }
-    callHandler(type:string, event:any):void
+    callHandler(type:string, event:KeyboardEvent):void
     {
         const handlers:TouchHandler[] = (<any> this.listener_type_map)[type];
         handlers.forEach((handler:TouchHandler) => {
             if(handler.pred(event))
             {
-                handler.callBack(event);
+                const ev:KeyEvent = <KeyEvent> <any> event;
+                ev.control_held = () => this.keysHeld["ControlLeft"] || this.keysHeld["ControlRight"];
+                ev.shift_held = () => this.keysHeld["ShiftLeft"] || this.keysHeld["ShiftRight"];
+                ev.alt_held = () => this.keysHeld["AltLeft"] || this.keysHeld["AltRight"];
+                handler.callBack(ev);
             }
         });
     }
@@ -116,6 +125,7 @@ export interface TouchMoveEvent {
     eventTime:number;
     moveCount:number;
     defaultPrevented:boolean;
+    startTouchPos:number[];
 };
 const touch_support = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 export function isTouchSupported():boolean {

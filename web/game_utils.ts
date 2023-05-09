@@ -7,7 +7,13 @@ export function distance(a:SquareAABBCollidable, b:SquareAABBCollidable):number
 {
     const dx = a.mid_x() - b.mid_x();
     const dy = a.mid_y() - b.mid_y();
-    return Math.sqrt(dx*dx + dy*dy);
+    return magnitude(dx, dy);
+}
+export function distance2d_arr(a:number[], b:number[]):number
+{
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    return magnitude(dx, dy);
 }
 export function get_normal_vector_aabb_rect_circle_collision(ball:SpatiallyMappableCircle, brick:SquareAABBCollidable):number[]
 {

@@ -23,7 +23,11 @@ export class KeyboardHandler {
         const handlers = this.listener_type_map[type];
         handlers.forEach((handler) => {
             if (handler.pred(event)) {
-                handler.callBack(event);
+                const ev = event;
+                ev.control_held = () => this.keysHeld["ControlLeft"] || this.keysHeld["ControlRight"];
+                ev.shift_held = () => this.keysHeld["ShiftLeft"] || this.keysHeld["ShiftRight"];
+                ev.alt_held = () => this.keysHeld["AltLeft"] || this.keysHeld["AltRight"];
+                handler.callBack(ev);
             }
         });
     }

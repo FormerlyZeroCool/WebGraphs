@@ -1,4 +1,5 @@
-import {SingleTouchListener, isTouchSupported, KeyboardHandler, fetchImage, TouchMoveEvent} from './io.js'
+import { distance, distance2d_arr } from './game_utils.js';
+import {SingleTouchListener, isTouchSupported, KeyboardHandler, fetchImage, TouchMoveEvent, KeyEvent} from './io.js'
 import { clamp, logToServer, max_32_bit_signed } from './utils.js';
 
 {
@@ -1195,7 +1196,7 @@ export class GuiCheckList implements GuiElement {
             this.dragItem.draw(ctx, x + this.dragItemLocation[0] - this.dragItem.width() / 2, y + this.dragItemLocation[1] - this.dragItem.height() / 2, offsetX, offsetY);
         }
     }
-    handleKeyBoardEvents(type:string, e:any):void
+    handleKeyBoardEvents(type:string, e:KeyEvent):void
     {
         this.layoutManager.handleKeyBoardEvents(type, e);
     }
@@ -1240,7 +1241,7 @@ export class GuiCheckList implements GuiElement {
             break;
             case("touchmove"):
             const movesNeeded:number = isTouchSupported()?7:2;
-            if(!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width())
+            if(!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width() && distance2d_arr(e.startTouchPos, e.touchPos) > this.list[0].height())
             {
                 if(e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1)
                 {

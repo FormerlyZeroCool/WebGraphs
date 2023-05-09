@@ -1,3 +1,4 @@
+import { distance2d_arr } from './game_utils.js';
 import { isTouchSupported, fetchImage } from './io.js';
 import { clamp, max_32_bit_signed } from './utils.js';
 {
@@ -978,7 +979,7 @@ export class GuiCheckList {
                 break;
             case ("touchmove"):
                 const movesNeeded = isTouchSupported() ? 7 : 2;
-                if (!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width()) {
+                if (!this.dragItem && this.selectedItem() && e.touchPos[0] < this.width() && distance2d_arr(e.startTouchPos, e.touchPos) > this.list[0].height()) {
                     if (e.moveCount === movesNeeded && this.selectedItem() && this.list.length > 1) {
                         this.dragItem = this.list.splice(this.selected(), 1)[0];
                         this.dragItemInitialIndex = this.selected();
