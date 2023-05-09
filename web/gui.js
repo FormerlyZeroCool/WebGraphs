@@ -950,7 +950,7 @@ export class GuiCheckList {
         const clicked = Math.floor(((e.touchPos[1]) / this.height()) * this.layoutManager.matrixDim[1]);
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
-        if (element && this.layoutManager.elementsPositions[clicked]) {
+        if (element && this.layoutManager.elementsPositions[clicked] && !this.dragItem) {
             e.touchPos[1] -= clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
             element.element.handleTouchEvents(type, e, true);
             e.touchPos[1] += clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
@@ -1813,7 +1813,7 @@ export class GuiTextBox {
             this.keys_held["MetaLeft"] || this.keys_held["MetaRight"]);
     }
     create_menu() {
-        const menu = new ContextMenu([100, 140], 0, 0);
+        const menu = new ContextMenu([100, 140 + (isTouchSupported() ? 80 : 0)], 0, 0);
         menu.add_option(() => {
             this.paste();
         }, "Paste");
@@ -1860,7 +1860,7 @@ export class GuiTextBox {
             {
                 return;
             }
-            else if (type === "touchmove") {
+            else if (type === "touchmove" && !isTouchSupported()) {
                 if (e.moveCount === 1)
                     this.cursor = touch_text_index;
                 const delta = -this.cursor + touch_text_index;
@@ -1891,7 +1891,7 @@ export class GuiTextBox {
                 this.highlighted_delta = end - start;
             }
             //just brings up prompt for mobile devices where I cannot bring up keyboard like a normal texbox
-            if (type === "touchend" && isTouchSupported()) {
+            else if (type === "touchend" && isTouchSupported()) {
                 const value = prompt(this.promptText, this.text);
                 if (value) {
                     this.setText(value);

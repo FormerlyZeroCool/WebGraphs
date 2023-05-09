@@ -67,9 +67,9 @@ export class ListenerTypes {
 }
 ;
 ;
+const touch_support = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 export function isTouchSupported() {
-    return (('ontouchstart' in window) ||
-        (navigator.maxTouchPoints > 0));
+    return touch_support;
 }
 export class MouseDownTracker {
     constructor() {

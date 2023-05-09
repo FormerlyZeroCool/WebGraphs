@@ -1208,7 +1208,7 @@ export class GuiCheckList implements GuiElement {
         this.layoutManager.lastTouched = clicked > this.list.length ? this.list.length - 1 : clicked;
         const element:RowRecord = this.layoutManager.elementsPositions[this.layoutManager.lastTouched];
         
-        if(element && this.layoutManager.elementsPositions[clicked])
+        if(element && this.layoutManager.elementsPositions[clicked] && !this.dragItem)
         {
             e.touchPos[1] -= clicked * (this.layoutManager.elementsPositions[clicked].height + 5);
             (<GuiListItem> <Object> element.element).handleTouchEvents(type, e, true);
@@ -2340,7 +2340,7 @@ export class GuiTextBox implements GuiElement {
     }
     create_menu():ContextMenu
     {
-        const menu = new ContextMenu([100, 140], 0, 0);
+        const menu = new ContextMenu([100, 140 + (isTouchSupported() ? 80 : 0)], 0, 0);
         menu.add_option(() => {
             this.paste();
         }, "Paste");
@@ -2393,7 +2393,7 @@ export class GuiTextBox implements GuiElement {
             {
                 return;
             }
-            else if(type === "touchmove")
+            else if(type === "touchmove" && !isTouchSupported())
             {
                 if(e.moveCount === 1)
                     this.cursor = touch_text_index;
@@ -2429,7 +2429,7 @@ export class GuiTextBox implements GuiElement {
                 this.highlighted_delta = end - start;
             }
             //just brings up prompt for mobile devices where I cannot bring up keyboard like a normal texbox
-            if(type === "touchend" && isTouchSupported())
+            else if(type === "touchend" && isTouchSupported())
             {
                 const value = prompt(this.promptText, this.text);
                 if(value)

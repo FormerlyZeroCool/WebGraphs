@@ -117,9 +117,9 @@ export interface TouchMoveEvent {
     moveCount:number;
     defaultPrevented:boolean;
 };
+const touch_support = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 export function isTouchSupported():boolean {
-    return (('ontouchstart' in window) ||
-      (navigator.maxTouchPoints > 0));
+    return touch_support;
 }
 export class MouseDownTracker {
     mouseDown:boolean;
