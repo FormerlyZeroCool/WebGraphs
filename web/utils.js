@@ -19,8 +19,9 @@ export function round_with_precision(value, precision) {
     return rounded;
 }
 export function normalize(vec) {
-    const mag = Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
-    return [vec[0] / mag, vec[1] / mag];
+    const mag = Math.sqrt(scalarDotProduct(vec, vec));
+    const multiplier = mag !== 0 ? mag : 1;
+    return [vec[0] / multiplier, vec[1] / multiplier];
 }
 export function scalarDotProduct(a, b) {
     return a[0] * b[0] + a[1] * b[1];
@@ -30,6 +31,9 @@ export function get_angle(deltaX, deltaY, unit_vectorX = 1, unit_vectorY = 0) {
     const b = [unit_vectorX, unit_vectorY];
     const dotProduct = scalarDotProduct(a, b);
     return Math.acos(dotProduct) * (deltaY < 0 ? -1 : 1);
+}
+export function get_angle_degrees(deltaX, deltaY, unit_vectorX = 1, unit_vectorY = 0) {
+    return get_angle(deltaX, deltaY, unit_vectorX, unit_vectorY) * 180 / Math.PI;
 }
 export function threeByThreeMat(a, b) {
     return [a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
